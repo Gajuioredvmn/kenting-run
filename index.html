@@ -4492,10 +4492,10 @@ const FX = { puffs: [], marks: [], cur: null, img: {}, spawnAcc: 0, spin: 0, las
 const PUFF_COLS = { smoke: [0xffffff, 0xe6e8ee, 0xc6cad4], sand: [0xfff2cc, 0xe8d8a8, 0xc8b480], grass: [0xd8d0a0, 0xaea678, 0x8a8458], gravel: [0xe0dcd4, 0xb8b4ac, 0x8e8a82], dirt: [0xd8c4a0, 0xb49878, 0x8a7458] };
 function fxInit() {
   for (const k in PUFF_COLS) {
-    const C = PUFF_COLS[k], px = new Pix(24, 24), rnd = mulberry(77);
-    // a cloud of a few lobes: lit on top, darker underneath
-    for (const [x, y, r] of [[12, 13, 8], [7, 14, 6], [17, 13, 6], [11, 8, 5], [15, 17, 5]]) px.ball(x, y, r, r * 0.9, [C[2], C[1], C[0]], -0.4, -1);
-    px.outline(C[2]);
+    const C = PUFF_COLS[k], px = new Pix(40, 32);
+    // a dense little cumulus: a heap of lobes, lit on top, shaded underneath, a soft rim
+    for (const [x, y, r] of [[20, 19, 11], [10, 21, 8], [30, 21, 8], [14, 12, 7], [26, 12, 7], [20, 9, 6], [6, 25, 5], [34, 25, 5], [20, 25, 8]]) px.ball(x, y, r, r * 0.85, [C[2], C[1], C[0], C[0]], -0.3, -1);
+    px.outline(C[1]);
     FX.img[k] = px.toCanvas();
   }
 }
@@ -4525,20 +4525,25 @@ function fxUpdate(dt) {
   // ---- puffs ----
   const bx = PC.scrX, by = PC.scrY, hw = (PC.scrBW || 120) * 0.4;
   let rate = 0;
-  if (launch) rate = 70; else if (burst) rate = 90; else if (slide > 0.3) rate = 40 * slide; else if (braking) rate = 24; else if (scrub) rate = 12; else if (off) rate = 24 + Math.min(30, v * 0.5);
+  if (launch) rate = 90; else if (burst) rate = 110; else if (slide > 0.3) rate = 70 * slide; else if (braking) rate = 36; else if (scrub) rate = 16; else if (off) rate = 30 + Math.min(40, v * 0.6);
   FX.spawnAcc += rate * dt;
+  const outer = PC.drift ? -PC.driftDir : -Math.sign(PC.steerIn || 1);   // the tyre on the outside of the bend works hardest
   while (FX.spawnAcc >= 1) {
     FX.spawnAcc -= 1;
-    const side = launch || burst || off || braking ? (Math.random() < 0.5 ? -1 : 1) : (PC.drift ? -PC.driftDir : -Math.sign(PC.steerIn || 1)), tx = bx + side * hw + (Math.random() - 0.5) * 8, ty = by - 3 + Math.random() * 4;
-    if (launch) puff(tx, ty, side * (18 + Math.random() * 40), -(20 + Math.random() * 40), 12, 34 + Math.random() * 18, 0.8 + Math.random() * 0.5, 'smoke', 1);
-    else if (burst) puff(tx, ty, side * (16 + Math.random() * 36), 20 + v * 0.5 + Math.random() * 40, 10, 30 + Math.random() * 16, 0.6 + Math.random() * 0.4, 'smoke', 1);
-    else if (off) puff(tx, ty + 1, side * (10 + Math.random() * 26), 40 + v * 1.2 + Math.random() * 50, 10, 26 + Math.random() * 18, 0.5 + Math.random() * 0.35, kind, 0.95);
-    else puff(tx, ty, side * (6 + Math.random() * 22), 30 + v * 0.9 + Math.random() * 30, 9, 22 + Math.random() * 16, 0.5 + Math.random() * 0.35, 'smoke', slide > 0.3 ? 0.95 : 0.7);
+    // both rear tyres smoke; in a slide the outer one more; each tyre throws smoke out to its side and some in under the car
+    let tyre = Math.random() < 0.5 ? -1 : 1;
+    if (slide > 0.3 && !launch && !burst && Math.random() < 0.3) tyre = outer;
+    const inward = Math.random() < 0.3, dir = inward ? -tyre : tyre;
+    const tx = bx + tyre * hw + (Math.random() - 0.5) * 10, ty = by - 4 + Math.random() * 6, R = Math.random;
+    if (launch) puff(tx, ty, dir * (26 + R() * 50) * (inward ? 0.4 : 1), 4 + R() * 22, 16, 40 + R() * 22, 0.9 + R() * 0.5, 'smoke', 1);
+    else if (burst) puff(tx, ty, dir * (22 + R() * 44) * (inward ? 0.4 : 1), 16 + v * 0.4 + R() * 30, 14, 36 + R() * 18, 0.7 + R() * 0.4, 'smoke', 1);
+    else if (off) puff(tx, ty + 1, dir * (12 + R() * 30), 40 + v * 1.1 + R() * 50, 12, 30 + R() * 20, 0.5 + R() * 0.4, kind, 1);
+    else puff(tx, ty, dir * (14 + R() * 36) * (inward ? 0.4 : 1), 24 + v * 0.7 + R() * 36, 12, 32 + R() * 20, 0.6 + R() * 0.45, 'smoke', slide > 0.3 ? 1 : 0.8);
   }
   for (let i = FX.puffs.length - 1; i >= 0; i--) {
     const q = FX.puffs[i]; q.t += dt;
     if (q.t >= q.life) { FX.puffs.splice(i, 1); continue; }
-    q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 1 - dt * 1.2; q.vy += (q.vy < 0 ? -8 : 12) * dt;
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 1 - dt * 1.6; q.vy = q.vy * (1 - dt * 0.8) - 10 * dt;
   }
   // ---- skid marks: laid on the road under the rear tyres while the tyres are spinning, sliding or locked ----
   const marking = (launch && v > 0.5) || burst || slide > 0.45 || braking;
@@ -4562,9 +4567,9 @@ function fxMarksRow(p, gs, X, rk, asph) {
 function fxDraw() {
   if (!FX.puffs.length) return;
   for (const q of FX.puffs) {
-    const u = q.t / q.life, s = Math.round(q.s0 + (q.s1 - q.s0) * u), im = FX.img[q.kind] || FX.img.smoke;
-    VG.globalAlpha = q.a * (1 - u * u);
-    VG.drawImage(im, Math.round(q.x - s / 2), Math.round(q.y - s / 2), s, s);
+    const u = q.t / q.life, s = Math.round(q.s0 + (q.s1 - q.s0) * Math.sqrt(u)), im = FX.img[q.kind] || FX.img.smoke, h = Math.round(s * 0.8);
+    VG.globalAlpha = q.a * (u < 0.6 ? 1 : 1 - ((u - 0.6) / 0.4) ** 2);
+    VG.drawImage(im, Math.round(q.x - s / 2), Math.round(q.y - h / 2), s, h);
   }
   VG.globalAlpha = 1;
 }
