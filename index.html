@@ -437,19 +437,40 @@ function drawLayer(g, c, camAz, k, yTop, alpha) {
   for (; x < RW; x += PANO_W) g.drawImage(c, x, yTop);
   g.globalAlpha = 1;
 }
-function drawSky(g, camAz, t, T) {
-  const HY = horizonY(), gr = g.createLinearGradient(0, 0, 0, HY + 40);
-  gr.addColorStop(0, cssHex(T.top)); gr.addColorStop(0.62, cssHex(mixHex(T.top, T.hor, 0.55))); gr.addColorStop(clamp(HY / (HY + 40), 0, 1), cssHex(T.hor)); gr.addColorStop(1, cssHex(T.low));
-  g.fillStyle = gr; g.fillRect(0, 0, RW, RH);
-  // the sun and its glow
-  const da = angWrap(T.sunAz * D2R - camAz);
-  if (Math.abs(da) < 1.3) {
-    const sx = X0 + FOC * Math.tan(da), sy = HY - FOC * Math.tan(T.sunEl * D2R);
-    const rg = g.createRadialGradient(sx, sy, 2, sx, sy, 150);
-    rg.addColorStop(0, rgbaHex(T.glow, 0.85)); rg.addColorStop(0.25, rgbaHex(T.glow, 0.28)); rg.addColorStop(1, rgbaHex(T.glow, 0));
-    g.globalCompositeOperation = 'lighter'; g.fillStyle = rg; g.fillRect(sx - 150, sy - 150, 300, 300); g.globalCompositeOperation = 'source-over';
-    g.fillStyle = cssHex(mixHex(T.glow, 0xffffff, 0.75)); g.beginPath(); g.arc(Math.round(sx), Math.round(sy), 9, 0, TAU); g.fill();
+// the sky strip: colour by height above the horizon, in a dozen flat bands with ordered dither between them;
+// painted once per sky colour and blitted so its foot sits 40 px under the horizon
+const SKY = { key: '', c: null, H: 420, sun: null };
+function skyStrip(T) {
+  const key = T.top + ':' + T.hor + ':' + T.low + ':' + RW;
+  if (SKY.key === key) return SKY.c;
+  const H = SKY.H, c = canvas(RW, H), g = c.getContext('2d'), img = g.createImageData(RW, H), d = img.data;
+  const N = 12, cols = [];
+  for (let i = 0; i <= N; i++) { const t = i / N; cols.push(rgb(t < 0.5 ? mixHex(T.low, T.hor, t * 2) : mixHex(T.hor, T.top, (t - 0.5) * 2))); }
+  for (let y = 0; y < H; y++) {
+    const up = (H - y) / H, t = clamp(up < 0.095 ? up / 0.095 * 0.5 : 0.5 + Math.pow((up - 0.095) / 0.905, 0.8) * 0.5, 0, 1) * N;
+    for (let x = 0; x < RW; x++) {
+      const th = (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16, k = Math.floor(t), C = cols[Math.min(N, (t - k) > th ? k + 1 : k)], o = (y * RW + x) * 4;
+      d[o] = C[0]; d[o + 1] = C[1]; d[o + 2] = C[2]; d[o + 3] = 255;
+    }
   }
+  g.putImageData(img, 0, 0);
+  SKY.key = key; SKY.c = c;
+  return c;
+}
+function sunPix(glow) {
+  if (SKY.sun) return SKY.sun;
+  const px = new Pix(26, 26), c = mixHex(glow, 0xffffff, 0.75);
+  px.ellipse(13, 13, 12, 12, mixHex(glow, 0xffffff, 0.3)); px.ellipse(13, 13, 10, 10, c); px.ellipse(13, 13, 7, 7, 0xffffff);
+  for (let i = 0; i < 12; i++) { const a = (i / 12) * TAU; px.set(13 + Math.cos(a) * 12.5, 13 + Math.sin(a) * 12.5, c); }
+  return (SKY.sun = px.toCanvas());
+}
+function drawSky(g, camAz, t, T) {
+  const HY = Math.round(horizonY()), strip = skyStrip(T);
+  g.fillStyle = cssHex(T.top); g.fillRect(0, 0, RW, RH);
+  g.drawImage(strip, 0, HY + 40 - SKY.H);
+  g.fillStyle = cssHex(T.low); g.fillRect(0, HY + 40, RW, RH - HY - 40);
+  const da = angWrap(T.sunAz * D2R - camAz);
+  if (Math.abs(da) < 1.3) { const sx = X0 + FOC * Math.tan(da), sy = HY - FOC * Math.tan(T.sunEl * D2R); g.drawImage(sunPix(T.glow), Math.round(sx) - 13, Math.round(sy) - 13); }
 }
 function drawBackdrop(g, set, camAz, t, alpha) {
   // clouds drift slowly; nearer layers scroll a touch faster than the far range for a sense of depth
@@ -1906,6 +1927,56 @@ function paintLand() {
   addSprite('pavilion', paintPavilion(), 6.5, { collide: 0.8 });
 }
 
+// ===================== sprites: the barriers along the road as tiling pixel textures =====================
+// A rail is laid as short wall segments, each wearing one tile of its texture, so a balustrade post passes
+// every 2.4 m and a stone wall shows its courses: pixels, not shaded polygons. L = tile length (m), h = height (m).
+const RAIL_TEX = {
+  balustrade: { L: 2.4, h: 1.0 }, railing: { L: 2.4, h: 1.1 }, guard: { L: 4, h: 0.8 }, concrete: { L: 4, h: 0.8 }, parapet: { L: 4, h: 1.05 },
+  fence: { L: 3, h: 2.2 }, hedge: { L: 2, h: 0.95 }, kerb: { L: 2, h: 0.2 }, stonewall: { L: 3, h: 1.4 },
+};
+const RPPM = 26;   // pixels per metre on rail textures
+function paintRailTex(kind, seed) {
+  const T = RAIL_TEX[kind], rnd = mulberry(seed), W = Math.round(T.L * RPPM), H = Math.max(6, Math.round(T.h * RPPM)), px = new Pix(W, H);
+  if (kind === 'balustrade' || kind === 'railing') {
+    // a post at each end with a cap, two rails between; the seaside one carries an orange reflector on the post
+    const white = 0xf4f4f0, shade = 0xc4c6c2, bar = kind === 'railing' ? 0x2a6ab8 : 0xf8f8f4, barS = kind === 'railing' ? 0x1a4a88 : 0xcccec8;
+    for (const x of [0, W - 6]) { px.rect(x, 2, 6, H - 2, white); px.rect(x + 4, 2, 2, H - 2, shade); px.rect(x - 1, 0, 8, 3, white); px.rect(x - 1, 2, 8, 1, shade); }
+    px.rect(0, 3, W, 3, bar); px.rect(0, 6, W, 1, barS);
+    px.rect(0, Math.round(H * 0.5), W, 3, bar); px.rect(0, Math.round(H * 0.5) + 3, W, 1, barS);
+    if (kind === 'balustrade') { px.rect(1, 0, 4, 3, 0xff8a1a); px.set(2, 0, 0xffd080); }
+  } else if (kind === 'stonewall') {
+    const cols = [0xb8ac98, 0xa89c88, 0xc4b8a4, 0x9c9080, 0xb0a490], mortar = 0x6e6658, course = 8;
+    px.rect(0, 0, W, H, mortar);
+    for (let y = 2, row = 0; y < H; y += course, row++) {
+      let x = row % 2 ? -6 : 0;
+      while (x < W) { const w = rnd.int(9, 16), c = rnd.pick(cols); px.rect(Math.max(0, x), y, Math.min(w - 1, W - x), course - 1, c); px.rect(Math.max(0, x), y, Math.min(w - 1, W - x), 1, shadeHex(c, 1.12)); px.rect(Math.max(0, x), y + course - 2, Math.min(w - 1, W - x), 1, shadeHex(c, 0.84)); x += w; }
+    }
+    px.rect(0, 0, W, 2, 0xd4cab6); px.rect(0, 2, W, 1, 0xbcb09c);
+  } else if (kind === 'guard') {
+    // the W-beam on its posts: grey beam with a groove, a bright top edge, an orange reflector
+    const yb = Math.round(H * 0.45);
+    px.rect(2, yb, 5, H - yb, 0x7a7e84); px.rect(2, yb, 2, H - yb, 0x9aa0a6);
+    px.rect(0, yb, W, H - yb - 4, 0xe6e8ea); px.rect(0, yb, W, 1, 0xffffff); px.rect(0, yb + Math.round((H - yb) * 0.45), W, 2, 0xb4b8bc); px.rect(0, H - 5, W, 1, 0xc4c8cc);
+    px.rect(Math.round(W / 2) - 2, yb - 3, 4, 3, 0xff8a1a);
+  } else if (kind === 'concrete' || kind === 'parapet') {
+    px.rect(0, 0, W, H, kind === 'parapet' ? 0xcac4b8 : 0xbab4a8);
+    for (let i = 0; i < W * H * 0.04; i++) { const x = rnd.int(0, W - 1), y = rnd.int(3, H - 1); px.set(x, y, rnd() < 0.5 ? 0xb0aa9e : 0xc8c2b6); }
+    px.rect(0, 0, W, 2, kind === 'parapet' ? 0xe2dccf : 0xdcd6ca); px.rect(0, 2, W, 1, 0xa8a296); px.rect(0, H - 2, W, 2, 0x8a8478);
+  } else if (kind === 'fence') {
+    // chain-link: posts at the ends, a dotted diamond mesh you can see through
+    px.rect(0, 0, 3, H, 0x6a7076); px.rect(W - 3, 0, 3, H, 0x6a7076); px.rect(0, 0, W, 2, 0x8a9096);
+    for (let y = 2; y < H; y += 3) for (let x = (y / 3) % 2 ? 1 : 3; x < W; x += 4) px.set(x, y, 0x9aa0a6);
+  } else if (kind === 'hedge') {
+    const pal = [0x2e6a26, 0x3e8a32, 0x4e9c3c, 0x6ab44a];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const n = hash2(x >> 1, y >> 1) * 0.6 + hash2(x, y) * 0.4, top = y < 3; px.set(x, y, pal[clamp(Math.floor((top ? 0.85 : 0.55 - (y / H) * 0.45) * 4 + (n - 0.5) * 1.6), 0, 3)]); }
+    for (let x = 0; x < W; x += 3) if (rnd() < 0.6) px.set(x + rnd.int(0, 2), rnd.int(0, 2), 0x8cd45c);
+  } else if (kind === 'kerb') {
+    px.rect(0, 0, W >> 1, H, 0xd8242a); px.rect(W >> 1, 0, W - (W >> 1), H, 0xf2f2ee); px.rect(0, 0, W, 1, 0xffffff); px.rect(0, H - 1, W, 1, 0x8a8078);
+  }
+  return px;
+}
+function paintRails() { let i = 0; for (const k in RAIL_TEX) addSprite('rail_' + k, paintRailTex(k, 7000 + i++ * 13), RAIL_TEX[k].h, { collide: 0, shadow: 0 }); }
+
 // ===================== sprites: banners for the arches, fork signs, place signs, painted road words =====================
 function paintBanner(top, sub, bg, fg, acc) {
   const W = 240, H = 20, px = new Pix(W, H);
@@ -2366,7 +2437,13 @@ class Deco {
     if (off < 40 && o.collide !== false) for (let s = s0; s < s1; s += 6) this.collide(Math.min(s + 3, s1), this.lat(s + 3, sg, off + depth / 2), depth / 2 + 0.2, 3.2, 'wall');
   }
   // a low barrier strip along the road: kind 'guard' (W-beam), 'concrete', 'parapet', 'railing', 'fence', 'hedge'
-  rail(s0, s1, sg, off, kind, o) { this.p.rails.push(Object.assign({ s0: Math.max(0, s0), s1: Math.min(this.p.L, s1), sg, off, kind }, o || {})); }
+  rail(s0, s1, sg, off, kind, o) {
+    // a textured rail is laid as one wall segment per tile; kinds without a texture fall back to the shaded strip
+    const T = typeof RAIL_TEX !== 'undefined' && RAIL_TEX[kind], tex = T && SPR['rail_' + kind];
+    s0 = Math.max(0, s0); s1 = Math.min(this.p.L, s1);
+    if (!tex) { this.p.rails.push(Object.assign({ s0, s1, sg, off, kind }, o || {})); return; }
+    for (let s = s0; s < s1 - 0.05; s += T.L) { const e = Math.min(s1, s + T.L); this.wall(s, e, sg, off, 0, T.h, 'rail_' + kind, { collide: false, u1: (e - s) / T.L, col: 0, sideCol: 0 }); }
+  }
   // a hanging wire through points [{s, x, y}] (y above the road)
   wire(pts) { for (let i = 0; i + 1 < pts.length; i++) this.p.wires.push({ s: pts[i].s, x0: pts[i].x, y0: pts[i].y, s1: pts[i + 1].s, x1: pts[i + 1].x, y1: pts[i + 1].y }); }
   collide(s, x, hx, hs, kind) { this.p.colliders.push({ s0: s - hs, s1: s + hs, x0: x - hx, x1: x + hx, kind: kind || 'solid' }); }
@@ -2445,6 +2522,8 @@ function decoratePiece(p) {
   p.secs.forEach((sec, j) => {
     const s0 = p.secStartS[j], s1 = j + 1 < p.secs.length ? p.secStartS[j + 1] : p.L;
     if (sec.bridge) TAGS._bridge(D, s0, s1, sec);
+    // the concrete barrier down a divided road's median, laid as textured segments
+    if (sec.mt === 'barrier' && sec.med > 0.4) { const O = sec.opp ? (sec.opp * LANE) / 2 : 0; D.rail(s0 + 2, s1 - 2, -1, -(sec.med / 2 + 2 * O + (O > 0.05 ? OPP_SH : 0)) - 0.15, 'concrete'); }
     for (const sg of [-1, 1]) { const t = sg > 0 ? sec.R : sec.L; if (t === 'city' || t === 'town' || t === 'plaza' || t === 'harbor') D.rail(s0, s1, sg, 0, 'kerb'); if (SIDE_DRESS[t]) SIDE_DRESS[t](D, s0, s1, sg); }
     for (const t of sec.tags || []) if (TAGS[t]) TAGS[t](D, s0, s1, sec);
   });
@@ -3209,7 +3288,7 @@ function drawPlayerCar(spr) {
   const img = carFrame(spr);
   // the rear wheels stand on a fixed row: the camera keeps its distance and follows the slope
   const yG = Math.round(Y0 + (CV.hgt * FOC) / Math.max(1, CAM.cfg.back - CAR_REAR));
-  const lift = Math.round((PC.airY || 0) * _pq.k) + (PC.offroad && PC.v > 4 ? (Math.floor(G.t * 22) & 1) : 0);
+  const lift = Math.round((PC.airY || 0) * _pq.k) + (PC.offroad && PC.v > 4 ? (Math.floor(G.t * 22) & 1) : 0) + (PC.v > 48 && (Math.floor(G.t * 30) & 1) ? 1 : 0);
   const x = Math.round(_pq.x), bw = spr.bw;
   if (PC.spec && PC.spec.neon) { VG.fillStyle = 'rgba(60,240,255,0.35)'; VG.fillRect(x - bw / 2 - 2, yG - 3, bw + 4, 4); VG.fillRect(x - bw / 2 + 4, yG + 1, bw - 8, 2); }
   // the shadow on the road: hard-edged rows, wider than the car, tapering
@@ -4359,7 +4438,7 @@ function raceUpdate(dt) {
   if (p.children.length && p.L - PC.s < 700 && RACE.state === 'run') { const sg = p.def.sign; HUD.fork = { L: sg.L[0], R: sg.R[0], k: clamp((700 - (p.L - PC.s)) / 150, 0, 1) * clamp((p.L - PC.s) / 60, 0, 1) }; }
 }
 // ---------- the chase camera: low behind the car, following its line with a little lag ----------
-const CAM = { init: false, lat: 0, shake: 0, yaw: 0, slope: 0, cfg: { back: 8.6, height: 3.1 } };
+const CAM = { init: false, lat: 0, shake: 0, yaw: 0, slope: 0, cfg: { back: 8.0, height: 2.7 } };
 function shake(k) { CAM.shake = Math.max(CAM.shake, k); }
 function updateCamera(dt) {
   const C = CAM.cfg;
@@ -4493,10 +4572,19 @@ function nearOf(slot, b, vi) {
   return null;
 }
 // ---------- the road raster ----------
-const ASPH = [0x62656c, 0x5e6168], ASPH_SC = [0x6c6e75, 0x686a71], ASPH_DOTS = [0x50525a, 0x7c7e86], PAINT = 0xf4f1e8, YELLOW = 0xf2c33a, KERB = 0xd2ccc0;
+const ASPH = [0x64676e, 0x5a5d64], ASPH_SC = [0x6e7077, 0x64666d], ASPH_DOTS = [0x50525a, 0x7c7e86], PAINT = 0xf4f1e8, YELLOW = 0xf2c33a, KERB = 0xd2ccc0;
 const MED_COL = { barrier: [0xb8b2a6, 0xb0aa9e], plant: [0x5a8a34, 0x548230], yellow: ASPH };
 let _row = 0, _f = 0;
 function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
+const DKC = new Map();
+function dkHex(h) { let v = DKC.get(h); if (v === undefined) { v = shadeHex(h, 0.94); DKC.set(h, v); } return v; }
+let _y = 0;
+// a span textured with a checker of a colour and its darker twin, the pixel grain of every big surface
+function fillSpanD(x0, x1, hex) {
+  x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 <= x0) return;
+  const a = fogPx(hex, _f), b = fogPx(dkHex(hex), _f), fb = RV.fb, par = _y & 1, base = _row;
+  for (let x = x0; x < x1; x++) fb[base + x] = ((x + par) & 1) ? b : a;
+}
 // a painted line of width w metres centred at screen x; thinner than a pixel, it is blended into the asphalt
 function lineAt(xc, wpx, col, under) {
   if (wpx >= 1) { fillSpan(Math.round(xc - wpx / 2), Math.round(xc + wpx / 2), fogPx(col, _f)); return; }
@@ -4535,7 +4623,7 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
     let a0 = dir < 0 ? outer : inner, a1 = dir < 0 ? inner : outer;
     if (lim != null) { if (dir < 0) a0 = Math.max(a0, lim); else a1 = Math.min(a1, lim); }
     if (a1 <= 0 || a0 >= RW || a1 <= a0) continue;
-    fillSpan(Math.round(a0), Math.round(a1), fogPx(bandCol(b, gs, t), _f));
+    if (b.k === 0 && b.w > 3) fillSpanD(Math.round(a0), Math.round(a1), bandCol(b, gs, t)); else fillSpan(Math.round(a0), Math.round(a1), fogPx(bandCol(b, gs, t), _f));
     if (b.k === 4 && rk > 3) { const pc = b.dots ? b.dots[0] : shadeHex(b.a, 0.86); for (let o = Math.ceil(((i > 0 ? bands[i - 1].w : 0)) / 1.2) * 1.2, oe = Math.min(b.w, (i > 0 ? bands[i - 1].w : 0) + 60); o < oe; o += 1.2) { const x = Math.round(edge(o)); if (x >= 0 && x < RW && x > a0 && x < a1) RV.fb[_row + x] = fogPx(pc, _f); } }
     if (b.dots) dots(a0, a1, gs, gsN, b.dots, b.dn * (b.k === 1 ? 0.8 : 1), i * 13 + (dir < 0 ? 0 : 7));
     if (b.k === 1 && (hash2(Math.floor(gs * 0.5), Math.floor(t * 6)) > 0.6)) { const x = Math.round(lerp(a0, a1, hash2(Math.floor(gs), Math.floor(t * 3)))); if (x >= 0 && x < RW) RV.fb[_row + x] = fogPx(0xffffff, _f * 0.5); }
@@ -4545,10 +4633,9 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
 function roadRow(cx, rk, R, gs, gsN) {
   const W = R.W, M = R.M, O = R.O, SH = R.SH, oL = R.oL, oR = R.oR, mt = R.sec.mt;
   const X = (o) => cx + o * rk;
-  const stripe = Math.floor(gs / 8) & 1, asph = ASPH[stripe];
-  fillSpan(Math.round(X(oL)), Math.round(X(oR)), fogPx(asph, _f));
-  if (SH > 0.3) fillSpan(Math.round(X(W)), Math.round(X(oR)), fogPx(ASPH_SC[stripe], _f));
-  dots(X(oL), X(oR), gs, gsN, ASPH_DOTS, 2.5, 3);
+  const stripe = Math.floor(gs / 6) & 1, asph = ASPH[stripe];
+  fillSpanD(Math.round(X(oL)), Math.round(X(oR)), asph);
+  if (SH > 0.3) fillSpanD(Math.round(X(W)), Math.round(X(oR)), ASPH_SC[stripe]);
   const lw = 0.15 * rk, dash = (gs % 10 + 10) % 10 < 4;
   // our lanes: dashed lines between them, a solid white edge line before the scooter lane
   const lanes = Math.round((2 * W) / LANE);
@@ -4559,7 +4646,7 @@ function roadRow(cx, rk, R, gs, gsN) {
     if (mt === 'yellow') { lineAt(X(-W - 0.14), lw * 0.9, YELLOW, asph); if (M > 0.45) lineAt(X(-W - M + 0.14), lw * 0.9, YELLOW, asph); }
     else {
       const mc = MED_COL[mt] || MED_COL.barrier;
-      fillSpan(Math.round(X(-W - M)), Math.round(X(-W)), fogPx(mc[stripe], _f));
+      if (M > 1.2) fillSpanD(Math.round(X(-W - M)), Math.round(X(-W)), mc[stripe]); else fillSpan(Math.round(X(-W - M)), Math.round(X(-W)), fogPx(mc[stripe], _f));
       if (mt === 'plant' && M > 0.8) { lineAt(X(-W - 0.12), 0.24 * rk, KERB, mc[0]); lineAt(X(-W - M + 0.12), 0.24 * rk, KERB, mc[0]); }
       lineAt(X(-W - 0.3), lw, YELLOW, asph);
     }
@@ -4585,7 +4672,7 @@ function rasterStrip(A, B, nA, nB) {
   for (let y = yBot; y >= yTop; y--) {
     const t = (yN - (y + 0.5)) / (yN - yF), iz = iza + (izb - iza) * t, z = 1 / iz;
     const gs = (ga + (gb - ga) * t) * z, tN = (yN - (y - 0.5)) / (yN - yF), gsN = (ga + (gb - ga) * tN) / (iza + (izb - iza) * tN);
-    _row = y * RW; _f = fogAt(z);
+    _row = y * RW; _y = y; _f = fogAt(z);
     if (nB === 1) {
       const a = A[0], b = B[0], cx = a.sx + (b.sx - a.sx) * t, rk = a.rk + (b.rk - a.rk) * t, R = t < 0.5 ? a : b;
       const xl = cx + R.oL * rk, xr = cx + R.oR * rk;
@@ -4662,13 +4749,14 @@ function drawWallFace(S, xa, yba, yta, za, ua, xb, ybb, ytb, zb, ub, clip, fog, 
       if (u1 < u0) { const q = u0; u0 = u1; u1 = q; VG.setTransform(x0 - x1, yt0 - yt1, 0, hh, x1 + 0.35, yt1); }
       else VG.setTransform(x1 - x0 + 0.35, yt1 - yt0, 0, hh, x0, yt0);
       VG.drawImage(img, srcX + u0 * srcW, srcY, Math.max(0.5, (u1 - u0) * srcW), sh, 0, 0, 1, 1);
+      if (fog > 0.02 && L > 0 && pg.hz[L]) { VG.globalAlpha = fog; VG.drawImage(pg.hz[L], srcX + u0 * srcW, srcY, Math.max(0.5, (u1 - u0) * srcW), sh, 0, 0, 1, 1); VG.globalAlpha = 1; }
     }
     VG.setTransform(1, 0, 0, 1, 0, 0);
   } else {
     VG.fillStyle = cssHex(col);
     VG.beginPath(); VG.moveTo(xa, Math.min(yba, clip)); VG.lineTo(xa, Math.min(yta, clip)); VG.lineTo(xb, Math.min(ytb, clip)); VG.lineTo(xb, Math.min(ybb, clip)); VG.closePath(); VG.fill();
   }
-  if (fog > 0.03) {
+  if (fog > 0.03 && !S) {
     VG.globalAlpha = fog; VG.fillStyle = cssHex(RV.haze);
     VG.beginPath(); VG.moveTo(xa, Math.min(yba, clip)); VG.lineTo(xa, Math.min(yta, clip)); VG.lineTo(xb, Math.min(ytb, clip)); VG.lineTo(xb, Math.min(ybb, clip)); VG.closePath(); VG.fill();
     VG.globalAlpha = 1;
@@ -4781,7 +4869,6 @@ function drawStripItems(a, b, clip) {
     }
     for (const r of p.rails) if (r.s1 > s0 && r.s0 < s1) items.push(item(2, r, Math.max(p.gS + r.s0, gsA), Math.min(p.gS + r.s1, gsB), p));
     const sec = (a.p === p ? a : b).sec;
-    if (sec && sec.mt === 'barrier' && (a.M > 0.4 || b.M > 0.4)) items.push(item(4, null, gsA, gsB, p));
     for (const v of TRAFFIC.list) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
     for (const v of TRAFFIC.oncoming) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
     if (p.anim.length) for (const an of p.anim) animItems(an, p, s0, s1, items);
@@ -5017,7 +5104,7 @@ async function boot() {
   resize();
   await loadFonts();
   if (typeof loadRefCars === 'function') await loadRefCars();
-  paintNature(); paintTown(); paintLand(); paintSigns(); paintBig(); paintCity(); paintTraffic();
+  paintNature(); paintTown(); paintLand(); paintSigns(); paintBig(); paintCity(); paintRails(); paintTraffic();
   packAtlas();
   buildWorld();
   for (const id in STAGES) buildBackdrop(STAGES[id].pano, STAGES[id].clouds);
