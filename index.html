@@ -1975,7 +1975,15 @@ function paintRailTex(kind, seed) {
   }
   return px;
 }
-function paintRails() { let i = 0; for (const k in RAIL_TEX) addSprite('rail_' + k, paintRailTex(k, 7000 + i++ * 13), RAIL_TEX[k].h, { collide: 0, shadow: 0 }); }
+// a delineator post: white, a black band, a red reflector near the top
+function paintPost() {
+  const px = new Pix(10, 48);
+  px.rect(3, 2, 4, 46, 0xf4f4f0); px.rect(6, 2, 1, 46, 0xc4c6c2); px.rect(3, 10, 4, 6, 0x1a1a1e); px.rect(3, 4, 4, 4, 0xe8202a); px.set(4, 4, 0xff8a8a);
+  px.outline(0x2a2a30);
+  return px;
+}
+function paintRails() {
+  addSprite('post', paintPost(), 0.95, { collide: 0, shadow: 0.2, ax: 0.5 }); let i = 0; for (const k in RAIL_TEX) addSprite('rail_' + k, paintRailTex(k, 7000 + i++ * 13), RAIL_TEX[k].h, { collide: 0, shadow: 0 }); }
 
 // ===================== sprites: banners for the arches, fork signs, place signs, painted road words =====================
 function paintBanner(top, sub, bg, fg, acc) {
@@ -2464,21 +2472,21 @@ class Deco {
 // undergrowth in between, clusters set back, a tree line further out, big trees on the far hills.
 // near: [every m, kinds, offset range]; under: [chance per 2 m, kinds, offset]; mid: [every m, kinds, offsets, count]; far / hill: [every m, kinds, offsets]
 const LIFE = {
-  grass: { near: [18, ['palm', 'palm', 'banyan', 'mango', 'betel', 'bougain'], [1.0, 3.5]], under: [0.45, ['bush', 'tuft', 'tuft', 'flowers', 'hibiscus'], [0.3, 7]], mid: [34, ['banyan', 'mango', 'casuarina', 'betel', 'palm'], [8, 26], [3, 6]], far: [9, ['banyan', 'casuarina', 'mango', 'betel'], [30, 120]], hill: [12, ['banyan', 'casuarina'], [120, 380]] },
-  farm: { near: [24, ['betel', 'betel', 'banana', 'mango'], [1.0, 3]], under: [0.32, ['tuft', 'tuft', 'flowers'], [0.3, 4]], mid: [52, ['farmhouse', 'tinhouse', 'banana', 'betel'], [14, 50], [1, 3]], far: [11, ['betel', 'banyan', 'casuarina'], [40, 140]], hill: [16, ['banyan', 'casuarina', 'betel'], [140, 420]] },
-  orchard: { near: [14, ['mango', 'mango', 'banana', 'betel'], [1.2, 3.5]], under: [0.38, ['tuft', 'bush', 'flowers'], [0.3, 4]], mid: [9, ['mango', 'mango', 'netrow'], [7, 40], [2, 4]], far: [10, ['mango', 'banyan', 'betel'], [44, 140]], hill: [14, ['banyan', 'mango'], [140, 400]] },
-  hills: { near: [15, ['banyan', 'mango', 'palm', 'casuarina', 'bougain'], [1.0, 3.5]], under: [0.5, ['bush', 'tuft', 'tuft', 'rock', 'flowers'], [0.3, 6]], mid: [20, ['banyan', 'mango', 'casuarina', 'betel'], [6, 30], [4, 8]], far: [5, ['banyan', 'casuarina', 'mango'], [26, 110]], hill: [6, ['banyan', 'casuarina'], [110, 360]] },
-  mountain: { near: [13, ['banyan', 'casuarina', 'betel', 'rock'], [1.0, 3.2]], under: [0.55, ['bush', 'tuft', 'rock', 'tuft'], [0.3, 5]], mid: [16, ['banyan', 'casuarina', 'mango'], [5, 24], [5, 9]], far: [4, ['banyan', 'casuarina'], [20, 100]], hill: [5, ['banyan', 'casuarina'], [100, 380]] },
+  grass: { near: [10, ['palm', 'palm', 'banyan', 'mango', 'betel', 'bougain'], [1.0, 3.5]], under: [0.45, ['bush', 'tuft', 'tuft', 'flowers', 'hibiscus'], [0.3, 7]], mid: [34, ['banyan', 'mango', 'casuarina', 'betel', 'palm'], [8, 26], [3, 6]], far: [9, ['banyan', 'casuarina', 'mango', 'betel'], [30, 120]], hill: [12, ['banyan', 'casuarina'], [120, 380]] },
+  farm: { near: [12, ['betel', 'betel', 'banana', 'mango'], [1.0, 3]], under: [0.32, ['tuft', 'tuft', 'flowers'], [0.3, 4]], mid: [52, ['farmhouse', 'tinhouse', 'banana', 'betel'], [14, 50], [1, 3]], far: [11, ['betel', 'banyan', 'casuarina'], [40, 140]], hill: [16, ['banyan', 'casuarina', 'betel'], [140, 420]] },
+  orchard: { near: [9, ['mango', 'mango', 'banana', 'betel'], [1.2, 3.5]], under: [0.38, ['tuft', 'bush', 'flowers'], [0.3, 4]], mid: [9, ['mango', 'mango', 'netrow'], [7, 40], [2, 4]], far: [10, ['mango', 'banyan', 'betel'], [44, 140]], hill: [14, ['banyan', 'mango'], [140, 400]] },
+  hills: { near: [9, ['banyan', 'mango', 'palm', 'casuarina', 'bougain'], [1.0, 3.5]], under: [0.5, ['bush', 'tuft', 'tuft', 'rock', 'flowers'], [0.3, 6]], mid: [20, ['banyan', 'mango', 'casuarina', 'betel'], [6, 30], [4, 8]], far: [5, ['banyan', 'casuarina', 'mango'], [26, 110]], hill: [6, ['banyan', 'casuarina'], [110, 360]] },
+  mountain: { near: [8, ['banyan', 'casuarina', 'betel', 'rock'], [1.0, 3.2]], under: [0.55, ['bush', 'tuft', 'rock', 'tuft'], [0.3, 5]], mid: [16, ['banyan', 'casuarina', 'mango'], [5, 24], [5, 9]], far: [4, ['banyan', 'casuarina'], [20, 100]], hill: [5, ['banyan', 'casuarina'], [100, 380]] },
   city: { near: [0], under: [0.06, ['walkers'], [1, 4]] },
   slope: { near: [0] }, shore: { near: [0] }, bay: { near: [0] },
   town: { near: [0], under: [0.07, ['walkers', 'scooters'], [0.6, 3]] },
   industrial: { near: [36, ['casuarina', 'bush'], [1.0, 4]], under: [0.24, ['tuft', 'tuft', 'bush'], [0.3, 6]], far: [22, ['casuarina', 'banyan'], [60, 160]] },
   harbor: { near: [0] },
-  beach: { near: [16, ['palm', 'palm', 'pandanus', 'casuarina'], [0.8, 3.5]], under: [0.16, ['tuft', 'rock'], [0.3, 4]], mid: [60, ['umbrella', 'walkers'], [10, 20], [1, 3]] },
-  cliff: { near: [26, ['palm', 'bush'], [0.5, 2]], under: [0.34, ['tuft', 'bush', 'rock'], [0.2, 2.5]], mid: [18, ['rock', 'rock'], [5, 17], [2, 4]] },
+  beach: { near: [9, ['palm', 'palm', 'pandanus', 'casuarina'], [0.8, 3.5]], under: [0.16, ['tuft', 'rock'], [0.3, 4]], mid: [60, ['umbrella', 'walkers'], [10, 20], [1, 3]] },
+  cliff: { near: [12, ['palm', 'bush'], [0.5, 2]], under: [0.34, ['tuft', 'bush', 'rock'], [0.2, 2.5]], mid: [18, ['rock', 'rock'], [5, 17], [2, 4]] },
   water: { far: [12, ['mangrove', 'reeds'], [240, 300]], hill: [20, ['banyan', 'casuarina'], [290, 460]] },
   riverbed: { under: [0.1, ['reeds', 'rock'], [10, 360]] },
-  fishpond: { near: [22, ['betel', 'betel', 'palm'], [1.0, 3]], under: [0.3, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
+  fishpond: { near: [12, ['betel', 'betel', 'palm'], [1.0, 3]], under: [0.3, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
   plaza: { near: [0], under: [0.07, ['walkers'], [2, 20]] },
 };
 const NO_COLLIDE = new Set(['walkers', 'scooters', 'umbrella', 'tuft', 'flowers', 'bush', 'hedge']);
@@ -2517,6 +2525,7 @@ function decoratePiece(p) {
     }
   }
   poleLine(D);
+  postLine(D);
   curveSigns(D);
   // ---- what each section's tags ask for ----
   p.secs.forEach((sec, j) => {
@@ -2535,9 +2544,9 @@ const SIDE_DRESS = {
   slope(D, s0, s1, sg) {
     const r = D.rnd;
     D.rail(s0, s1, sg, 0.9, 'stonewall');
-    every(s0, s1, 5, 1.5, r, (s) => D.spr(r() < 0.7 ? 'bougain' : 'bush', s, D.lat(s, sg, 1.3), { y: 1.25, scale: r.range(0.9, 1.2), collide: false, flip: r() < 0.5 }));
-    every(s0, s1, 15, 4, r, (s) => D.spr(r() < 0.6 ? 'palm' : 'terminalia', s, D.lat(s, sg, r.range(2.2, 3.6)), { scale: r.range(0.9, 1.1), collide: false }));
-    every(s0, s1, 11, 3, r, (s) => D.spr(r.pick(['mango', 'banyan', 'mango']), s, D.lat(s, sg, r.range(4, 7)), { scale: r.range(1.0, 1.3), collide: false }));
+    every(s0, s1, 3.5, 1, r, (s) => D.spr(r() < 0.7 ? 'bougain' : 'bush', s, D.lat(s, sg, 1.3), { y: 1.25, scale: r.range(0.9, 1.2), collide: false, flip: r() < 0.5 }));
+    every(s0, s1, 9, 2.5, r, (s) => D.spr(r() < 0.6 ? 'palm' : 'terminalia', s, D.lat(s, sg, r.range(2.2, 3.6)), { scale: r.range(0.9, 1.1), collide: false }));
+    every(s0, s1, 7, 2, r, (s) => D.spr(r.pick(['mango', 'banyan', 'mango']), s, D.lat(s, sg, r.range(4, 7)), { scale: r.range(1.0, 1.3), collide: false }));
     // the hill itself: big wooded mounds overlapping each other up the slope, the far ones taller
     every(s0, s1, 20, 4, r, (s) => D.spr('hill', s, D.lat(s, sg, r.range(8, 11)), { scale: r.range(0.9, 1.15), collide: false, flip: sg > 0, sway: 0 }));
     every(s0, s1, 30, 8, r, (s) => D.spr('hill', s, D.lat(s, sg, r.range(20, 30)), { scale: r.range(1.8, 2.4), collide: false, flip: sg > 0, sway: 0 }));
@@ -2546,18 +2555,18 @@ const SIDE_DRESS = {
   shore(D, s0, s1, sg) {
     const r = D.rnd;
     D.rail(s0, s1, sg, 1.1, 'balustrade');
-    every(s0, s1, 4.5, 1.2, r, (s) => D.spr(r.pick(['pandanus', 'bush', 'bougain', 'bush']), s, D.lat(s, sg, r.range(2, 4.2)), { scale: r.range(0.8, 1.15), collide: false, flip: r() < 0.5 }));
+    every(s0, s1, 3, 0.8, r, (s) => D.spr(r.pick(['pandanus', 'bush', 'bougain', 'bush']), s, D.lat(s, sg, r.range(2, 4.2)), { scale: r.range(0.8, 1.15), collide: false, flip: r() < 0.5 }));
     every(s0, s1, 3.5, 1, r, (s) => D.spr('searock', s, D.lat(s, sg, r.range(8.5, 12.5)), { scale: r.range(0.8, 1.6), collide: false, flip: r() < 0.5 }));
-    every(s0, s1, 30, 8, r, (s) => D.spr('palm', s, D.lat(s, sg, r.range(2.4, 3.4)), { scale: r.range(0.85, 1.05), collide: false }));
+    every(s0, s1, 13, 3, r, (s) => D.spr('palm', s, D.lat(s, sg, r.range(2.4, 3.4)), { scale: r.range(0.85, 1.05), collide: false }));
   },
   // 南灣: a low wall, then the beach crowded with people under umbrellas, boats out on the bay
   bay(D, s0, s1, sg) {
     const r = D.rnd;
     D.rail(s0, s1, sg, 1.3, 'balustrade');
-    every(s0, s1, 7, 2, r, (s) => D.spr(r() < 0.5 ? 'bougain' : 'bush', s, D.lat(s, sg, r.range(1.8, 2.6)), { scale: r.range(0.8, 1.1), collide: false, flip: r() < 0.5 }));
-    every(s0, s1, 5, 1.5, r, (s) => D.spr('umbrella', s, D.lat(s, sg, r.range(5, 20)), { collide: false, flip: r() < 0.5 }));
+    every(s0, s1, 4, 1.2, r, (s) => D.spr(r() < 0.5 ? 'bougain' : 'bush', s, D.lat(s, sg, r.range(1.8, 2.6)), { scale: r.range(0.8, 1.1), collide: false, flip: r() < 0.5 }));
+    every(s0, s1, 3.5, 1, r, (s) => D.spr('umbrella', s, D.lat(s, sg, r.range(5, 20)), { collide: false, flip: r() < 0.5 }));
     every(s0, s1, 3.5, 1, r, (s) => D.spr(r() < 0.75 ? 'walkers' : 'crowd', s, D.lat(s, sg, r.range(4, 23)), { collide: false, flip: r() < 0.5 }));
-    every(s0, s1, 24, 6, r, (s) => D.spr('palm', s, D.lat(s, sg, r.range(2.2, 3.2)), { scale: r.range(0.85, 1.05), collide: false }));
+    every(s0, s1, 12, 3, r, (s) => D.spr('palm', s, D.lat(s, sg, r.range(2.2, 3.2)), { scale: r.range(0.85, 1.05), collide: false }));
     every(s0, s1, 36, 10, r, (s) => D.spr('sailboat', s, D.lat(s, sg, r.range(45, 140)), { collide: false, scale: r.range(0.8, 1.2) }));
   },
 };
@@ -2579,6 +2588,15 @@ function poleLine(D) {
       prev = { s, x };
     } else prev = null;
     s += 40 + r() * 6;
+  }
+}
+// ---------- the little white delineator posts with red reflectors, every 8 m along the open road ----------
+const POST_TYPES = new Set(['grass', 'farm', 'orchard', 'hills', 'mountain', 'fishpond', 'industrial', 'beach', 'cliff', 'riverbed']);
+function postLine(D) {
+  const p = D.p;
+  for (let s = 4; s < p.L - 4; s += 8) {
+    const sec = p.sec(s); if (sec.bridge || sec.fork) continue;
+    for (const sg of [-1, 1]) { const t = sg > 0 ? sec.R : sec.L; if (POST_TYPES.has(t)) D.spr('post', s, D.lat(s, sg, 0.35), { flip: sg > 0, sway: 0, collide: false }); }
   }
 }
 // ---------- the yellow chevron boards on the outside of every sharp bend, and a warning sign before it ----------
@@ -2651,10 +2669,10 @@ const TAGS = {
     for (const sg of [-1, 1]) for (let k = 0; k < 8; k++) D.spr('crowd', s + 6 + k * 10, D.lat(s, sg, 2.6), { collide: false });
   },
   qilou(D, s0, s1) { TAGS.boulevard(D, s0, s1); },
-  kerbtrees(D, s0, s1) { every(s0, s1, 26, 3, D.rnd, (s) => D.spr('palm', s + 8, D.lat(s + 8, -1, 1.5), { scale: 0.85 })); },
+  kerbtrees(D, s0, s1) { every(s0, s1, 13, 2, D.rnd, (s) => D.spr('palm', s + 8, D.lat(s + 8, -1, 1.5), { scale: 0.85 })); },
   palmgroup(D, s0, s1, sec) {
     // palms in twos and threes right by the road, where the side allows
-    every(s0, s1, 30, 8, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1, t = sg > 0 ? sec.R : sec.L; if (t === 'water' || t === 'harbor' || t === 'city' || t === 'slope' || t === 'shore' || t === 'bay') return; const n = D.rnd.int(2, 3); for (let k = 0; k < n; k++) D.spr('palm', s + k * 4 + D.rnd.range(-1, 1), D.lat(s, sg, 1.8 + k * 1.4 + D.rnd.range(0, 1)), { scale: D.rnd.range(0.85, 1.1) }); });
+    every(s0, s1, 16, 4, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1, t = sg > 0 ? sec.R : sec.L; if (t === 'water' || t === 'harbor' || t === 'city' || t === 'slope' || t === 'shore' || t === 'bay') return; const n = D.rnd.int(2, 3); for (let k = 0; k < n; k++) D.spr('palm', s + k * 4 + D.rnd.range(-1, 1), D.lat(s, sg, 1.8 + k * 1.4 + D.rnd.range(0, 1)), { scale: D.rnd.range(0.85, 1.1) }); });
   },
   mangogroup(D, s0, s1, sec) { every(s0, s1, 40, 10, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1, t = sg > 0 ? sec.R : sec.L; if (t === 'slope' || t === 'shore' || t === 'bay' || t === 'water') return; const n = D.rnd.int(3, 5); for (let k = 0; k < n; k++) D.spr('mango', s + D.rnd.range(-8, 8), D.lat(s, sg, D.rnd.range(4, 14)), { scale: D.rnd.range(0.9, 1.2), collide: false }); }); },
   coastplants(D, s0, s1, sec) { every(s0, s1, 9, 3, D.rnd, (s) => { if (sec.R !== 'cliff') return; D.spr(D.rnd() < 0.6 ? 'pandanus' : 'bush', s, D.lat(s, 1, D.rnd.range(1.2, 3)), { scale: D.rnd.range(0.8, 1.2), collide: false }); }); },
@@ -2662,7 +2680,7 @@ const TAGS = {
   boulevard(D, s0, s1) {
     // the shops right behind a wide pavement: palms by the kerb, planters of bougainvillea, people, signs hung out over the walk
     houseRow(D, s0, s1, -1, 3.8, { vsigns: true });
-    every(s0, s1, 9, 1, D.rnd, (s) => { if (D.rnd() < 0.8) D.spr('planter', s + 4.5, D.lat(s, -1, 2.6), { flip: D.rnd() < 0.5 }); });
+    every(s0, s1, 5, 1, D.rnd, (s) => { if (D.rnd() < 0.8) D.spr('planter', s + 2.5, D.lat(s, -1, 2.6), { flip: D.rnd() < 0.5 }); });
     every(s0, s1, 6, 2, D.rnd, (s) => D.spr(D.rnd() < 0.8 ? 'walkers' : 'crowd', s, D.lat(s, -1, D.rnd.range(2.2, 4.2)), { collide: false, flip: D.rnd() < 0.5 }));
     every(s0, s1, 26, 8, D.rnd, (s) => D.spr('umbrella', s, D.lat(s, -1, 3.6), { collide: false }));
     every(s0, s1, 40, 10, D.rnd, (s) => D.spr('scooters', s, D.lat(s, -1, 2.4), { collide: false }));
@@ -2673,7 +2691,7 @@ const TAGS = {
     D.rail(s0, s1, 1, 8.1, 'balustrade');
     every(s0, s1, 12, 4, D.rnd, (s) => D.spr(D.rnd() < 0.7 ? 'walkers' : 'planter', s, D.lat(s, 1, D.rnd.range(3, 6.5)), { collide: false, flip: D.rnd() < 0.5 }));
     every(s0, s1, 9, 2, D.rnd, (s) => D.spr(D.rnd() < 0.5 ? 'bougain' : 'planter', s, D.lat(s, 1, 2.2), { collide: false, flip: D.rnd() < 0.5 }));
-    every(s0, s1, 28, 6, D.rnd, (s) => D.spr('palm', s, D.lat(s, 1, 6.6), { scale: 0.9, collide: false }));
+    every(s0, s1, 14, 3, D.rnd, (s) => D.spr('palm', s, D.lat(s, 1, 6.6), { scale: 0.9, collide: false }));
   },
   royalpalm(D, s0, s1) { every(s0, s1, 16, 0, D.rnd, (s) => { D.spr('royal', s, D.lat(s, -1, 2.2), { collide: true }); D.spr('royal', s + 8, D.lat(s + 8, 1, 1.4)); }); },
   citytower(D, s0, s1) {
@@ -3290,6 +3308,7 @@ function drawPlayerCar(spr) {
   const yG = Math.round(Y0 + (CV.hgt * FOC) / Math.max(1, CAM.cfg.back - CAR_REAR));
   const lift = Math.round((PC.airY || 0) * _pq.k) + (PC.offroad && PC.v > 4 ? (Math.floor(G.t * 22) & 1) : 0) + (PC.v > 48 && (Math.floor(G.t * 30) & 1) ? 1 : 0);
   const x = Math.round(_pq.x), bw = spr.bw;
+  PC.scrX = x; PC.scrY = yG - lift; PC.scrBW = bw;
   if (PC.spec && PC.spec.neon) { VG.fillStyle = 'rgba(60,240,255,0.35)'; VG.fillRect(x - bw / 2 - 2, yG - 3, bw + 4, 4); VG.fillRect(x - bw / 2 + 4, yG + 1, bw - 8, 2); }
   // the shadow on the road: hard-edged rows, wider than the car, tapering
   VG.fillStyle = 'rgba(10,6,22,0.42)';
@@ -3469,6 +3488,7 @@ function paintTraffic() {
 
 // ===================== the player's car: engine, gearbox, grip, drifting, crashes =====================
 const REDLINE = { v12: 8200, v8: 6600, i6: 7200, i4: 7600, flat6: 7800, turbo: 8600 };
+const WORLD_K = 1.15;   // the world passes a little faster than the speedo says, the arcade way
 const PC = {
   spec: null, car: null, piece: null, s: 0, x: 0, v: 0, vx: 0, rpm: 900, gear: 1, gears: 6, auto: true,
   throttle: 0, brake: 0, steer: 0, steerIn: 0, shiftT: 0, shiftTo: 0, neutral: false,
@@ -3504,7 +3524,7 @@ function pcStep(dt, track) {
   // ---- crash: the car tumbles, lands, and is set back on the road ----
   if (PC.crash) {
     const c = PC.crash; c.t += dt;
-    PC.v = Math.max(0, PC.v - 22 * dt); PC.s += PC.v * dt;
+    PC.v = Math.max(0, PC.v - 22 * dt); PC.s += PC.v * dt * WORLD_K;
     PC.airY = Math.max(0, c.vy * c.t - 9 * c.t * c.t);
     PC.yaw += c.spin * dt; PC.roll = Math.sin(Math.min(1, c.t / 1.1) * Math.PI) * c.rollK;
     if (c.t > c.dur) {
@@ -3576,7 +3596,7 @@ function pcStep(dt, track) {
       if (v > 15) pcCrash(1); else { PC.v = 0; PC.vx = 0; PC.x += (PC.x > (hit.x0 + hit.x1) / 2 ? 1 : -1) * 0.5; sfxThud(0.4); }
     }
   }
-  PC.s += PC.v * dt; PC.dist += PC.v * dt;
+  PC.s += PC.v * dt * WORLD_K; PC.dist += PC.v * dt * WORLD_K;
   // ---- body language: yaw into the slide, roll, pitch under braking ----
   const yawT = Math.atan2(PC.vx, Math.max(6, v)) * 0.9 + PC.drift * PC.driftDir * 0.42;
   PC.yaw = lerp(PC.yaw, yawT, clamp(dt * 6, 0, 1));
@@ -4382,7 +4402,7 @@ function raceStart(carIdx, auto) {
   HUD.show = true; HUD.msgs.length = 0;
   layoutPads();
   engineStart(spec.engine);
-  trafficReset();
+  trafficReset(); fxReset();
   GHOST.rec = []; GHOST.recT = 0; if (G.mode === 'play') GHOST.load(); else GHOST.on = false;
 }
 function onCrash() { RACE.crashes++; shake(0.6); }
@@ -4438,7 +4458,7 @@ function raceUpdate(dt) {
   if (p.children.length && p.L - PC.s < 700 && RACE.state === 'run') { const sg = p.def.sign; HUD.fork = { L: sg.L[0], R: sg.R[0], k: clamp((700 - (p.L - PC.s)) / 150, 0, 1) * clamp((p.L - PC.s) / 60, 0, 1) }; }
 }
 // ---------- the chase camera: low behind the car, following its line with a little lag ----------
-const CAM = { init: false, lat: 0, shake: 0, yaw: 0, slope: 0, cfg: { back: 8.0, height: 2.7 } };
+const CAM = { init: false, lat: 0, shake: 0, yaw: 0, slope: 0, cfg: { back: 6.0, height: 1.9 } };
 function shake(k) { CAM.shake = Math.max(CAM.shake, k); }
 function updateCamera(dt) {
   const C = CAM.cfg;
@@ -4453,6 +4473,79 @@ function updateCamera(dt) {
   const want = clamp((PC.piece.yAt(clamp(PC.s, 0, PC.piece.L)) - CV.roadY) / C.back, -0.14, 0.14);
   CAM.slope = CAM.init2 ? lerp(CAM.slope, want, clamp(dt * 9, 0, 1)) : want; CAM.init2 = true;
   CV.slope = CAM.slope;
+}
+
+// ===================== tyre effects: wheelspin smoke off the line, smoke in a slide, dust off the road, skid marks =====================
+// Puffs are pixel sprites thrown out from the rear tyres on screen; skid marks are laid on the road itself,
+// in road coordinates, and painted into the road raster so they stay put as the car drives away from them.
+const FX = { puffs: [], marks: [], cur: null, img: {}, spawnAcc: 0, spin: 0 };
+const PUFF_COLS = { smoke: [0xffffff, 0xe6e8ee, 0xc6cad4], sand: [0xfff2cc, 0xe8d8a8, 0xc8b480], grass: [0xd8d0a0, 0xaea678, 0x8a8458], gravel: [0xe0dcd4, 0xb8b4ac, 0x8e8a82], dirt: [0xd8c4a0, 0xb49878, 0x8a7458] };
+function fxInit() {
+  for (const k in PUFF_COLS) {
+    const C = PUFF_COLS[k], px = new Pix(24, 24), rnd = mulberry(77);
+    // a cloud of a few lobes: lit on top, darker underneath
+    for (const [x, y, r] of [[12, 13, 8], [7, 14, 6], [17, 13, 6], [11, 8, 5], [15, 17, 5]]) px.ball(x, y, r, r * 0.9, [C[2], C[1], C[0]], -0.4, -1);
+    px.outline(C[2]);
+    FX.img[k] = px.toCanvas();
+  }
+}
+function fxReset() { FX.puffs.length = 0; FX.marks.length = 0; FX.cur = null; }
+// one puff: screen position, velocity (px/s), size (px), life (s), kind
+function puff(x, y, vx, vy, s0, s1, life, kind, a) { FX.puffs.push({ x, y, vx, vy, s0, s1, t: 0, life, kind, a: a == null ? 0.85 : a }); if (FX.puffs.length > 120) FX.puffs.shift(); }
+function fxUpdate(dt) {
+  if (G.state !== 'race' || !PC.piece || PC.scrX == null) { return; }
+  const v = PC.v, th = PC.throttle;
+  // ---- what the tyres are doing ----
+  const launch = PC.gear === 1 && !PC.neutral && v < 14 && th > 0.6 && RACE.state === 'run' && !PC.crash;
+  FX.spin = lerp(FX.spin, launch ? 1 : 0, clamp(dt * 8, 0, 1));
+  const slide = Math.max(PC.slip, PC.drift ? 1 : 0), scrub = v > 28 && Math.abs(PC.steerIn) > 0.75 ? 0.35 : 0;
+  const braking = PC.brake > 0.8 && v > 18 && !PC.offroad ? 1 : 0;
+  const off = PC.offroad && v > 3;
+  const kind = off ? (PC.surface === 'beach' || PC.surface === 'bay' || PC.surface === 'shore' ? 'sand' : PC.surface === 'riverbed' || PC.surface === 'cliff' ? 'gravel' : PC.surface === 'farm' || PC.surface === 'orchard' ? 'dirt' : 'grass') : 'smoke';
+  // ---- puffs ----
+  const bx = PC.scrX, by = PC.scrY, hw = (PC.scrBW || 120) * 0.4;
+  let rate = 0;
+  if (launch) rate = 40; else if (slide > 0.3) rate = 22 * slide; else if (braking) rate = 14; else if (scrub) rate = 8; else if (off) rate = 16 + Math.min(20, v * 0.4);
+  FX.spawnAcc += rate * dt;
+  while (FX.spawnAcc >= 1) {
+    FX.spawnAcc -= 1;
+    const side = launch || off || braking ? (Math.random() < 0.5 ? -1 : 1) : (PC.drift ? -PC.driftDir : -Math.sign(PC.steerIn || 1)), tx = bx + side * hw + (Math.random() - 0.5) * 6, ty = by - 3 + Math.random() * 3;
+    if (launch) puff(tx, ty, side * (14 + Math.random() * 30), -(16 + Math.random() * 34), 8, 22 + Math.random() * 12, 0.6 + Math.random() * 0.4, 'smoke', 0.95);
+    else if (off) puff(tx, ty + 1, side * (8 + Math.random() * 20), 36 + v * 1.1 + Math.random() * 40, 7, 18 + Math.random() * 14, 0.45 + Math.random() * 0.3, kind, 0.9);
+    else puff(tx, ty, side * (4 + Math.random() * 16), 30 + v * 0.8 + Math.random() * 24, 6, 14 + Math.random() * 12, 0.4 + Math.random() * 0.3, 'smoke', slide > 0.3 ? 0.8 : 0.55);
+  }
+  for (let i = FX.puffs.length - 1; i >= 0; i--) {
+    const q = FX.puffs[i]; q.t += dt;
+    if (q.t >= q.life) { FX.puffs.splice(i, 1); continue; }
+    q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 1 - dt * 1.2; q.vy += (q.vy < 0 ? -8 : 12) * dt;
+  }
+  // ---- skid marks: laid on the road under the rear tyres while the tyres are spinning, sliding or locked ----
+  const marking = (launch && v > 0.5) || slide > 0.45 || braking;
+  if (marking && !PC.crash) {
+    const p = PC.piece, s = PC.s - CAR_REAR, x = PC.x, m = FX.cur;
+    if (m && m.p === p && s - m.s1 < 3 && Math.abs(x - m.x1) < 0.6 && m.s1 - m.s0 < 14) { m.s1 = s; m.x1 = x; }
+    else { FX.cur = { p, s0: s, s1: s + 0.2, x0: x, x1: x }; FX.marks.push(FX.cur); if (FX.marks.length > 48) FX.marks.shift(); }
+  } else FX.cur = null;
+  if (PC.drift || slide > 0.5 || launch) { if (!FX._sk) { FX._sk = true; sfxSkid(true); } } else if (FX._sk) { FX._sk = false; if (!PC.drift) sfxSkid(false); }
+}
+// marks under a row of the road raster: two dark tracks either side of the car's line
+const MARK_COL = 0x3a3c42;
+function fxMarksRow(p, gs, X, rk, asph) {
+  const s = gs - p.gS;
+  for (let i = 0; i < FX.marks.length; i++) {
+    const m = FX.marks[i]; if (m.p !== p || s < m.s0 || s > m.s1) continue;
+    const t = m.s1 > m.s0 ? (s - m.s0) / (m.s1 - m.s0) : 0, x = m.x0 + (m.x1 - m.x0) * t, w = Math.max(0.5, 0.24 * rk);
+    lineAt(X(x - 0.72), w, MARK_COL, asph); lineAt(X(x + 0.72), w, MARK_COL, asph);
+  }
+}
+function fxDraw() {
+  if (!FX.puffs.length) return;
+  for (const q of FX.puffs) {
+    const u = q.t / q.life, s = Math.round(q.s0 + (q.s1 - q.s0) * u), im = FX.img[q.kind] || FX.img.smoke;
+    VG.globalAlpha = q.a * (1 - u * u);
+    VG.drawImage(im, Math.round(q.x - s / 2), Math.round(q.y - s / 2), s, s);
+  }
+  VG.globalAlpha = 1;
 }
 
 // ===================== the renderer: a road raster, then everything else scaled by distance, back to front =====================
@@ -4636,6 +4729,7 @@ function roadRow(cx, rk, R, gs, gsN) {
   const stripe = Math.floor(gs / 6) & 1, asph = ASPH[stripe];
   fillSpanD(Math.round(X(oL)), Math.round(X(oR)), asph);
   if (SH > 0.3) fillSpanD(Math.round(X(W)), Math.round(X(oR)), ASPH_SC[stripe]);
+  if (FX.marks.length) fxMarksRow(R.p, gs, X, rk, asph);
   const lw = 0.15 * rk, dash = (gs % 10 + 10) % 10 < 4;
   // our lanes: dashed lines between them, a solid white edge line before the scooter lane
   const lanes = Math.round((2 * W) / LANE);
@@ -5062,7 +5156,7 @@ function render() {
   const T = stageTod(CV.p, CV.s);
   renderFrame(T);
   const a = performance.now();
-  if (HUD.carVisible !== false) drawPlayerCar(PC.spr);
+  if (HUD.carVisible !== false) { drawPlayerCar(PC.spr); fxDraw(); }
   const b = performance.now();
   postFX();
   drawPixHud();
@@ -5093,6 +5187,7 @@ function tick(dt) {
     raceUpdate(dt);
     trafficUpdate(dt);
     GHOST.record(dt); GHOST.update();
+    fxUpdate(dt);
   }
 }
 async function loadFonts() {
@@ -5108,6 +5203,7 @@ async function boot() {
   packAtlas();
   buildWorld();
   for (const id in STAGES) buildBackdrop(STAGES[id].pano, STAGES[id].clouds);
+  fxInit();
   uiInit();
   startAttract();
   requestAnimationFrame(frame);
