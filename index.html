@@ -3749,7 +3749,7 @@ function pcStep(dt, track) {
   PC.rpm = lerp(PC.rpm, rpm, clamp(dt * 14, 0, 1));
   // ---- steering, centrifugal push, drift ----
   const k = p.curv(PC.s), v = PC.v;
-  const auth = (6.6 + 4.2 * sp.steer) * clamp(v / 20, 0.18, 1) * (PC.drift > 0 ? 1.4 : 1);
+  const auth = (6.6 + 4.2 * sp.steer) * 1.5 * clamp(v / 20, 0.18, 1) * (PC.drift > 0 ? 1.4 : 1);   // quick: a lane in a third of a second
   const cent = k * v * v * (0.34 - 0.12 * sp.grip) * (PC.drift > 0 ? 0.62 : 1);
   // start a drift: a brake tap while steering hard at speed
   if (!PC.drift && PC.brake > 0.25 && Math.abs(PC.steerIn) > 0.55 && v > ((sp.pose && sp.pose.driftV) || 26)) { PC.drift = 1; PC.driftDir = Math.sign(PC.steerIn); sfxSkid(true); }
@@ -3758,7 +3758,7 @@ function pcStep(dt, track) {
   const over = Math.max(0, Math.abs(cent) - (4.5 + 4 * sp.grip));
   PC.slip = lerp(PC.slip, over > 0 || PC.drift ? 1 : 0, dt * 4);
   const target = PC.steerIn * auth - cent - Math.sign(cent) * over * 0.6 + PC.wind;
-  PC.vx = lerp(PC.vx, target, clamp(dt * (PC.drift ? 5 : 8), 0, 1));
+  PC.vx = lerp(PC.vx, target, clamp(dt * (PC.drift ? 7 : 15), 0, 1));
   PC.x += PC.vx * dt;
   // ---- edges: median barrier on the left (scrape), off-road on the right ----
   const lw = p.leftWall(PC.s), re = p.rightEdge(PC.s);
@@ -3813,7 +3813,7 @@ function findCollider(p, s, x, hl, hw) {
 // Steering is by tilting the phone like a wheel; where the sensor is blocked, a left-thumb slider steers.
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
 const CTL = {
-  steer: 0, gas: 0, brake: 0, tilt: { ok: false, asked: false, theta: 0, zero: 0, last: 0, raw: 0 }, mode: 'touch', sens: 28,
+  steer: 0, gas: 0, brake: 0, tilt: { ok: false, asked: false, theta: 0, zero: 0, last: 0, raw: 0 }, mode: 'touch', sens: 18,
   keys: {}, touches: new Map(), pads: {}, shift: null, knob: { x: -1, y: -1, active: false, t: 0 }, lastGestureT: -9, guide: true,
   steerTouch: null, padRects: null,
 };
@@ -3939,15 +3939,15 @@ function readControls(dt) {
   for (const [, t] of CTL.touches) {
     if (t.kind === 'gas') gas = 1;
     if (t.kind === 'brake') brake = 1;
-    if (t.kind === 'steer') touchSteer = clamp((t.x - t.ox) / Math.max(60, innerWidth * 0.1), -1, 1);
+    if (t.kind === 'steer') touchSteer = clamp((t.x - t.ox) / Math.max(44, innerWidth * 0.07), -1, 1);
   }
   if (touchSteer != null) steer = Math.abs(touchSteer) < 0.06 ? 0 : touchSteer;
   else if (CTL.mode === 'tilt' && CTL.tilt.ok && performance.now() - CTL.tilt.last < 600) {
     const d = -(CTL.tilt.theta - CTL.tilt.zero);
-    steer = Math.abs(d) < 1.5 ? 0 : clamp((d - Math.sign(d) * 1.5) / CTL.sens, -1, 1);
+    steer = Math.abs(d) < 1.2 ? 0 : clamp((d - Math.sign(d) * 1.2) / CTL.sens, -1, 1);
   }
   // keyboard steering eases in; analog sources apply directly
-  if (touchSteer == null && !(CTL.mode === 'tilt' && CTL.tilt.ok)) CTL.steer = lerp(CTL.steer, steer, clamp(dt * 9, 0, 1)); else CTL.steer = steer;
+  if (touchSteer == null && !(CTL.mode === 'tilt' && CTL.tilt.ok)) CTL.steer = lerp(CTL.steer, steer, clamp(dt * 16, 0, 1)); else CTL.steer = steer;
   CTL.gas = gas; CTL.brake = brake;
   if (BOT.on) botDrive(dt);
   PC.throttle = CTL.gas; PC.brake = CTL.brake; PC.steerIn = CTL.steer;
@@ -5474,7 +5474,8 @@ boot();
 // The race keeps running behind the menus as an attract mode: the bot drives stage 1 with the HUD off.
 const UI = { scr: null, sel: 0, auto: true, ctrl: 'tilt', song: 0, turn: null, turnRaf: 0, turnT: 0, unlocked: false, resultShown: false, from: 'title' };
 const SAVE = { load(k, d) { try { const v = localStorage.getItem('kr.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, save(k, v) { try { localStorage.setItem('kr.' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } } };
-const SET = Object.assign({ music: 0.6, sfx: 0.9, sens: 28, quality: 'high', guide: true }, SAVE.load('settings', {}));
+const SET = Object.assign({ music: 0.6, sfx: 0.9, sens: 18, quality: 'high', guide: true }, SAVE.load('settings', {}));
+if (SET.sens === 28) SET.sens = 18;   // the old default was too lazy
 const ROUTE_NAMES = { s1: '高雄港', s2a: '海線', s2b: '山線', s3: '枋山', s4a: '鵝鑾鼻', s4b: '貓鼻頭' };
 const STAT_ROWS = [['極速', (c) => c.top / 340, (c) => c.top + ''], ['加速', (c) => c.acc, null], ['抓地', (c) => c.grip, null], ['操控', (c) => c.steer, null], ['車重', (c) => c.mass, null]];
 const ENGINE_NAME = { v12: 'V12', v8: 'V8', i6: '直列六缸', i4: '直列四缸', flat6: '水平對臥六缸', turbo: '渦輪增壓' };
@@ -5708,7 +5709,7 @@ function openSettings() {
   const r = (k, lbl, min, max, step, fmt) => `<div class="row"><span class="lbl">${lbl}</span><div><input class="rng" type="range" min="${min}" max="${max}" step="${step}" value="${SET[k]}" data-set="${k}"><div class="note" style="margin:2px 0 0" id="v-${k}">${fmt(SET[k])}</div></div></div>`;
   $('settings').innerHTML = `<h2 class="ttl">設定</h2>
     ${r('music', '音樂', 0, 1, 0.05, (v) => Math.round(v * 100) + '%')}${r('sfx', '音效', 0, 1, 0.05, (v) => Math.round(v * 100) + '%')}
-    ${r('sens', '轉向', 14, 44, 1, (v) => '傾斜 ' + v + '° 打滿　（數字小比較靈敏）')}
+    ${r('sens', '轉向', 10, 40, 1, (v) => '傾斜 ' + v + '° 打滿　（數字小比較靈敏）')}
     <div class="row"><span class="lbl">畫質</span><div class="seg" id="seg-q"><button class="btn" data-q="high">高（速度模糊、遠景）</button><button class="btn" data-q="low">省電</button></div></div>
     <div class="row"><span class="lbl">H 檔提示</span><div class="seg" id="seg-g"><button class="btn" data-gd="1">顯示</button><button class="btn" data-gd="0">隱藏</button></div></div>
     <div class="actions"><button class="btn" data-act="back">完成</button></div>`;
