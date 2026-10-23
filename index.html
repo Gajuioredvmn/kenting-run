@@ -84,7 +84,7 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .stats .l{font:700 clamp(11px,1.8vh,13px)/1 var(--font-ui);color:var(--cream)}
 .stats .v{font:400 10px var(--font-pix);color:#fff}
 .bar{height:clamp(8px,1.4vh,11px);border-radius:3px;background:rgba(255,243,220,.12);overflow:hidden}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--sea),var(--lime),var(--sun),var(--hot));background-size:200px 100%}
+.bar i{transition:width .5s cubic-bezier(.2,.8,.2,1);display:block;height:100%;background:linear-gradient(90deg,var(--sea),var(--lime),var(--sun),var(--hot));background-size:200px 100%}
 .thumbs{grid-column:1/2;display:flex;gap:6px;overflow-x:auto;align-items:center;padding:2px}
 .thumbs button{flex:0 0 auto;width:clamp(56px,9vw,82px);aspect-ratio:2/1;border-radius:8px;background:rgba(10,6,24,.6);border:2px solid transparent;padding:0}
 .thumbs button[aria-current="true"]{border-color:var(--sun);background:rgba(255,178,62,.18)}
@@ -3866,7 +3866,9 @@ function headCentres(spr, dk) {
   return out;
 }
 // a limb: a thick stroke of square pixels from (x0,y0) to (x1,y1), outlined
+let ARM_CTX = null;   // where the arms are drawn: the race canvas unless the showroom borrows them
 function limb(x0, y0, x1, y1, w, col, outl) {
+  const VG = ARM_CTX || vctx;
   const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
   VG.fillStyle = outl;
   for (let i = 0; i <= n; i++) { const t = i / n; VG.fillRect(Math.round(x0 + (x1 - x0) * t) - (w >> 1) - 1, Math.round(y0 + (y1 - y0) * t) - (w >> 1) - 1, w + 2, w + 2); }
@@ -3874,10 +3876,12 @@ function limb(x0, y0, x1, y1, w, col, outl) {
   for (let i = 0; i <= n; i++) { const t = i / n; VG.fillRect(Math.round(x0 + (x1 - x0) * t) - (w >> 1), Math.round(y0 + (y1 - y0) * t) - (w >> 1), w, w); }
 }
 function fist(x, y, skin, outl, thumb) {
+  const VG = ARM_CTX || vctx;
   VG.fillStyle = outl; VG.fillRect(x - 4, y - 4, 8, 8); VG.fillStyle = skin; VG.fillRect(x - 3, y - 3, 6, 6); VG.fillStyle = shadeCss(skin, 0.82); VG.fillRect(x - 3, y + 1, 6, 2);
   if (thumb) { VG.fillStyle = outl; VG.fillRect(x - 2, y - 9, 4, 6); VG.fillStyle = skin; VG.fillRect(x - 1, y - 8, 2, 5); }
 }
 function openHand(x, y, skin, outl, tilt) {
+  const VG = ARM_CTX || vctx;
   VG.fillStyle = outl; VG.fillRect(x - 4, y - 5, 8, 9); VG.fillStyle = skin; VG.fillRect(x - 3, y - 4, 6, 7);
   for (let k = 0; k < 3; k++) { VG.fillStyle = outl; VG.fillRect(x - 3 + k * 2 + tilt, y - 8, 2, 4); VG.fillStyle = skin; VG.fillRect(x - 3 + k * 2 + tilt, y - 7, 1, 3); }
 }
@@ -6631,27 +6635,68 @@ function openSelect() {
   UI.turnT = 0; drawThumbs();
   if (!UI.turnRaf) UI.turnRaf = requestAnimationFrame(turnLoop);
 }
-// the showroom: the car side on, and from behind, steering left and right as if warming up
+// the showroom: a turntable under sweeping spotlights; the car warms its tyres, throws a drift each way with
+// smoke and flame, then sits straight while the two of them wave — on a loop, with the side view beside it
+const SHOW = { puffs: [], t0: 0, car: -1 };
 function turnLoop() {
   UI.turnRaf = 0;
   if (UI.scr !== 'select') return;
   UI.turnRaf = requestAnimationFrame(turnLoop);
   const spec = CARS[UI.sel], side = carSide(spec, 52), rear = carSprites(spec), cv = $('turn'), g2 = cv.getContext('2d');
-  UI.turnT += 1 / 60;
+  if (SHOW.car !== UI.sel) { SHOW.car = UI.sel; SHOW.puffs.length = 0; UI.turnT = 0; }
+  const dt = 1 / 60; UI.turnT += dt; const t = UI.turnT, T = t % 9;   // the loop: 0-2.4 burnout, 2.4-6.4 drifts, 6.4-9 wave
   g2.imageSmoothingEnabled = false; g2.clearRect(0, 0, cv.width, cv.height);
-  const fy = cv.height - 34;
-  // a floor with a stripe of light
-  g2.fillStyle = 'rgba(10,6,24,.55)'; g2.fillRect(0, fy, cv.width, cv.height - fy);
-  g2.fillStyle = 'rgba(255,178,62,.35)'; g2.fillRect(0, fy, cv.width, 2);
-  const sx = 14, bob = Math.round(Math.sin(UI.turnT * 3) * 0.6);
+  const W = cv.width, H = cv.height, fy = H - 34;
+  // the floor and the turntable, its rim lights chasing round
+  g2.fillStyle = 'rgba(10,6,24,.55)'; g2.fillRect(0, fy, W, H - fy);
+  const tx = W - 118, ty = fy + 6;
+  g2.fillStyle = 'rgba(40,30,70,.9)'; g2.beginPath(); g2.ellipse(tx, ty, 112, 16, 0, 0, TAU); g2.fill();
+  g2.fillStyle = 'rgba(80,60,130,.9)'; g2.beginPath(); g2.ellipse(tx, ty - 3, 108, 14, 0, 0, TAU); g2.fill();
+  for (let k = 0; k < 18; k++) { const a = (k / 18) * TAU + t * 1.2, lit = (k + Math.floor(t * 6)) % 3 === 0; g2.fillStyle = lit ? '#ffd23a' : '#5a4a8a'; g2.fillRect(Math.round(tx + Math.cos(a) * 104) - 1, Math.round(ty - 3 + Math.sin(a) * 12) - 1, 3, 2); }
+  // spotlights sweeping from the top corners
+  for (const [x0, col, ph] of [[W * 0.62, 'rgba(255,210,58,', 0], [W * 0.98, 'rgba(255,120,200,', 2.1]]) {
+    const ax = tx + Math.sin(t * 0.8 + ph) * 70;
+    const gr = g2.createLinearGradient(0, 0, 0, fy); gr.addColorStop(0, col + '0.0)'); gr.addColorStop(1, col + '0.22)');
+    g2.fillStyle = gr; g2.beginPath(); g2.moveTo(x0, 0); g2.lineTo(ax - 40, fy); g2.lineTo(ax + 40, fy); g2.closePath(); g2.fill();
+  }
+  g2.fillStyle = 'rgba(255,178,62,.35)'; g2.fillRect(0, fy, W, 2);
+  // the side view, bobbing, headlights on
+  const sx = 14, bob = Math.round(Math.sin(t * 3) * 0.6);
   g2.fillStyle = 'rgba(0,0,0,.4)'; g2.beginPath(); g2.ellipse(sx + side.width / 2, fy + 2, side.width * 0.46, 5, 0, 0, TAU); g2.fill();
   g2.drawImage(side, sx, fy - side.height + 4 + bob);
-  const nF = rear.frames.length, midF = (nF - 1) >> 1, si = clamp(Math.round(Math.sin(UI.turnT * 0.9) * 2.4) + midF, 0, nF - 1), img = rear.frames[si][Math.floor(UI.turnT * 0.7) % 4 === 3 ? 1 : 0][Math.floor(UI.turnT * 8) & 1];
-  const rk = 0.82, rw = img.width * rk, rh = img.height * rk, rx = cv.width - rw - 4;
-  g2.fillStyle = 'rgba(0,0,0,.4)'; g2.beginPath(); g2.ellipse(rx + rw / 2, fy + 2, rw * 0.36, 5, 0, 0, TAU); g2.fill();
-  const ry = fy - rh + (img.height - rear.ay + 3) * rk + 2;
+  // the stunt from behind
+  const nF = rear.frames.length, midF = (nF - 1) >> 1;
+  let si = midF, roll = 0, shake = 0, smoke = 0, flame = 0, brake = 0, wave = false, lean = 0;
+  if (T < 2.4) { shake = 1; smoke = 1.6; flame = 1; brake = T % 0.5 < 0.25 ? 1 : 0; }
+  else if (T < 6.4) { const u = (T - 2.4) / 4, dir = u < 0.5 ? -1 : 1, k = Math.sin(((u * 2) % 1) * Math.PI); si = clamp(midF + dir * Math.round(k * 2.4), 0, nF - 1); roll = -dir * 0.3 * k; smoke = 1.1 * k; flame = 0.5; lean = dir * k; }
+  else { wave = true; brake = T > 8.6 ? 1 : 0; }
+  const img = rear.frames[si][brake][Math.floor(t * 8) & 1];
+  const rk = 0.82, rw = img.width * rk, rh = img.height * rk, rx = tx - rw / 2 + (shake ? Math.round(Math.sin(t * 60) * 1.2) : 0);
+  const ry = fy - rh + (img.height - rear.ay + 3) * rk + 2, pivX = tx + (roll < 0 ? -1 : 1) * rw * 0.4, pivY = fy + 2;
+  // smoke behind the tyres, rising
+  if (smoke > 0 && Math.random() < smoke * 0.6) { const tyre = roll !== 0 ? (roll < 0 ? 1 : -1) : (Math.random() < 0.5 ? -1 : 1); SHOW.puffs.push({ x: tx + tyre * rw * 0.34 + (Math.random() - 0.5) * 8, y: fy - 2, vx: tyre * (10 + Math.random() * 30), vy: -(14 + Math.random() * 18), s: 8 + Math.random() * 8, t: 0, life: 0.9 + Math.random() * 0.5 }); }
+  for (let i = SHOW.puffs.length - 1; i >= 0; i--) { const q = SHOW.puffs[i]; q.t += dt; if (q.t > q.life) { SHOW.puffs.splice(i, 1); continue; } q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 1 - dt * 1.5; }
+  const smokeImg = FX.img && FX.img.smoke;
+  g2.fillStyle = 'rgba(0,0,0,.4)'; g2.beginPath(); g2.ellipse(tx, fy + 2, rw * 0.36, 5, 0, 0, TAU); g2.fill();
+  if (smokeImg) for (const q of SHOW.puffs) { if (q.y < fy - 8) continue; const u = q.t / q.life, s2 = Math.round(q.s * (1 + u * 2)); g2.globalAlpha = 0.85 * (1 - u * u); g2.drawImage(smokeImg, Math.round(q.x - s2 / 2), Math.round(q.y - s2 * 0.4), s2, Math.round(s2 * 0.8)); }
+  g2.globalAlpha = 1;
+  g2.save(); g2.translate(pivX, pivY); g2.rotate(roll); g2.translate(-pivX, -pivY);
   g2.drawImage(img, rx, ry, rw, rh);
-  if (rear.heads) { const ph = [0, 1, 0, 2][Math.floor(UI.turnT * 6) & 3], sh = rear.shift[si]; for (const h of rear.heads) g2.drawImage(h.frames[ph], Math.round(rx + (h.x + sh + Math.sin(UI.turnT * 0.9) * 2) * rk), Math.round(ry + h.y * rk), h.frames[0].width * rk, h.frames[0].height * rk); }
+  if (rear.heads) { const ph = [0, 1, 0, 2][Math.floor(t * 6) & 3], sh = rear.shift[si]; for (const h of rear.heads) g2.drawImage(h.frames[ph], Math.round(rx + (h.x + sh - lean * 3) * rk), Math.round(ry + h.y * rk), h.frames[0].width * rk, h.frames[0].height * rk); }
+  // flames at the pipes while the tyres spin
+  if (flame > 0 && (Math.floor(t * 20) & 1)) for (const px2 of [-0.1, 0.1]) { const fx = Math.round(tx + px2 * rw), fyy = Math.round(fy - 10 * rk); g2.fillStyle = '#ff8a1a'; g2.fillRect(fx - 3, fyy, 6, 4 + Math.round(Math.random() * 6 * flame)); g2.fillStyle = '#ffe060'; g2.fillRect(fx - 1, fyy, 2, 3 + Math.round(Math.random() * 4 * flame)); }
+  // the two of them waving: the crew's arms, borrowed from the race
+  if (wave && (rear.heads || rear.headPos)) {
+    const crew = CREW[spec.id] || [], H2 = rear.heads ? rear.heads.map((h) => [h.x + h.frames[0].width / 2 + rear.shift[si], h.y + h.frames[0].height / 2]) : (rear.headPos[si] || []);
+    ARM_CTX = g2; g2.save(); g2.translate(rx, ry); g2.scale(rk, rk);
+    H2.forEach((hc, i) => { const o = crew[i] || {}; if (o.dog) return; const skin = cssHex(o.skin || 0xf2c8a0), shirt = cssHex(o.shirt || 0xffffff), side2 = i ? 1 : -1, sxp = hc[0] + side2 * 9, syp = hc[1] + 7, up = Math.round(Math.sin(t * 7 + i) * 3);
+      const ex = sxp + side2 * 8, ey = syp - 6, fxp = hc[0] + side2 * 6, fyp = hc[1] - 19 + up;
+      limb(sxp, syp, ex, ey, 4, shirt, '#140a1a'); limb(ex, ey, fxp, fyp + 3, 3, skin, '#140a1a'); openHand(fxp + ((Math.floor(t * 7) & 1) ? 2 : -2), fyp, skin, '#140a1a', (Math.floor(t * 7) & 1) ? 2 : -2); });
+    g2.restore(); ARM_CTX = null;
+  }
+  g2.restore();
+  // sparkles over the turntable
+  for (let k = 0; k < 3; k++) { const ph = (t * 0.7 + k * 0.33) % 1, ax = tx + Math.sin(k * 2.1 + t) * 90, ay = fy - 110 + Math.cos(k * 1.3 + t * 1.7) * 40; if (ph < 0.5) { g2.fillStyle = '#fff6e0'; g2.fillRect(ax - 1, ay - 4, 2, 8); g2.fillRect(ax - 4, ay - 1, 8, 2); } }
 }
 function stopTurn() { if (UI.turnRaf) cancelAnimationFrame(UI.turnRaf); UI.turnRaf = 0; }
 function drawThumbs() {
