@@ -100,7 +100,7 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .avrow canvas{width:56px;height:56px;image-rendering:pixelated;border-radius:50%}
 .btn.file{position:relative;overflow:hidden;cursor:pointer} .btn.file input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .txt{font:700 clamp(14px,2.2vh,17px)/1.2 var(--font-ui);color:var(--cream);background:rgba(0,0,0,.35);border:2px solid rgba(255,243,220,.35);border-radius:8px;padding:.45em .7em;width:9em;max-width:100%}
-.av{display:inline-flex;flex:0 0 auto;border-radius:50%;overflow:hidden;background:#5a6a9a;border:2px solid #fff6e0;box-shadow:0 0 0 2px #140a1a} .av img{image-rendering:pixelated;display:block}
+.av{display:inline-flex;flex:0 0 auto;border-radius:50%;overflow:hidden;background:#5a6a9a;border:2px solid #fff6e0;box-shadow:0 0 0 2px #140a1a} .av img{display:block;object-fit:cover}
 .txt.code{width:7em;letter-spacing:.2em;text-transform:uppercase;font-family:var(--font-num)}
 .code{font:400 clamp(12px,2vh,15px) var(--font-pix);color:var(--sun);letter-spacing:.15em}
 .players{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px} .pl{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.3);font:700 clamp(13px,2.2vh,16px)/1.2 var(--font-ui);color:var(--cream)}
@@ -565,7 +565,7 @@ class Piece {
         const t = (i + 0.5) / m, kk = (s.k || 0) * curveProfile(t);
         h += kk * DS;
         x += Math.sin(h) * DS; z -= Math.cos(h) * DS;
-        y = y0 + (s.dy || 0) * sstep((i + 1) / m);
+        y = y0 + (s.dy || 0) * sstep((i + 1) / m) + (s.roll ? s.roll[0] * Math.sin(TAU * s.roll[1] * ((i + 1) / m)) : 0);   // roll: [amp, n] n whole waves inside the section
         const into = (i + 1) * DS;
         const e = s.fork ? sstep(clamp(into / (s.len * 0.55), 0, 1)) : s.diverge ? sstep(clamp(into / (s.len * 0.9), 0, 1)) : sstep(clamp(into / 120, 0, 1));
         cs.W = lerp(from.W, to.W, s.fork ? sstep(clamp(into / (s.len * 0.45), 0, 1)) : e);
@@ -665,109 +665,112 @@ function sideBands(type) { return SIDE_BANDS[type] || SIDE_BANDS.grass; }
 // ===================== the route: 高雄港 → 海線 / 山線 → 枋山海岸 → 墾丁 / 貓鼻頭 =====================
 // section: len (m), k peak curvature (1/m, + turns right), dy rise (m), lanes, L / R side types,
 // tags: what the scenery builder places along it. Forks: children [left, right].
+// one clock for every stage: the first is straight and quiet, so the same seconds get tighter as the road climbs,
+// twists and fills up — the way the arcade did it
+const STAGE_TIME = 95;
 const STAGES = {
   s1: {
-    label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: 98,
-    traffic: { per100: 2.0, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1, suv: 1, wagon: 1 } },
+    label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: STAGE_TIME,
+    traffic: { per100: 1.3, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1, suv: 1, wagon: 1 } },
     children: ['s2b', 's2a'],
     sign: { L: ['山線', '國3・沿山公路', '三地門・大武山'], R: ['海線・旗津', '過港隧道・東港', '大鵬灣'] },
     sections: [
       { len: 420, k: 0, lanes: 4, sh: 2.6, shl: 2.2, L: 'city', R: 'harbor', tags: ['start', 'qilou', 'kerbtrees', 'promenade', 'cranes', 'ships', 'tower85sign'] },
-      { len: 560, k: 0.0028, dy: 4, L: 'city', R: 'harbor', tags: ['qilou', 'kerbtrees', 'pier2', 'kpmc', 'harborbridge', 'cranes'] },
-      { len: 460, k: -0.0036, dy: -4, L: 'city', R: 'harbor', tags: ['citytower', 'lightrail', 'lrtstop', 'dome', 'promenade', 'ships'] },
-      { len: 220, k: 0, dy: -7, L: 'cut', R: 'cut', tags: ['underpass', 'underpasssign'] },
+      { len: 560, k: 0.0028, dy: 5, L: 'city', R: 'harbor', tags: ['qilou', 'kerbtrees', 'pier2', 'kpmc', 'harborbridge', 'cranes'] },
+      { len: 460, k: -0.0036, dy: -5, L: 'city', R: 'harbor', tags: ['citytower', 'lightrail', 'lrtstop', 'dome', 'promenade', 'ships'] },
+      { len: 220, k: 0, dy: -10, L: 'cut', R: 'cut', tags: ['underpass', 'underpasssign'] },
       { len: 140, k: 0, L: 'cut', R: 'cut', tags: ['underpass', 'deck'] },
-      { len: 220, k: 0.0012, dy: 7, L: 'cut', R: 'cut', tags: ['underpass'] },
-      { len: 320, k: 0.0042, L: 'city', R: 'industrial', tags: ['qilou', 'containers', 'lamps'] },
-      { len: 360, k: -0.002, dy: 12, L: 'city', R: 'industrial', tags: ['overpass', 'containers', 'lamps', 'weiwuying'] },
-      { len: 380, k: 0.003, dy: -12, L: 'water', R: 'grass', tags: ['pagodas', 'lamps', 'airport'] },
-      { len: 600, k: -0.0032, L: 'town', R: 'grass', tags: ['airport', 'plane', 'betelstand', 'palmgroup'] },
-      { len: 520, k: 0.0045, dy: 5, L: 'industrial', R: 'industrial', tags: ['refinery', 'chimney', 'lamps'] },
-      { len: 420, k: -0.0025, dy: -5, L: 'grass', R: 'grass', tags: ['palmgroup', 'forksign'] },
+      { len: 220, k: 0.0012, dy: 10, L: 'cut', R: 'cut', tags: ['underpass'] },
+      { len: 320, k: 0.0045, L: 'city', R: 'industrial', tags: ['qilou', 'containers', 'lamps'] },
+      { len: 360, k: -0.002, dy: 20, L: 'city', R: 'industrial', tags: ['overpass', 'containers', 'lamps', 'weiwuying'] },
+      { len: 380, k: 0.0032, dy: -20, L: 'water', R: 'grass', tags: ['pagodas', 'lamps', 'airport'] },
+      { len: 700, k: -0.0035, dy: 8, roll: [5, 2], L: 'town', R: 'grass', tags: ['airport', 'plane', 'betelstand', 'palmgroup'] },
+      { len: 620, k: 0.005, dy: -8, L: 'industrial', R: 'industrial', tags: ['refinery', 'chimney', 'lamps'] },
+      { len: 520, k: -0.0028, dy: 4, L: 'grass', R: 'grass', tags: ['palmgroup', 'forksign'] },
     ],
   },
   s2a: {
-    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 92,
-    traffic: { per100: 1.5, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 1, pickup: 1, suv: 1, rebar: 1 } },
+    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: STAGE_TIME,
+    traffic: { per100: 1.8, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 1, pickup: 1, suv: 1, rebar: 1 } },
     next: 's3',
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'harbor', tags: ['checkpoint', 'townhouse', 'tunnelsign', 'lamps'] },
-      { len: 300, k: 0.0008, dy: -9, L: 'cut', R: 'cut', tags: ['tunnel', 'portal'] },
-      { len: 300, k: -0.0008, dy: 9, L: 'cut', R: 'cut', tags: ['tunnel'] },
-      { len: 600, k: -0.002, L: 'grass', R: 'beach', tags: ['cijin', 'bathers', 'lamps'] },
-      { len: 520, k: 0.003, L: 'harbor', R: 'bay', tags: ['rainbowchurch', 'windmills', 'bathers', 'ferry', 'seafood'] },
-      { len: 480, k: 0.0012, dy: 7, L: 'water', R: 'water', bridge: 'girder', tags: ['bridgelamps', 'sandbars'] },
-      { len: 560, k: -0.0035, dy: -7, L: 'farm', R: 'farm', tags: ['farmhouse', 'betel', 'betelstand', 'banana'] },
-      { len: 600, k: 0.004, L: 'town', R: 'harbor', tags: ['townhouse', 'templegate', 'fishboats', 'seafood', 'tuna', 'lamps'] },
-      { len: 420, k: -0.0026, L: 'water', R: 'beach', tags: ['mangrove', 'sailboat', 'palmgroup', 'circuit'] },
-      { len: 300, k: 0, dy: 8, L: 'water', R: 'water', bridge: 'bascule', tags: ['bridgelamps', 'sailboat', 'dapeng'] },
-      { len: 340, k: -0.0042, dy: -8, L: 'water', R: 'beach', tags: ['mangrove', 'palmgroup', 'liuqiu'] },
-      { len: 440, k: 0.0036, L: 'fishpond', R: 'fishpond', tags: ['ponds', 'betel', 'farmhouse'] },
-      { len: 520, k: 0.0045, dy: -5, L: 'orchard', R: 'beach', tags: ['waxapple', 'oysters', 'palmgroup', 'tetrapods'] },
-      { len: 300, k: -0.002, L: 'town', R: 'town', tags: ['townhouse', 'betelstand'] },
+      { len: 300, k: 0.0008, dy: -18, L: 'cut', R: 'cut', tags: ['tunnel', 'portal'] },
+      { len: 300, k: -0.0008, dy: 18, L: 'cut', R: 'cut', tags: ['tunnel'] },
+      { len: 460, k: -0.0025, roll: [6, 2], L: 'grass', R: 'beach', tags: ['cijin', 'bathers', 'lamps'] },
+      { len: 460, k: 0.0045, dy: 9, L: 'harbor', R: 'bay', tags: ['rainbowchurch', 'windmills', 'bathers', 'ferry', 'seafood'] },
+      { len: 420, k: 0.0012, dy: 24, L: 'water', R: 'water', bridge: 'girder', tags: ['bridgelamps', 'sandbars'] },
+      { len: 480, k: -0.0055, dy: -33, L: 'farm', R: 'farm', tags: ['farmhouse', 'betel', 'betelstand', 'banana'] },
+      { len: 460, k: 0.0055, L: 'town', R: 'harbor', tags: ['townhouse', 'templegate', 'fishboats', 'seafood', 'tuna', 'lamps'] },
+      { len: 380, k: -0.003, dy: 15, roll: [10, 2], L: 'water', R: 'beach', tags: ['mangrove', 'sailboat', 'palmgroup', 'circuit'] },
+      { len: 300, k: 0, dy: 21, L: 'water', R: 'water', bridge: 'bascule', tags: ['bridgelamps', 'sailboat', 'dapeng'] },
+      { len: 340, k: -0.006, dy: -36, L: 'water', R: 'beach', tags: ['mangrove', 'palmgroup', 'liuqiu'] },
+      { len: 340, k: 0.0048, dy: 12, L: 'fishpond', R: 'fishpond', tags: ['ponds', 'betel', 'farmhouse'] },
+      { len: 400, k: 0.0065, dy: -12, L: 'orchard', R: 'beach', tags: ['waxapple', 'oysters', 'palmgroup', 'tetrapods'] },
+      { len: 280, k: -0.0025, L: 'town', R: 'town', tags: ['townhouse', 'betelstand'] },
     ],
   },
   s2b: {
-    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 86,
-    traffic: { per100: 1.3, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 2, suv: 1 } },
+    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: STAGE_TIME,
+    traffic: { per100: 1.7, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 2, suv: 1 } },
     next: 's3',
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel', 'dawu'] },
-      { len: 640, k: 0.0022, L: 'orchard', R: 'grass', tags: ['buddha', 'ferris', 'mangogroup', 'betelstand'] },
-      { len: 620, k: 0.001, dy: 10, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps', 'gaoping'] },
-      { len: 700, k: 0.0032, dy: -10, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand', 'wanluan'] },
-      { len: 520, k: -0.0045, sh: 1.8, L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
-      { len: 460, k: 0.005, dy: 14, L: 'mountain', R: 'hills', tags: ['tribalgate', 'stonehouse', 'betel', 'coffee'] },
-      { len: 440, k: -0.0048, dy: -10, L: 'mountain', R: 'orchard', tags: ['totem', 'mangogroup', 'stonehouse'] },
-      { len: 320, k: 0, L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps', 'glassbridge'] },
-      { len: 600, k: 0.0042, dy: 8, L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'tribalgate'] },
-      { len: 420, k: -0.003, dy: -12, L: 'hills', R: 'orchard', tags: ['mangogroup', 'betelstand', 'temple'] },
+      { len: 640, k: 0.0028, dy: 15, roll: [8, 2], L: 'orchard', R: 'grass', tags: ['buddha', 'ferris', 'mangogroup', 'betelstand'] },
+      { len: 560, k: 0.001, dy: 30, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps', 'gaoping'] },
+      { len: 700, k: 0.0038, dy: -39, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand', 'wanluan'] },
+      { len: 480, k: -0.0055, dy: 27, sh: 1.8, L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
+      { len: 460, k: 0.0065, dy: 48, L: 'mountain', R: 'hills', tags: ['tribalgate', 'stonehouse', 'betel', 'coffee'] },
+      { len: 440, k: -0.006, dy: -48, L: 'mountain', R: 'orchard', tags: ['totem', 'mangogroup', 'stonehouse'] },
+      { len: 320, k: 0, dy: 9, L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps', 'glassbridge'] },
+      { len: 560, k: 0.005, dy: 36, roll: [10, 2], L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'tribalgate'] },
+      { len: 420, k: -0.004, dy: -45, L: 'hills', R: 'orchard', tags: ['mangogroup', 'betelstand', 'temple'] },
     ],
   },
   s3: {
-    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 80,
-    traffic: { per100: 1.4, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 2, pickup: 1, rebar: 1, logs: 1, wagon: 1 } },
+    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: STAGE_TIME,
+    traffic: { per100: 2.0, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 2, pickup: 1, rebar: 1, logs: 1, wagon: 1 } },
     children: ['s4a', 's4b'],
     sign: { L: ['恆春・墾丁', '台26', '鵝鑾鼻'], R: ['海生館', '濱海公路', '貓鼻頭'] },
     sections: [
       { len: 420, k: 0, lanes: 3, sh: 2.0, L: 'town', R: 'harbor', tags: ['checkpoint', 'station', 'townhouse', 'fishboats', 'lamps'] },
-      { len: 560, k: 0.0028, dy: 4, L: 'slope', R: 'shore', tags: ['railway', 'mangostall'] },
-      { len: 480, k: -0.0038, dy: 8, L: 'slope', R: 'cliff', tags: ['coastplants', 'guardR'] },
-      { len: 420, k: 0.0045, dy: -8, L: 'slope', R: 'shore', tags: ['mangostall'] },
-      { len: 520, k: -0.003, L: 'orchard', R: 'shore', tags: ['mangostall', 'mangogroup'] },
+      { len: 600, k: 0.0032, dy: 18, roll: [10, 2], L: 'slope', R: 'shore', tags: ['railway', 'mangostall'] },
+      { len: 480, k: -0.0045, dy: 36, L: 'slope', R: 'cliff', tags: ['coastplants', 'guardR'] },
+      { len: 420, k: 0.006, dy: -42, L: 'slope', R: 'shore', tags: ['mangostall'] },
+      { len: 600, k: -0.0036, dy: 12, roll: [11, 3], L: 'orchard', R: 'shore', tags: ['mangostall', 'mangogroup'] },
       { len: 380, k: 0, L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand', 'fuan', 'sichongxi'] },
-      { len: 640, k: 0.0032, dy: 10, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
-      { len: 520, k: -0.004, dy: -10, L: 'farm', R: 'shore', tags: ['onion', 'bigtemple'] },
+      { len: 640, k: 0.0045, dy: 48, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 520, k: -0.0065, dy: -54, L: 'farm', R: 'shore', tags: ['onion', 'bigtemple'] },
       { len: 300, k: 0, L: 'farm', R: 'grass', tags: ['palmgroup', 'forksign'] },
     ],
   },
   s4a: {
-    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 76, goal: '鵝鑾鼻燈塔',
-    traffic: { per100: 1.6, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
+    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: STAGE_TIME, goal: '鵝鑾鼻燈塔',
+    traffic: { per100: 2.2, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
     sections: [
       { len: 560, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
-      { len: 440, k: 0.003, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps', 'chuhuo', 'kentingarch'] },
-      { len: 820, k: -0.0026, dy: 3, L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat', 'nuke'] },
-      { len: 600, k: 0.0036, dy: -3, L: 'town', R: 'town', tags: ['nightmarket', 'neon', 'lamps'] },
-      { len: 700, k: -0.004, L: 'slope', R: 'beach', tags: ['sailrock', 'palmgroup', 'coastplants'] },
-      { len: 520, k: 0.003, dy: 10, L: 'grass', R: 'cliff', tags: ['palmgroup', 'guardR', 'lighthouseview', 'longpan'] },
-      { len: 420, k: 0, dy: -2, L: 'plaza', R: 'plaza', tags: ['goal', 'lighthouse', 'palm', 'southpoint'] },
+      { len: 440, k: 0.0036, dy: 9, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps', 'chuhuo', 'kentingarch'] },
+      { len: 900, k: -0.003, dy: -9, roll: [10, 3], L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat', 'nuke'] },
+      { len: 600, k: 0.0045, dy: 6, L: 'town', R: 'town', tags: ['nightmarket', 'neon', 'lamps'] },
+      { len: 780, k: -0.0055, dy: 42, roll: [8, 2], L: 'slope', R: 'beach', tags: ['sailrock', 'palmgroup', 'coastplants'] },
+      { len: 600, k: 0.0068, dy: -45, L: 'grass', R: 'cliff', tags: ['palmgroup', 'guardR', 'lighthouseview', 'longpan'] },
+      { len: 420, k: 0, dy: 9, L: 'plaza', R: 'plaza', tags: ['goal', 'lighthouse', 'palm', 'southpoint'] },
     ],
   },
   s4b: {
-    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 76, goal: '貓鼻頭',
-    traffic: { per100: 1.2, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2, suv: 2, wagon: 1, logs: 1 } },
+    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: STAGE_TIME, goal: '貓鼻頭',
+    traffic: { per100: 2.0, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2, suv: 2, wagon: 1, logs: 1 } },
     sections: [
       { len: 380, k: 0, lanes: 3, sh: 1.8, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup'] },
-      { len: 160, k: 0, dy: 3, L: 'water', R: 'water', bridge: 'cable', tags: [] },
-      { len: 520, k: 0.0034, dy: -3, L: 'farm', R: 'beach', tags: ['palmgroup', 'tetrapods'] },
+      { len: 160, k: 0, dy: 6, L: 'water', R: 'water', bridge: 'cable', tags: [] },
+      { len: 520, k: 0.004, dy: -6, L: 'farm', R: 'beach', tags: ['palmgroup', 'tetrapods'] },
       { len: 160, k: 0, L: 'water', R: 'water', bridge: 'cable', tags: [] },
-      { len: 520, k: -0.0036, L: 'grass', R: 'beach', tags: ['aquarium', 'palmgroup'] },
-      { len: 620, k: 0.0042, dy: 12, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
-      { len: 760, k: -0.0045, dy: -8, L: 'hills', R: 'beach', tags: ['fishvillage', 'coral', 'palmgroup'] },
-      { len: 660, k: 0.0034, L: 'hills', R: 'bay', tags: ['palmgroup', 'bathers', 'baisha'] },
-      { len: 480, k: -0.003, dy: 14, L: 'grass', R: 'cliff', tags: ['guardR', 'coastplants', 'guanshan'] },
-      { len: 420, k: 0, dy: -2, L: 'plaza', R: 'cliff', tags: ['goal', 'catrock', 'pavilion'] },
+      { len: 520, k: -0.0045, dy: 12, roll: [8, 2], L: 'grass', R: 'beach', tags: ['aquarium', 'palmgroup'] },
+      { len: 620, k: 0.0058, dy: 42, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 760, k: -0.0065, dy: -45, L: 'hills', R: 'beach', tags: ['fishvillage', 'coral', 'palmgroup'] },
+      { len: 600, k: 0.0045, dy: 15, roll: [10, 3], L: 'hills', R: 'bay', tags: ['palmgroup', 'bathers', 'baisha'] },
+      { len: 480, k: -0.0058, dy: 45, L: 'grass', R: 'cliff', tags: ['guardR', 'coastplants', 'guanshan'] },
+      { len: 420, k: 0, dy: -9, L: 'plaza', R: 'cliff', tags: ['goal', 'catrock', 'pavilion'] },
     ],
   },
 };
@@ -3521,23 +3524,27 @@ function clipV(pts, v0, v1) {
   return cut(cut(pts, v0, true), v1, false);
 }
 function carMetrics(spec) { return { BW: Math.round(spec.W * CPX) }; }
-function paintCarRear(spec, steer, brake, phase) {
-  const px = new Pix(CFW, CFH), cx = CFW / 2, P = carPal(spec.color), G = carGeo(spec);
-  const yaw = CAR_YAW[steer + 2], cy = Math.cos(yaw), sy = Math.sin(yaw);
-  const zT = G.secs[0].z, f = CPX * (CAM_S.D + zT), Y0s = CGY - (CAM_S.H * f) / CAM_S.D;
+// opt (the showroom turntable): { yaw, W, H, gy, D, camH, pivot, ppm } — any angle, a wider frame, a camera of its own
+// set further back and lower and aimed at the car's middle, and the front wheels and the nose painted since they show
+function paintCarRear(spec, steer, brake, phase, opt) {
+  const O = opt || {}, CW = O.W || CFW, CH = O.H || CFH, GY = O.gy || CGY, D = O.D || CAM_S.D, HC = O.camH || CAM_S.H, PV = O.pivot || 0;
+  const px = new Pix(CW, CH), cx = CW / 2, P = carPal(spec.color), G = carGeo(spec);
+  const yaw = O.yaw == null ? CAR_YAW[steer + 2] : O.yaw, cy = Math.cos(yaw), sy = Math.sin(yaw), turn = O.yaw != null;
+  const zT = G.secs[0].z, f = O.ppm ? O.ppm * D : CPX * (D + zT), Y0s = GY - (HC * f) / D;
   const chrome = !!spec.chrome, interior = spec.interior, crew = CREW[spec.id] || [];
-  // car space (x right, y up, z forward, origin on the ground under the rear axle) to the sprite
-  const pr = (x, y, z) => { const X = x * cy + z * sy, d = -x * sy + z * cy + CAM_S.D; return [cx + (X * f) / d, Y0s - ((y - CAM_S.H) * f) / d, d]; };
-  const depth = (x, z) => -x * sy + z * cy + CAM_S.D;
+  // car space (x right, y up, z forward, origin on the ground under the rear axle) to the sprite, turned about z = PV
+  const pr = (x, y, z) => { const X = x * cy + (z - PV) * sy, d = -x * sy + (z - PV) * cy + D; return [cx + (X * f) / d, Y0s - ((y - HC) * f) / d, d]; };
+  const depth = (x, z) => -x * sy + (z - PV) * cy + D;
+  const camX = D * sy;   // where the camera stands, across the car
   const area = (q) => { let a = 0; for (let i = 0; i < q.length; i++) { const p = q[i], n = q[(i + 1) % q.length]; a += p[0] * n[1] - n[0] * p[1]; } return a; };
   const flat = (q) => { const o = []; for (const p of q) o.push(p[0], p[1]); return o; };
   const items = [];   // { d: depth, L: layer, draw() }
-  let layer = 0;      // 0: the tyres, under everything; 1: the body and what sits on it
-  const face = (pts3, col, cull) => {
+  let layer = turn ? 1 : 0;   // 0: the tyres, under everything; 1: the body and what sits on it (on the turntable the tyres sort with the body, so the near ones show)
+  const face = (pts3, col, cull, dOff) => {
     const q = pts3.map((p) => pr(p[0], p[1], p[2]));
     if (cull !== false && area(q) <= 0.01) return;
     let d = 0; for (const p of q) d += p[2]; d /= q.length;
-    items.push({ d, L: layer, draw: () => px.poly(flat(q), col) });
+    items.push({ d: d + (dOff || 0), L: layer, draw: () => px.poly(flat(q), col) });
   };
   // ---- the shadow on the ground under the car, first of all ----
   { const a = G.secs[0], hw = a.hw + 0.06; px.poly(flat([pr(-hw, 0, zT - 0.08), pr(hw, 0, zT - 0.08), pr(hw, 0, G.wb + 0.5), pr(-hw, 0, G.wb + 0.5)]), 0x110e18); }
@@ -3553,19 +3560,20 @@ function paintCarRear(spec, steer, brake, phase) {
       face([A[k], B[k], B[k2], A[k2]], col);
       face([A[k2], B[k2], B[k], A[k]], col);
     }
-    if (!front) items.push({ d: zc + CAM_S.D - R - 0.05, L: 0, draw: () => { for (const gx of [-0.1, 0.1]) { const a = pr(xc + gx, 0.02, zc - R * 0.5), b = pr(xc + gx, R * 0.9, zc - R); px.line(a[0], a[1], b[0], b[1], 0x18181e, 1); } } });
+    if (!front && !turn) items.push({ d: zc + CAM_S.D - R - 0.05, L: 0, draw: () => { for (const gx of [-0.1, 0.1]) { const a = pr(xc + gx, 0.02, zc - R * 0.5), b = pr(xc + gx, R * 0.9, zc - R); px.line(a[0], a[1], b[0], b[1], 0x18181e, 1); } } });
     for (const [ring2, sx] of [[A, -1], [B, 1]]) {
       const q = ring2.map((p) => pr(p[0], p[1], p[2]));
-      const toward = (sx > 0) === (sy < 0);
+      const toward = sx * (camX - (xc + sx * w / 2)) > 0;
       if (!toward) continue;
       let d = 0; for (const p of q) d += p[2]; d /= q.length;
-      items.push({ d: d - 0.02, L: 0, draw: () => { px.poly(flat(q), 0x18181c); const hub = ring2.map((p) => pr(p[0], R + (p[1] - R) * 0.55, zc + (p[2] - zc) * 0.55)); px.poly(flat(hub), front ? 0x9aa0a8 : (spec.rimCol || 0xb8bcc2)); } });
+      items.push({ d: d - 0.02, L: layer, draw: () => { px.poly(flat(q), 0x18181c); const hub = ring2.map((p) => pr(p[0], R + (p[1] - R) * 0.55, zc + (p[2] - zc) * 0.55)); px.poly(flat(hub), front ? 0x9aa0a8 : (spec.rimCol || 0xb8bcc2)); } });
     }
   };
   const xw = G.W / 2 - 0.1 - (spec.tuck || 0.04) * 0.3;
   const rR = Math.min(0.37, G.at(spec.wheels[1]).top * 0.5 - 0.02);
   tyre(-xw, 0, rR, 0.4); tyre(xw, 0, rR, 0.4);
-  if (Math.abs(steer) > 1) { const sx = sy > 0 ? -1 : 1; tyre(sx * (xw - 0.05), G.wb, Math.min(0.27, G.at(spec.wheels[0]).top * 0.45), 0.24, true); }
+  if (turn) { const rF = Math.min(0.36, G.at(spec.wheels[0]).top * 0.5 - 0.02); tyre(-(xw - 0.03), G.wb, rF, 0.36, true); tyre(xw - 0.03, G.wb, rF, 0.36, true); }
+  else if (Math.abs(steer) > 1) { const sx = sy > 0 ? -1 : 1; tyre(sx * (xw - 0.05), G.wb, Math.min(0.27, G.at(spec.wheels[0]).top * 0.45), 0.24, true); }
   layer = 1;
   // ---- the body: a loft through the stations; each face toned by which way it looks ----
   const S = G.secs, c0 = spec.cockpit[0], c1 = spec.cockpit[1];
@@ -3616,7 +3624,30 @@ function paintCarRear(spec, steer, brake, phase) {
   const pipes = spec.engine === 'v12' ? [-0.6, -0.46, 0.46, 0.6] : spec.engine === 'v8' ? [-0.55, 0.55] : spec.engine === 'turbo' ? [0] : spec.engine === 'flat6' ? [-0.12, 0.12] : [0.55];
   for (const fx of pipes) { const u = fx * hwT; tq([[u - 0.055, bot0 - 0.06], [u + 0.055, bot0 - 0.06], [u + 0.055, bot0 + 0.03], [u - 0.055, bot0 + 0.03]], 0xd8dce0); tq([[u - 0.03, bot0 - 0.05], [u + 0.03, bot0 - 0.05], [u + 0.03, bot0 + 0.01], [u - 0.03, bot0 + 0.01]], 0x18181c); }
   if (spec.stripe != null) { const sw2 = Math.max(0.06, G.W * (spec.stripeW || 0.1) / 2); tq(clipV([[-sw2, -1], [sw2, -1], [sw2, 9], [-sw2, 9]], bot0 + tH * 0.72, top0), spec.stripe); }
-  items.push({ d: pr(0, top0 * 0.5, zT)[2] - 0.001, draw: () => { for (const fn of tailItems) fn(); } });
+  if (cy > 0.04) items.push({ d: pr(0, top0 * 0.5, zT)[2] - 0.001, draw: () => { for (const fn of tailItems) fn(); } });
+  if (turn && cy < 0.3) {
+    // the nose, seen from the front: the cap in the body's tones with a black bumper strip, a louvred grille and the plate;
+    // the lamps lie on the hood just behind the nose, under glass, so they read from the front and from above
+    const Sn = S[S.length - 1], zN = Sn.z, nose = secPts(Sn), nTop = Sn.top, nBot = Sn.bot, nH = nTop - nBot, hwN = Sn.hw;
+    const NP = (u, v) => pr(u, v, zN);
+    const nq = (pts, col) => { const q = pts.map((p) => NP(p[0], p[1])); if (q.length > 2) px.poly(flat(q), col); };
+    items.push({ d: depth(0, zN) - 0.001, draw: () => {
+      nq(clipV(nose, nBot + nH * 0.55, 9), P[4]); nq(clipV(nose, nBot + nH * 0.2, nBot + nH * 0.55), P[3]); nq(clipV(nose, -1, nBot + nH * 0.2), P[1]);
+      nq(clipV(nose, -1, nBot + 0.09), 0x1a181e); nq(clipV(nose, nBot + 0.09, nBot + 0.11), chrome ? 0xffffff : 0x3a3840);
+      const g0 = nBot + 0.13, g1 = nBot + nH * 0.62;
+      nq([[-hwN * 0.72, g0], [hwN * 0.72, g0], [hwN * 0.72, g1], [-hwN * 0.72, g1]], 0x1a181e);
+      for (let k = 1; k < 4; k++) { const v = g0 + ((g1 - g0) * k) / 4; nq([[-hwN * 0.7, v], [hwN * 0.7, v], [hwN * 0.7, v + 0.012], [-hwN * 0.7, v + 0.012]], 0x4a4a54); }
+      nq([[-0.2, (g0 + g1) / 2 - 0.05], [0.2, (g0 + g1) / 2 - 0.05], [0.2, (g0 + g1) / 2 + 0.05], [-0.2, (g0 + g1) / 2 + 0.05]], 0xe8e8e0);
+      nq([[-0.17, (g0 + g1) / 2 - 0.02], [0.17, (g0 + g1) / 2 - 0.02], [0.17, (g0 + g1) / 2 + 0.02], [-0.17, (g0 + g1) / 2 + 0.02]], 0x2a2a30);
+      for (const sx of [-1, 1]) { const u = sx * hwN * 0.84; nq([[u - 0.07, g1 - 0.08], [u + 0.07, g1 - 0.08], [u + 0.07, g1], [u - 0.07, g1]], 0xf29a1a); }
+    } });
+    const tAtZ = (z) => spec.wheels[1] - z / G.L, hoodY = (z) => G.at(tAtZ(z)).top + 0.006;
+    for (const sx of [-1, 1]) {
+      const u = sx * hwN * 0.6, w = Math.min(0.2, hwN * 0.22), z0 = zN - 0.44, z1 = zN - 0.08;
+      const lampQ = (du, dz0, dz1) => [[u - du, hoodY(z0 + dz0), z0 + dz0], [u + du, hoodY(z0 + dz0), z0 + dz0], [u + du, hoodY(z1 - dz1), z1 - dz1], [u - du, hoodY(z1 - dz1), z1 - dz1]];
+      face(lampQ(w, 0, 0), 0x1a181e, true, -0.02); face(lampQ(w - 0.025, 0.03, 0.03), 0xfff6d0, true, -0.03); face(lampQ(w - 0.07, 0.07, 0.12), 0xffd040, true, -0.04);
+    }
+  }
   // the crease where the deck meets the tail: the brightest line on the car
   const cr = secPts(S[0]);
   items.push({ d: pr(0, top0, zT)[2] - 0.0025, draw: () => { if (zR - zT > 0.3) { const a = pr(-hwT * 0.55, top0 + 0.005, zT + 0.1), b = pr(-hwT * 0.1, top0 + 0.005, zR - 0.08); px.line(a[0], a[1], b[0], b[1], P[5], 2); } } });
@@ -3800,13 +3831,27 @@ function carSprites(spec) {
   CAR_SPR[key] = out;
   return out;
 }
+// the turntable: the car at every 15 degrees, painted from its numbers (the reference-cut car turns the same way)
+const TURN_N = 48;
+const TURN_OPT = { W: 320, H: 150, gy: 128, D: 9, camH: 1.25, ppm: 44 };
+let TURN_CAR = null;   // only one car's turn is kept: forty-eight frames is a lot of picture
+function carTurnFrame(spec, i) {
+  if (TURN_CAR && TURN_CAR !== spec.id) delete CAR_SPR[TURN_CAR + ':turn'];
+  TURN_CAR = spec.id;
+  const key = spec.id + ':turn', fr = CAR_SPR[key] || (CAR_SPR[key] = new Array(TURN_N));
+  if (fr[i]) return fr[i];
+  const G = carGeo(spec), o = Object.assign({ yaw: (i / TURN_N) * TAU, pivot: (G.secs[0].z + G.secs[G.secs.length - 1].z) / 2 }, TURN_OPT);
+  return (fr[i] = paintCarRear(spec, 0, false, 0, o).toCanvas());
+}
+function carTurn(spec) { const out = []; for (let i = 0; i < TURN_N; i++) out.push(carTurnFrame(spec, i)); return out; }
 function carSide(spec, scale) { const key = spec.id + ':' + (scale || 52); return CAR_SPR[key] || (CAR_SPR[key] = paintCarSide(spec, scale).toCanvas()); }
 // ---------- drawing the player's car ----------
 const _pc = { x: 0, y: 0, z: 0 }, _pq = { x: 0, y: 0, k: 0, cz: 0 };
 // which frame: straight, half lock or full lock, read straight off the wheel so the picture always answers the hand.
 // The thresholds have a little hysteresis so the picture never flickers while the wheel sits near one of them.
 function carSteerIndex(spr) {
-  const n = spr.frames.length, mid = (n - 1) >> 1, a = Math.abs(PC.steerIn), cur = Math.abs((PC._si == null ? mid : PC._si) - mid);
+  // standing still the car cannot be seen to turn: the pose comes in with speed, full by 40 km/h
+  const n = spr.frames.length, mid = (n - 1) >> 1, a = Math.abs(PC.steerIn) * clamp((PC.v - 1) / 10, 0, 1), cur = Math.abs((PC._si == null ? mid : PC._si) - mid);
   let lv = a > 0.72 ? 2 : a > 0.28 ? 1 : 0;
   if (cur === 2 && a > 0.62) lv = 2; else if (cur === 1 && a > 0.2 && a <= 0.82) lv = 1; else if (cur === 0 && a <= 0.36) lv = 0;
   if (PC.drift && lv < 2 && Math.sign(PC.steerIn) === PC.driftDir) lv = 2;   // sideways, the nose is right round
@@ -3817,6 +3862,44 @@ function carSteerIndex(spr) {
 function carFrame(spr) {
   const si = carSteerIndex(spr), brake = PC.brake > 0.1 || RACE.state === 'goal' ? 1 : 0, fl = Math.floor(G.t * 8) & 1;
   return spr.frames[si][brake][fl];
+}
+// where the tail lamps are on a frame: wherever the braking picture differs from the plain one, boxed per side
+function carLamps(spr, si) {
+  spr.lamps = spr.lamps || [];
+  if (spr.lamps[si]) return spr.lamps[si];
+  const a = spr.frames[si][0][0], b = spr.frames[si][1][0], w = a.width, h = a.height;
+  const A = a.getContext('2d').getImageData(0, 0, w, h).data, B = b.getContext('2d').getImageData(0, 0, w, h).data;
+  // the lit pixels per side, by row; the lamp is the densest band of rows, stray highlights elsewhere are not it
+  const rows = [[], []]; for (let k = 0; k < 2; k++) for (let y = 0; y < h; y++) rows[k].push([]);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4; if (A[i + 3] < 128 || B[i + 3] < 128) continue;
+    if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) < 48) continue;
+    if (!(B[i] > 220 && B[i + 1] > 120 && B[i] - B[i + 2] > 40)) continue;   // only the bright orange of a lit lamp
+    rows[x < w / 2 ? 0 : 1][y].push(x);
+  }
+  const bw = spr.bw || w * 0.6, out = [];
+  rows.forEach((R, side) => {
+    let best = 0; for (let y = 0; y < h; y++) if (R[y].length > R[best].length) best = y;
+    let y0 = best, y1 = best; const need = Math.max(2, R[best].length * 0.3);
+    while (y0 > 0 && R[y0 - 1].length >= need) y0--; while (y1 < h - 1 && R[y1 + 1].length >= need) y1++;
+    let x0 = w, x1 = 0; for (let y = y0; y <= y1; y++) for (const x of R[y]) { x0 = Math.min(x0, x); x1 = Math.max(x1, x + 1); }
+    const ok = R[best].length >= 3 && x1 - x0 >= 3 && x1 - x0 < w * 0.5;
+    if (ok) out.push([x0, y0, x1 - x0, y1 - y0 + 1]);
+    else out.push([Math.round(spr.ax + (side ? 1 : -1) * bw * 0.3 - 7), Math.round(spr.ay - 36), 14, 6]);
+  });
+  return (spr.lamps[si] = out);
+}
+// the brake lamps lit: the lamps themselves flushed, and a glow around them, over the frame just drawn at (x0, y0)
+function drawBrakeGlow(spr, si, x0, y0, k) {
+  const L = carLamps(spr, si); if (!L.length) return;
+  VG.save(); VG.globalCompositeOperation = 'lighter';
+  for (const [lx, ly, lw, lh] of L) {
+    const cx = x0 + lx + lw / 2, cy = y0 + ly + lh / 2, r = Math.max(6, Math.max(lw, lh) * 0.9) * k;
+    VG.fillStyle = 'rgba(255,70,40,' + (0.55 * k) + ')'; VG.fillRect(x0 + lx, y0 + ly, lw, lh);
+    const rg = VG.createRadialGradient(cx, cy, 0, cx, cy, r); rg.addColorStop(0, 'rgba(255,90,50,' + (0.5 * k) + ')'); rg.addColorStop(0.5, 'rgba(255,50,30,' + (0.18 * k) + ')'); rg.addColorStop(1, 'rgba(255,40,20,0)');
+    VG.fillStyle = rg; VG.fillRect(cx - r, cy - r, r * 2, r * 2);
+  }
+  VG.restore();
 }
 function drawPlayerCar(spr) {
   if (!spr || !PC.piece) return;
@@ -3841,7 +3924,7 @@ function drawPlayerCar(spr) {
   if (spinning) { const a = HAZ.spinDir * TAU * sstep(clamp(HAZ.spinT / HAZ.spinDur, 0, 1)); VG.save(); VG.translate(x, yG - lift - 24); VG.rotate(a); VG.translate(-x, -(yG - lift - 24)); }
   // the drift pose: rolled up onto the outside wheels, squashed a touch, hopping
   const pose = (PC.spec && PC.spec.pose) || POSE_DEFAULT;
-  const roll = FX.roll, dk = FX.driftK, posed = Math.abs(roll) > 0.004 || dk > 0.02 || FX.hopY < -0.5 || Math.abs(FX.pitch || 0) > 0.005;
+  const roll = FX.roll + (FX.jolt > 0 ? Math.sin(G.t * 45) * 0.1 * FX.jolt * (FX.joltDir || 1) : 0), dk = FX.driftK, posed = Math.abs(roll) > 0.004 || dk > 0.02 || FX.hopY < -0.5 || Math.abs(FX.pitch || 0) > 0.005;
   if (posed) {
     const pxv = x + FX.pivot * bw * 0.42, pyv = yG - lift;
     VG.save(); VG.translate(pxv + FX.shimmyX, pyv + FX.hopY); VG.rotate(roll); VG.scale(1 + pose.stretchX * dk, (1 - pose.squashY * dk) * (1 + (FX.pitch || 0))); VG.translate(-pxv, -pyv);
@@ -3853,6 +3936,8 @@ function drawPlayerCar(spr) {
     }
   }
   VG.drawImage(img, x - spr.ax, yG - spr.ay - lift);
+  // braking: the lamps flare, so there is no missing it
+  if (PC.brake > 0.1 && RACE.state !== 'goal') drawBrakeGlow(spr, PC._si == null ? (spr.frames.length - 1) >> 1 : PC._si, x - spr.ax, yG - spr.ay - lift, 0.7 + 0.3 * Math.min(1, PC.brake) + (Math.floor(G.t * 16) & 1 ? 0.08 : 0));
   // the two of them on top, swaying with the car and their hair in the wind
   if (spr.heads) {
     const si2 = carSteerIndex(spr), sh = spr.shift[si2];
@@ -3958,10 +4043,11 @@ function rectSec(z, hw, y0, y1, o) { o = o || {}; const r = Math.min(o.r || 0, h
 function boxPart(hw, y0, y1, z0, z1, col, o) { return Object.assign({ secs: [rectSec(z0, hw, y0, y1, o), rectSec(z1, hw, y0, y1, o)], col }, o || {}); }
 function solidRender(model, o) {
   // o: { yaw, D, H, ppm, W, Hpx, gy, outline }  model: { parts: [...], extras: [fn(ctx)], tyres: [...] }
-  const px = new Pix(o.W, o.Hpx), cx = o.W / 2, cy = Math.cos(o.yaw), sy = Math.sin(o.yaw), f = o.ppm * o.D, Y0s = o.gy - (o.H * f) / o.D;
-  const pr = (x, y, z) => { const X = x * cy + z * sy, d = -x * sy + z * cy + o.D; return [cx + (X * f) / d, Y0s - ((y - o.H) * f) / d, d]; };
-  // the camera in model space: behind the origin by D along the view, up H
-  const cam = { x: o.D * sy, y: o.H, z: -o.D * cy };
+  const px = new Pix(o.W, o.Hpx), cx = o.W / 2, cy = Math.cos(o.yaw), sy = Math.sin(o.yaw), f = o.ppm * o.D, Y0s = o.gy - (o.H * f) / o.D, PV = o.pivot || 0;
+  const pr = (x, y, z) => { const X = x * cy + (z - PV) * sy, d = -x * sy + (z - PV) * cy + o.D; return [cx + (X * f) / d, Y0s - ((y - o.H) * f) / d, d]; };
+  // the camera in model space: behind the pivot by D along the view, up H
+  const cam = { x: o.D * sy, y: o.H, z: PV - o.D * cy };
+  const angled = Math.abs(sy) > 0.02;
   const flat = (q) => { const r = []; for (const p of q) r.push(p[0], p[1]); return r; };
   const items = [];
   const face = (pts3, col, L, force) => {
@@ -4021,18 +4107,20 @@ function solidRender(model, o) {
     }
   }
   // tyres: octagonal drums
+  // in an angled view the wheels on the camera's side go over the body, as if seen in their arches; the far ones stay under
   const tyre = (t) => {
     const R = t.R, w = t.w, n = 8, ang = [];
+    const near = angled && t.x !== 0 && Math.sign(t.x) === Math.sign(cam.x), TL = near ? 2 : 0;
     for (let k = 0; k < n; k++) ang.push(((k + 0.5) / n) * TAU);
     const ring = (x) => ang.map((a) => [x, R + Math.sin(a) * R, t.z + Math.cos(a) * R]);
     const A = ring(t.x - w / 2), B = ring(t.x + w / 2);
-    for (let k = 0; k < n; k++) { const k2 = (k + 1) % n, ny = Math.sin(((k + 1) / n) * TAU), col = ny > 0.5 ? 0x4e4e5a : ny > -0.2 ? 0x3a3a46 : 0x26262e; face([A[k], B[k], B[k2], A[k2]], col, 0); face([A[k2], B[k2], B[k], A[k]], col, 0); }
+    for (let k = 0; k < n; k++) { const k2 = (k + 1) % n, ny = Math.sin(((k + 1) / n) * TAU), col = ny > 0.5 ? 0x4e4e5a : ny > -0.2 ? 0x3a3a46 : 0x26262e; face([A[k], B[k], B[k2], A[k2]], col, TL); face([A[k2], B[k2], B[k], A[k]], col, TL); }
     for (const [ring2, sx] of [[A, -1], [B, 1]]) {
       const q = ring2.map((p) => pr(p[0], p[1], p[2]));
-      const toward = Math.abs(sy) > 0.02 && ((sx > 0) === (sy < 0));
+      const outer = t.x === 0 || sx === Math.sign(t.x), toward = angled && outer && sx * (cam.x - (t.x + sx * w / 2)) > 0;
       if (!toward) continue;
       let d = 0; for (const p of q) d += p[2]; d /= q.length;
-      items.push({ d: d - 0.02, L: 0, draw: () => { px.poly(flat(q), 0x18181c); const hub = ring2.map((p) => pr(p[0], R + (p[1] - R) * 0.55, t.z + (p[2] - t.z) * 0.55)); px.poly(flat(hub), t.rim || 0xb8bcc2); } });
+      items.push({ d: d - 0.02, L: TL, draw: () => { px.poly(flat(q), 0x18181c); const hub = ring2.map((p) => pr(p[0], R + (p[1] - R) * 0.55, t.z + (p[2] - t.z) * 0.55)); px.poly(flat(hub), t.rim || 0xb8bcc2); } });
     }
   };
   for (const t of model.tyres || []) tyre(t);
@@ -4064,13 +4152,22 @@ const TPPM = 40;
 function tyre(px, x, y, w, h) { px.rect(x, y, w, h, 0x18181c); px.rect(x + 1, y, w - 2, 2, 0x34343a); }
 // ---------- the traffic camera: far back and a little high, so near and far traffic read the same ----------
 const TV = { ppm: 40, D: 14, H: 2.4 };
-function trafficRender(build, view, wM, hM) {
-  const W = Math.ceil(wM * TV.ppm * 1.25) + 10, Hpx = Math.ceil(hM * TV.ppm * 1.12) + 8;
-  const m = build(view);
-  const r = solidRender(m, { yaw: view === 'front' ? Math.PI : 0, D: TV.D, H: TV.H, ppm: TV.ppm, W, Hpx, gy: Hpx - 3 });
+// an angled view (yaw in radians) turns the model about its middle; the frame widens for the swung length and
+// the camera keeps its distance from the tail, so the picture sits on the road at the same size as the straight one
+function trafficRender(build, view, wM, hM, yaw) {
+  const m = build(view), Hpx = Math.ceil(hM * TV.ppm * 1.12) + 8;
+  let W = Math.ceil(wM * TV.ppm * 1.25) + 10, pivot = 0, D = TV.D;
+  if (yaw) {
+    const L = m.shadow ? m.shadow.z1 - m.shadow.z0 : 5;
+    pivot = m.shadow ? (m.shadow.z0 + m.shadow.z1) / 2 : 2; D = TV.D + (pivot - (m.shadow ? m.shadow.z0 : 0));
+    W = Math.ceil((wM * Math.abs(Math.cos(yaw)) + L * Math.abs(Math.sin(yaw))) * TV.ppm * 1.3) + 10;
+  }
+  const r = solidRender(m, { yaw: yaw || (view === 'front' ? Math.PI : 0), D, H: TV.H, ppm: TV.ppm, W, Hpx, gy: Hpx - 3, pivot });
   r.wh = Hpx / TV.ppm;
   return r;
 }
+// the angles each kind is painted at, besides straight on: long vehicles only turn a little, cars go near side-on
+const TURN_SHORT = [-0.7, -0.3, 0.3, 0.7], TURN_LONG = [-0.3, 0.3];
 const GLASS = [0x2a3a4e, 0x9ccce4], GLASS_F = [0x3a4a60, 0xb0d8ec];
 // the glass of a cabin: roof in body colour, panes in glass tones, the rear and front panes lighter
 function cabinTone(nrm, P) { const [nx, ny, nz] = nrm; if (ny > 0.75) return P[4]; if (Math.abs(nz) > 0.5) return GLASS[1]; return GLASS[0]; }
@@ -4291,19 +4388,29 @@ function paintScooterRider(seed, front) {
 }
 const TRAFFIC_SPR = {}; // type -> { rear: [names], front: [names] }
 function paintTraffic() {
-  const reg = (type, view, name, r, wh) => { addSprite(name, r.px, wh == null ? r.wh : wh, { collide: 0, shadow: 0, meta: { lights: r.lights } }); ((TRAFFIC_SPR[type] = TRAFFIC_SPR[type] || { rear: [], front: [] })[view]).push(name); };
+  const reg = (type, view, name, r, wh, build, wM, hM) => {
+    addSprite(name, r.px, wh == null ? r.wh : wh, { collide: 0, shadow: 0, meta: { lights: r.lights } });
+    const set = (TRAFFIC_SPR[type] = TRAFFIC_SPR[type] || { rear: [], front: [], turn: [] });
+    set[view].push(name);
+    if (view === 'rear' && build) {
+      // the turned views of this one: painted at each angle, kept by angle beside the straight frame
+      const angs = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs' ? TURN_LONG : TURN_SHORT, byAng = {};
+      for (const a of angs) { const rr = trafficRender(build, 'rear', wM, hM, a), nm = name + '@' + a; addSprite(nm, rr.px, rr.wh, { collide: 0, shadow: 0, meta: { lights: rr.lights } }); byAng[a] = nm; }
+      set.turn[set.rear.length - 1] = byAng;
+    }
+  };
   const carCols = [0xf2f2ee, 0xc8ccd0, 0x2a2a30, 0xb8242a, 0x2a4a8a, 0x6a6e74, 0xd8d2c4, 0x1a5a3a];
-  carCols.forEach((c, i) => { reg('sedan', 'rear', 'car_r#' + i, trafficRender((v) => sedanModel(c, {}, v), 'rear', 2.2, 1.6)); reg('sedan', 'front', 'car_f#' + i, trafficRender((v) => sedanModel(c, {}, v), 'front', 2.2, 1.6)); });
-  reg('taxi', 'rear', 'taxi_r', trafficRender((v) => sedanModel(0xf2c21a, { sign: true }, v), 'rear', 2.2, 1.75)); reg('taxi', 'front', 'taxi_f', trafficRender((v) => sedanModel(0xf2c21a, { sign: true }, v), 'front', 2.2, 1.75));
-  [0xf2f2ee, 0x8a8e94, 0x2a4a8a].forEach((c, i) => { reg('pickup', 'rear', 'pick_r#' + i, trafficRender((v) => pickupModel(c, v), 'rear', 2.3, 1.9)); reg('pickup', 'front', 'pick_f#' + i, trafficRender((v) => pickupModel(c, v), 'front', 2.3, 1.9)); });
-  [0x6aa848, 0xe8a81a, 0xb84a2a, null].forEach((c, i) => reg('bluetruck', 'rear', 'blue_r#' + i, trafficRender((v) => blueTruckModel(c, v), 'rear', 2.1, 2.15)));
+  carCols.forEach((c, i) => { reg('sedan', 'rear', 'car_r#' + i, trafficRender((v) => sedanModel(c, {}, v), 'rear', 2.2, 1.6), null, (v) => sedanModel(c, {}, v), 2.2, 1.6); reg('sedan', 'front', 'car_f#' + i, trafficRender((v) => sedanModel(c, {}, v), 'front', 2.2, 1.6)); });
+  reg('taxi', 'rear', 'taxi_r', trafficRender((v) => sedanModel(0xf2c21a, { sign: true }, v), 'rear', 2.2, 1.75), null, (v) => sedanModel(0xf2c21a, { sign: true }, v), 2.2, 1.75); reg('taxi', 'front', 'taxi_f', trafficRender((v) => sedanModel(0xf2c21a, { sign: true }, v), 'front', 2.2, 1.75));
+  [0xf2f2ee, 0x8a8e94, 0x2a4a8a].forEach((c, i) => { reg('pickup', 'rear', 'pick_r#' + i, trafficRender((v) => pickupModel(c, v), 'rear', 2.3, 1.9), null, (v) => pickupModel(c, v), 2.3, 1.9); reg('pickup', 'front', 'pick_f#' + i, trafficRender((v) => pickupModel(c, v), 'front', 2.3, 1.9)); });
+  [0x6aa848, 0xe8a81a, 0xb84a2a, null].forEach((c, i) => reg('bluetruck', 'rear', 'blue_r#' + i, trafficRender((v) => blueTruckModel(c, v), 'rear', 2.1, 2.15), null, (v) => blueTruckModel(c, v), 2.1, 2.15));
   reg('bluetruck', 'front', 'blue_f', trafficRender((v) => blueTruckModel(null, v), 'front', 2.1, 2.15));
-  [0x1a58b8, 0xd8242a, 0xf2a01a, 0x18884a].forEach((c, i) => { reg('bus', 'rear', 'bus_r#' + i, trafficRender((v) => busModel(c, v), 'rear', 3.2, 3.5)); reg('bus', 'front', 'bus_f#' + i, trafficRender((v) => busModel(c, v), 'front', 3.2, 3.5)); });
-  reg('gravel', 'rear', 'grav_r', trafficRender((v) => gravelModel(v), 'rear', 3.2, 3.7)); reg('gravel', 'front', 'grav_f', trafficRender((v) => gravelModel(v), 'front', 3.2, 3.7));
-  [0x2a2a30, 0xf2f2ee, 0x8a1a2a, 0x4a6a9a].forEach((c, i) => { reg('suv', 'rear', 'suv_r#' + i, trafficRender((v) => suvModel(c, v), 'rear', 2.4, 2.2)); });
-  [0xd8d2c0, 0x2a4a8a, 0x6a2a4a].forEach((c, i) => { reg('wagon', 'rear', 'wagon_r#' + i, trafficRender((v) => wagonModel(c, v), 'rear', 2.3, 1.9)); });
-  reg('rebar', 'rear', 'rebar_r', trafficRender((v) => trailerModel('rebar', v), 'rear', 3.2, 3.6));
-  reg('logs', 'rear', 'logs_r', trafficRender((v) => trailerModel('logs', v), 'rear', 3.2, 3.6));
+  [0x1a58b8, 0xd8242a, 0xf2a01a, 0x18884a].forEach((c, i) => { reg('bus', 'rear', 'bus_r#' + i, trafficRender((v) => busModel(c, v), 'rear', 3.2, 3.5), null, (v) => busModel(c, v), 3.2, 3.5); reg('bus', 'front', 'bus_f#' + i, trafficRender((v) => busModel(c, v), 'front', 3.2, 3.5)); });
+  reg('gravel', 'rear', 'grav_r', trafficRender((v) => gravelModel(v), 'rear', 3.2, 3.7), null, (v) => gravelModel(v), 3.2, 3.7); reg('gravel', 'front', 'grav_f', trafficRender((v) => gravelModel(v), 'front', 3.2, 3.7));
+  [0x2a2a30, 0xf2f2ee, 0x8a1a2a, 0x4a6a9a].forEach((c, i) => { reg('suv', 'rear', 'suv_r#' + i, trafficRender((v) => suvModel(c, v), 'rear', 2.4, 2.2), null, (v) => suvModel(c, v), 2.4, 2.2); });
+  [0xd8d2c0, 0x2a4a8a, 0x6a2a4a].forEach((c, i) => { reg('wagon', 'rear', 'wagon_r#' + i, trafficRender((v) => wagonModel(c, v), 'rear', 2.3, 1.9), null, (v) => wagonModel(c, v), 2.3, 1.9); });
+  reg('rebar', 'rear', 'rebar_r', trafficRender((v) => trailerModel('rebar', v), 'rear', 3.2, 3.6), null, (v) => trailerModel('rebar', v), 3.2, 3.6);
+  reg('logs', 'rear', 'logs_r', trafficRender((v) => trailerModel('logs', v), 'rear', 3.2, 3.6), null, (v) => trailerModel('logs', v), 3.2, 3.6);
   for (let i = 0; i < 8; i++) { reg('scooter', 'rear', 'scoot_r#' + i, paintScooterRider(500 + i * 7, false), 1.72); reg('scooter', 'front', 'scoot_f#' + i, paintScooterRider(600 + i * 7, true), 1.72); }
 }
 
@@ -4384,6 +4491,9 @@ function pcStep(dt, track) {
     if (r > 1.04) a -= 5 * (r - 1);
   }
   a -= PC.kd * PC.v * PC.v + (PC.v > 0.5 ? 0.35 : 0);
+  // the hill: gravity along the slope, so a climb bleeds speed and a descent gives it back; a sharp crest at speed lifts the car
+  { const p = PC.piece, gr = (p.at(p.Y, Math.min(p.L, PC.s + 3)) - p.at(p.Y, Math.max(0, PC.s - 3))) / 6; a -= 9.8 * gr * 0.9;
+    if (PC.lastGr > 0.035 && gr < 0.005 && PC.v > 38 && typeof FX !== 'undefined') { FX.hopV = Math.min(FX.hopV, -(30 + (PC.v - 38) * 1.4)); } PC.lastGr = gr; }
   a -= PC.brake * 26;
   // drifting costs a little speed every second, much less than braking would
   if (PC.drift > 0) a -= 2.2;
@@ -4748,7 +4858,7 @@ function sfxShift(g) { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseH
 let _skidOn = false; function sfxSkid(on) { _skidOn = on; }
 // the chirp of the tyres on a power shift
 function sfxChirp() { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseHit(t, 'bandpass', 2600, 3, 0.4, 0.16); }
-let _scrT = 0; function sfxScrape() { if (!AU.ctx) return; const t = AU.ctx.currentTime; if (t - _scrT < 0.12) return; _scrT = t; noiseHit(t, 'bandpass', 3200, 2, 0.18, 0.12); }
+let _scrT = 0; function sfxScrape() { if (!AU.ctx) return; const t = AU.ctx.currentTime; if (t - _scrT < 0.1) return; _scrT = t; noiseHit(t, 'bandpass', 3200, 2, 0.34, 0.14); tone(t, 'sawtooth', 1900 + Math.random() * 300, 1500, 0.05, 0.14); }
 function sfxThud(k) { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'sine', 120, 40, 0.4 * k, 0.25); noiseHit(t, 'lowpass', 600, 1, 0.3 * k, 0.15); }
 function sfxCrash(k) {
   if (!AU.ctx) return; const t = AU.ctx.currentTime;
@@ -4761,14 +4871,35 @@ function sfxBeep(hi) { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t
 function sfxBell() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'square', 1760, 0, 0.08, 0.12); tone(t + 0.14, 'square', 1760, 0, 0.08, 0.12); }
 function sfxChime() { if (!AU.ctx) return; const t = AU.ctx.currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(t + i * 0.07, 'triangle', f, 0, 0.14, 0.4)); }
 function sfxWarn() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'square', 880, 0, 0.07, 0.12); }
-function sfxPass(k, pan) {
+// the whoosh of going past someone: a rush of air sweeping down in pitch as it passes, panned to their side,
+// a deeper and longer one for the big trucks and buses
+function sfxPass(k, pan, type) {
   if (!AU.ctx) return; const t = AU.ctx.currentTime;
+  const big = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs', dur = big ? 0.75 : 0.5;
   const s = noiseSrc(false), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain(), p = AU.ctx.createStereoPanner ? AU.ctx.createStereoPanner() : null;
-  f.type = 'bandpass'; f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(380, t + 0.5); f.Q.value = 1.2;
-  s.connect(f); f.connect(g); if (p) { p.pan.value = clamp(pan, -1, 1); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22 * k, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6); s.start(t, Math.random()); s.stop(t + 0.7);
+  f.type = 'bandpass'; f.frequency.setValueAtTime(big ? 1800 : 3200, t); f.frequency.exponentialRampToValueAtTime(big ? 160 : 260, t + dur); f.Q.value = 0.9;
+  s.connect(f); f.connect(g); if (p) { p.pan.setValueAtTime(clamp(pan, -1, 1) * 0.8, t); p.pan.linearRampToValueAtTime(clamp(pan, -1, 1) * 0.3, t + dur); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((big ? 0.7 : 0.55) * k, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random()); s.stop(t + dur + 0.1);
+  // the slap of the air as the gap closes
+  noiseHit(t, 'highpass', 5000, 0.7, 0.25 * k, 0.08, p || AU.sfx);
+}
+// metal on metal: a crunch, a ring, and the clatter after
+function sfxClang(k) {
+  if (!AU.ctx) return; const t = AU.ctx.currentTime;
+  noiseHit(t, 'lowpass', 900, 0.8, 0.6 * k, 0.18); noiseHit(t + 0.02, 'bandpass', 2600, 1.5, 0.35 * k, 0.25);
+  tone(t, 'square', 420, 180, 0.16 * k, 0.22); tone(t + 0.01, 'sine', 1600, 900, 0.1 * k, 0.4);
+  for (let i = 0; i < 4; i++) noiseHit(t + 0.12 + i * 0.07 + Math.random() * 0.03, 'bandpass', 3200 + Math.random() * 2000, 3, 0.08 * k, 0.05);
 }
 function sfxHorn() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'sawtooth', 392, 0, 0.08, 0.5); tone(t, 'sawtooth', 494, 0, 0.06, 0.5); }
+// the ignition: the key's click, the dash chime, the starter's chug, the catch
+function sfxKey() { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseHit(t, 'highpass', 2600, 1, 0.25, 0.03); tone(t + 0.01, 'square', 900, 500, 0.05, 0.03); }
+function sfxDing() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'sine', 2093, 0, 0.12, 0.35); tone(t + 0.28, 'sine', 1568, 0, 0.1, 0.4); }
+function sfxStarter(dur) {
+  if (!AU.ctx) return; const t = AU.ctx.currentTime;
+  for (let k = 0; k * 0.09 < dur; k++) { const tk = t + k * 0.09; noiseHit(tk, 'lowpass', 380, 1.2, 0.26, 0.05); tone(tk, 'square', 84, 64, 0.07, 0.05); }
+  tone(t, 'sawtooth', 140, 210, 0.04, dur);
+}
+function sfxCatch() { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseHit(t, 'lowpass', 500, 1, 0.3, 0.2); tone(t, 'sawtooth', 50, 110, 0.12, 0.25); }
 function sfxUi() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'square', 990, 0, 0.06, 0.07); }
 
 // ===================== the radio: four original tracks played by a small synth band =====================
@@ -4942,7 +5073,7 @@ function spawnVehicle(p, s) {
   const mix = p.def.traffic ? p.def.traffic.mix : { sedan: 1 };
   const type = pickType(mix);
   const T = VTYPES[type] || VTYPES.sedan, set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan;
-  const spr = SPR[set.rear[Math.floor(Math.random() * set.rear.length)]];
+  const vi = Math.floor(Math.random() * set.rear.length), spr = SPR[set.rear[vi]], turn = set.turn ? set.turn[vi] : null;
   const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
   // a lane (scooters ride the shoulder when there is one); never one that would close the last gap
   const iv = nearIntervals(p, s, T.len, null, 14), picks = [];
@@ -4955,7 +5086,7 @@ function spawnVehicle(p, s) {
   let v;
   if (type === 'scooter') v = rnd(10, 15); else if (type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs') v = rnd(14, 19); else if (type === 'suv') v = rnd(18, 26); else v = rnd(16, 25);
   const M = manners();
-  return { spr, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0, lc: null, lcT: rnd(2, M.every), sig: 0, sigT: 0, manners: M };
+  return { spr, turn, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0, lc: null, lcT: rnd(2, M.every), sig: 0, sigT: 0, manners: M };
 }
 function trafficUpdate(dt) {
   const p = PC.piece, pd = p.def.traffic || { per100: 1 };
@@ -4989,6 +5120,7 @@ function trafficUpdate(dt) {
     v.s += v.v * dt;
     laneChange(v, dt);
     if (v.hitT > 0) { v.hitT -= dt; v.x += v.push * dt; v.push *= 0.9; }
+    if (v.wob > 0) v.wob -= dt;
     const hw = v.p.hw(v.s);
     v.x = clamp(v.x, -hw + v.wid / 2, hw + Math.max(0, v.p.shoulder(v.s) - 0.3) - v.wid / 2);
     if (v.s < PC.s - 90 || v.s > v.p.L - 4) { TRAFFIC.list.splice(i, 1); continue; }
@@ -4997,17 +5129,22 @@ function trafficUpdate(dt) {
       const ds = v.s - PC.s, dx = v.x - PC.x;
       if (Math.abs(ds) < (v.len + 4.4) / 2 && Math.abs(dx) < (v.wid + 1.85) / 2) {
         const closing = PC.v - v.v, full = (v.wid + 1.85) / 2, overlap = full - Math.abs(dx), frontal = ds > 0 && overlap > full * 0.55;
-        if (frontal && closing > 24 && !v.hitT) { pcCrash(clamp((closing - 24) / 30, 0.3, 1)); v.v = Math.max(v.v, PC.v * 0.5); v.push = Math.sign(dx || 1) * 3; v.hitT = 0.6; }
-        else if (frontal) { PC.v = Math.max(0, Math.min(PC.v, v.v) - 2); PC.vx = -Math.sign(dx || 1) * 3.5; v.v += 1.5; v.push = Math.sign(dx || 1) * 1.5; v.hitT = 0.4; sfxThud(0.6); shake(0.3); sfxHorn(); }
+        if (frontal && closing > 24 && !v.hitT) { pcCrash(clamp((closing - 24) / 30, 0.3, 1)); v.v = Math.max(v.v, PC.v * 0.5); v.push = Math.sign(dx || 1) * 3; v.hitT = 0.6; v.wob = 0.8; fxHit(0, 1); }
+        else if (frontal) {
+          // into the back of it: a bang of metal, the car jolts and sheds speed, the other one lurches forward and leans on the horn
+          const k = clamp(closing / 24, 0.25, 1);
+          PC.v = Math.max(0, Math.min(PC.v, v.v) - 2); PC.vx = -Math.sign(dx || 1) * 3.5; v.v += 1.5 + 3 * k; v.push = Math.sign(dx || 1) * 1.5; v.hitT = 0.4; v.wob = 0.6; v.brake = 1;
+          sfxClang(k); shake(0.3 + 0.3 * k); sfxHorn(); fxHit(0, k);
+        }
         else {
-          // a scrape along the side: shoved apart, a little speed scrubbed off, sparks, no drama
-          PC.vx = -Math.sign(dx || 1) * 4; PC.v *= 0.96; v.push = Math.sign(dx || 1) * 2; v.hitT = 0.3; sfxScrape(); shake(0.12);
+          // a scrape along the side: shoved apart, a little speed scrubbed off, sparks and a grinding squeal
+          PC.vx = -Math.sign(dx || 1) * 4; PC.v *= 0.96; v.push = Math.sign(dx || 1) * 2; v.hitT = 0.3; v.wob = Math.max(v.wob || 0, 0.3); sfxScrape(); shake(0.18);
           if (typeof fxScrape === 'function') fxScrape(-Math.sign(dx || 1));
         }
       }
       if (!v.passed && ds < -2 && Math.abs(dx) < 4.5) {
         v.passed = true; const close = Math.abs(dx) < 2.6;
-        sfxPass(clamp((PC.v - v.v) / 20, 0.3, 1), clamp(dx / 4, -1, 1)); RACE.score += close ? 300 : 100;
+        sfxPass(clamp((PC.v - v.v) / 16, 0.35, 1), clamp(dx / 4, -1, 1), v.type); RACE.score += close ? 300 : 100;
         if (typeof fxPassed === 'function') fxPassed(v, close);
       }
     }
@@ -5033,12 +5170,22 @@ function laneChange(v, dt) {
   v.lc = { x: nx, wait: M.signal * rnd(0.7, 1.3) }; v.sig = dir; v.sigT = 0;
 }
 // a vehicle on screen: a soft shadow, the picture, its brake lights glowing when it slows
-function drawVehicle(v, x, y, k, clip, fog) {
-  const S = v.spr; if (!S) return;
+// yv: the view angle (radians, + when the nose points right on screen); the nearest painted turn is used
+function trafficView(v, yv) {
+  const T = v.turn; if (!T || !yv) return v.spr;
+  const a = Math.abs(yv), s = yv < 0 ? -1 : 1;
+  const key = T[s * 0.7] && a > 0.5 ? s * 0.7 : a > 0.15 ? s * 0.3 : 0;
+  return key ? SPR[T[key]] || v.spr : v.spr;
+}
+function drawVehicle(v, x, y, k, clip, fog, yv) {
+  const S = trafficView(v, yv); if (!S) return;
   const hpx = S.wh * k, wpx = hpx * S.w / S.h;
   if (y - hpx >= clip || x + wpx < 0 || x - wpx > RW) return;
   if (y <= clip) { VG.fillStyle = 'rgba(0,0,0,0.28)'; VG.beginPath(); VG.ellipse(x, y - 0.5, wpx * 0.56, Math.max(1, wpx * 0.1), 0, 0, TAU); VG.fill(); }
+  const wob = v.wob > 0 ? v.wob : 0;
+  if (wob > 0) { VG.save(); VG.translate(x, y); VG.rotate(Math.sin(G.t * 38) * 0.09 * wob * (v.push < 0 ? -1 : 1)); VG.translate(-x, -y + Math.round(Math.sin(G.t * 50) * 2 * wob)); }
   drawSpr(S, x, y, hpx, 1, false, clip, fog, 0);
+  if (wob > 0) VG.restore();
   const L = S.meta && S.meta.lights;
   if (v.sig && (Math.floor(G.t * 3) & 1) && y - hpx < clip) {
     const sc = hpx / S.h, x0 = x - wpx / 2, cx = x0 + (v.sig < 0 ? 0.12 : 0.88) * wpx, cy = y - hpx * (v.type === 'bus' || v.type === 'gravel' || v.type === 'rebar' || v.type === 'logs' ? 0.3 : 0.42), r = Math.max(2, wpx * 0.07);
@@ -5066,19 +5213,25 @@ function drawVehicle(v, x, y, k, clip, fog) {
 // ahead of you in towns and cities and amble to the other side. Hit one and the car spins a full turn and loses
 // its speed; the one you hit is knocked flying (and lands on the far pavement, cross, but fine — it is a cartoon).
 const HAZ = { list: [], nextS: 0, spinT: 0, spinDur: 0, spinDir: 1, xings: [] };
-function hazardsReset() { HAZ.list.length = 0; HAZ.nextS = PC.s + 260; HAZ.spinT = 0; for (const x of HAZ.xings) { x.t = x.t0; x.hitT = 0; } }
+function hazardsReset() { HAZ.list.length = 0; HAZ.nextS = PC.s + 260; HAZ.spinT = 0; for (const x of HAZ.xings) { x.t = -1; x.hitT = 0; x.on = false; x.warnOn = false; x.x = -999; } }
 // a tram crossing: registered by the lightrail tag; the tram comes across every so often, bells and lights first
-function tramCrossing(p, s) { HAZ.xings.push({ p, s, t: 0, t0: 0, period: 16, warn: 2.6, speed: 9, len: 34, x: 0, on: false, hitT: 0 }); }
+// the tram crosses once, timed to you: the bells start when you are as far away as the whole crossing takes at your speed,
+// so if you hold your speed it has cleared the road just as you get there — only speeding up into it gets you hit
+function tramCrossing(p, s) { HAZ.xings.push({ p, s, t: -1, period: 1e9, warn: 2.6, speed: 12, len: 22, x: 0, on: false, hitT: 0, done: false }); }
 function tramXUpdate(dt) {
   for (const x of HAZ.xings) {
-    x.t += dt; const u = x.t % x.period;
-    // the tram's nose enters from the left 'warn' seconds after the bells start, and takes the width of the road plus its length
     const run = (p => (p.outerR(Math.round(x.s / DS)) - p.outerL(Math.round(x.s / DS))) + x.len + 16)(x.p), dur = run / x.speed;
+    if (x.t < 0) {
+      if (x.p === PC.piece && PC.s < x.s && x.s - PC.s < (x.warn + dur + 1.0) * clamp(PC.v * 1.25, 45, 85)) x.t = 0;
+      else { x.warnOn = false; x.on = false; x.x = -999; continue; }
+    }
+    x.t += dt; const u = x.t;
+    // the tram's nose enters from the left 'warn' seconds after the bells start, and takes the width of the road plus its length
     x.warnOn = u < x.warn + dur; x.on = u > x.warn && u < x.warn + dur;
     x.x = x.on ? x.p.outerL(Math.round(x.s / DS)) - 8 - x.len + (u - x.warn) * x.speed : -999;   // the nose's leading edge... the tram spans x.x .. x.x + len
     if (x.on && !PC.crash && x.p === PC.piece && Math.abs(PC.s - x.s) < 2.4 && PC.x > x.x - 1 && PC.x < x.x + x.len + 1) { pcCrash(0.8); sfxHorn(); }
-    if (x.warnOn && x.p === PC.piece && PC.s < x.s && x.s - PC.s < 90 && !x.bellT) { x.bellT = 0.01; }
-    if (x.bellT) { x.bellT += dt; if (x.bellT > 0.55) { x.bellT = 0; if (x.warnOn && x.p === PC.piece && Math.abs(x.s - PC.s) < 120) sfxBell(); } }
+    if (x.warnOn && x.p === PC.piece && PC.s < x.s && x.s - PC.s < 320 && !x.bellT) { x.bellT = 0.01; }
+    if (x.bellT) { x.bellT += dt; if (x.bellT > 0.55) { x.bellT = 0; if (x.warnOn && x.p === PC.piece && Math.abs(x.s - PC.s) < 320) sfxBell(); } }
   }
 }
 function paintPedSide(seed, kind) {
@@ -5237,7 +5390,8 @@ function drawHud(dt) {
   const W = innerWidth, H = innerHeight;
   hud.setTransform(HDPR, 0, 0, HDPR, 0, 0);
   hud.clearRect(0, 0, W, H);
-  if (!HUD.show) return;
+  drawBadgePhotos();
+  if (!HUD.show || RACE.state === 'ignition') return;
   const R = RACE, top = 10;
   const pb = CTL.pads.pause; if (pb) { arcBox(pb.x, pb.y, pb.w, pb.h, 0.8); hud.fillStyle = '#ffffff'; hud.fillRect(pb.x + 18, pb.y + 11, 5, 18); hud.fillRect(pb.x + 29, pb.y + 11, 5, 18); }
   if (CTL.pads.gas) drawPedals();
@@ -5533,9 +5687,12 @@ function raceStart(carIdx, auto, seq) {
   engineStart(spec.engine);
   trafficReset(); fxReset(); hazardsReset();
   GHOST.rec = []; GHOST.recT = 0; if (G.mode === 'play') GHOST.load(); else GHOST.on = false;
+  // from the driver's seat first: the key, the starter, the catch — not online, where everyone starts together
+  if (G.mode === 'play' && !(NET.on && NET.phase === 'race') && !G.noIgnite) { RACE.state = 'ignition'; igniteStart(); }
 }
 function onCrash() { RACE.crashes++; shake(0.6); }
 function raceUpdate(dt) {
+  if (RACE.state === 'ignition') { igniteUpdate(dt); return; }
   if (RACE.state === 'countdown') {
     RACE.countdown -= dt;
     const n = Math.ceil(RACE.countdown);
@@ -5604,6 +5761,125 @@ function updateCamera(dt) {
   CV.slope = CAM.slope;
 }
 
+// ===================== the ignition: from the driver's seat, the key goes in and turns, the dash lights, the starter =====================
+// cranks and the engine catches — then the dash drops out of the picture onto the start line, and the lights count down.
+// Drawn in the race view's own pixels over the rendered scene, so the windscreen shows the real start line.
+const IGN = { on: false, t: 0, dur: 3.3, acc: false, crank: false, caught: false, hand: 0, keyA: 0, lamps: 0, drop: 0 };
+const IGN_T = { reach: 0.55, slot: 0.8, acc: 1.0, crank: 1.3, catch: 2.2, release: 2.5, drop: 2.8, end: 3.3 };
+function igniteStart() { Object.assign(IGN, { on: true, t: 0, acc: false, crank: false, caught: false, hand: 0, keyA: 0, lamps: 0, drop: 0 }); PC.rpm = 0; }
+// a tap or a key: straight to the catch, or, once caught, straight to the drop
+function igniteSkip() { if (!IGN.on) return; if (!IGN.caught) IGN.t = Math.max(IGN.t, IGN_T.catch - 0.001); else if (IGN.t < IGN_T.drop) IGN.t = IGN_T.drop; }
+function igniteUpdate(dt) {
+  if (!IGN.on) return;
+  const T = IGN_T, t0 = IGN.t; IGN.t += dt; const t = IGN.t;
+  // the hand's reach, the key's angle: 0 off, 1 accessory, 2 start, back to 1.6 (on) once it runs
+  IGN.hand = t < T.reach ? ease(t / T.reach) : t < T.release ? 1 : Math.max(0, 1 - (t - T.release) / 0.3);
+  const target = t < T.acc ? 0 : t < T.crank ? 1 : t < T.catch ? 2 : 1.6;
+  IGN.keyA = lerp(IGN.keyA, target, 1 - Math.exp(-dt * 18));
+  if (t0 < T.slot && t >= T.slot) sfxKey();
+  if (t0 < T.acc && t >= T.acc) { IGN.acc = true; IGN.lamps = 1; sfxDing(); }
+  if (t0 < T.crank && t >= T.crank) { IGN.crank = true; sfxStarter(T.catch - T.crank); }
+  if (t0 < T.catch && t >= T.catch) { IGN.caught = true; IGN.crank = false; sfxCatch(); PC.rpm = 2600; }
+  // the needle: dead, then flicking with the starter, then the blip down to idle
+  if (IGN.crank) PC.rpm = 180 + Math.random() * 260;
+  else if (IGN.caught) PC.rpm = lerp(PC.rpm, 900 + PC.throttle * PC.redline * 0.7, dt * 4);
+  else PC.rpm = 0;
+  if (IGN.acc) IGN.lamps = IGN.caught ? Math.max(0, IGN.lamps - dt * 3) : IGN.crank ? 0.55 : 1;
+  IGN.drop = t < T.drop ? 0 : ease(clamp((t - T.drop) / (T.end - T.drop), 0, 1));
+  if (t >= T.end) { IGN.on = false; RACE.state = 'countdown'; }
+}
+function ease(u) { return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; }
+// ---- the picture ----
+function drawIgnition() {
+  if (!IGN.on) return;
+  const spec = PC.spec || CARS[RACE.carIdx], crew = CREW[spec.id] || [], drv = crew[0] || {};
+  const inter = spec.interior || 0x2a2a2a, panel = cssHex(shadeHex(inter, 0.42)), ledge = cssHex(shadeHex(inter, 0.62)), lip = cssHex(shadeHex(inter, 0.82));
+  const X0 = RW / 2, dy = Math.round(IGN.drop * (RH * 1.15)), up = Math.round(IGN.drop * 70);
+  const R = (x, y, w, h, c) => { VG.fillStyle = c; VG.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
+  const disc = (x, y, r, c) => { VG.fillStyle = c; VG.beginPath(); VG.arc(x, y, r, 0, TAU); VG.fill(); };
+  const poly = (pts, c) => { VG.fillStyle = c; VG.beginPath(); VG.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) VG.lineTo(pts[i][0], pts[i][1]); VG.closePath(); VG.fill(); };
+  // ---- the header, the pillars, the mirror: these lift away as the dash drops ----
+  VG.save(); VG.translate(0, -up); VG.globalAlpha = 1 - IGN.drop;
+  R(0, 0, RW, 16, '#0c0a12'); R(0, 16, RW, 2, '#1c1826');
+  R(X0 - 70, 14, 50, 12, '#1c1826'); R(X0 - 68, 16, 46, 8, '#2a2636');                           // the visor, flipped up
+  poly([[0, 0], [RW * 0.13, 0], [RW * 0.05, 128], [0, 128]], '#0c0a12'); poly([[RW, 0], [RW - RW * 0.13, 0], [RW - RW * 0.05, 128], [RW, 128]], '#0c0a12');
+  poly([[RW * 0.13 - 6, 0], [RW * 0.13, 0], [RW * 0.05, 128], [RW * 0.05 - 6, 128]], '#1c1826'); poly([[RW - RW * 0.13 + 6, 0], [RW - RW * 0.13, 0], [RW - RW * 0.05, 128], [RW - RW * 0.05 + 6, 128]], '#1c1826');
+  R(X0 + 6, 14, 3, 10, '#0c0a12'); R(X0 - 26, 22, 66, 20, '#0c0a12'); R(X0 - 24, 24, 62, 16, '#3a4452'); R(X0 - 22, 25, 30, 3, '#6a7888');   // the mirror
+  VG.restore();
+  // ---- the dash ----
+  VG.save(); VG.translate(0, dy);
+  const top = 118;
+  R(0, top, RW, RH - top, panel);
+  R(0, top, RW, 14, ledge); R(0, top, RW, 3, lip);                                               // the ledge, its lit edge
+  R(0, top + 14, RW, 2, '#0c0a12');
+  // the centre console: a vent, the radio with its orange display, the gear lever
+  R(X0 + 92, top + 20, 84, 110, cssHex(shadeHex(inter, 0.32))); R(X0 + 92, top + 20, 84, 2, '#0c0a12');
+  for (let k = 0; k < 4; k++) R(X0 + 100, top + 28 + k * 6, 68, 2, '#0c0a12');
+  R(X0 + 98, top + 60, 72, 22, '#0c0a12'); R(X0 + 102, top + 64, 44, 10, IGN.acc ? '#ff9a2a' : '#2a1a10'); if (IGN.acc) { R(X0 + 106, top + 67, 2, 4, '#1a0a00'); R(X0 + 112, top + 67, 2, 4, '#1a0a00'); R(X0 + 120, top + 66, 12, 6, '#1a0a00'); }
+  R(X0 + 150, top + 62, 12, 12, '#3a3a44'); R(X0 + 152, top + 64, 8, 8, '#8a8a94');
+  R(X0 + 124, top + 100, 20, 28, '#0c0a12'); R(X0 + 132, top + 84, 4, 24, '#b8bcc2'); disc(X0 + 134, top + 82, 7, '#1a181e'); disc(X0 + 133, top + 81, 4, '#3a3840');
+  // the binnacle: a hooded cowl over the two gauges, the lamps between them
+  const bx = X0 - 62, by = top + 54;
+  VG.fillStyle = cssHex(shadeHex(inter, 0.3)); VG.beginPath(); VG.ellipse(bx, by + 10, 118, 56, 0, Math.PI, TAU); VG.fill(); R(bx - 118, by + 10, 236, 44, cssHex(shadeHex(inter, 0.3)));
+  VG.fillStyle = '#0c0a12'; VG.beginPath(); VG.ellipse(bx, by + 12, 108, 48, 0, Math.PI, TAU); VG.fill(); R(bx - 108, by + 12, 216, 42, '#0c0a12');
+  const rpm = clamp(PC.rpm / PC.redline, 0, 1.08), red = PC.redline;
+  gaugeDraw(bx - 56, by + 14, 40, rpm, 'rpm', red, IGN.lamps > 0 || IGN.caught);
+  gaugeDraw(bx + 56, by + 14, 40, 0, 'km/h', red, IGN.lamps > 0 || IGN.caught);
+  const LAMP = [['#ff3a3a', '#5a1414'], ['#ff3a3a', '#5a1414'], ['#ffb02a', '#5a3a0a'], ['#4ad24a', '#143a14'], ['#ff3a3a', '#5a1414'], ['#4a9aff', '#0a2a5a']];
+  LAMP.forEach(([on, off], i) => { const lx = bx - 12 + (i % 2) * 14, ly = by + 4 + Math.floor(i / 2) * 12; R(lx - 1, ly - 1, 10, 10, '#1c1826'); const lit = i === 5 ? IGN.caught || IGN.lamps > 0.9 : IGN.lamps; R(lx, ly, 8, 8, lit ? on : off); if (lit && IGN.lamps > 0.3) R(lx + 1, ly + 1, 3, 2, '#ffffff'); });
+  // ---- the wheel: a fat rim, three spokes, the horn pad in the car's colour ----
+  const wx = X0 - 62, wy = top + 160, wr = 96;
+  VG.lineWidth = 13; VG.strokeStyle = '#0c0a12'; VG.beginPath(); VG.arc(wx, wy, wr, 0, TAU); VG.stroke();
+  VG.lineWidth = 9; VG.strokeStyle = '#2a2430'; VG.beginPath(); VG.arc(wx, wy, wr, 0, TAU); VG.stroke();
+  VG.lineWidth = 3; VG.strokeStyle = '#4a4254'; VG.beginPath(); VG.arc(wx, wy, wr - 2, Math.PI * 1.1, Math.PI * 1.9); VG.stroke();
+  for (const a of [Math.PI, 0, Math.PI * 0.5]) { const ex = wx + Math.cos(a) * (wr - 4), ey = wy + Math.sin(a) * (wr - 4); VG.lineWidth = 11; VG.strokeStyle = '#0c0a12'; VG.beginPath(); VG.moveTo(wx, wy); VG.lineTo(ex, ey); VG.stroke(); VG.lineWidth = 7; VG.strokeStyle = '#2a2430'; VG.beginPath(); VG.moveTo(wx, wy); VG.lineTo(ex, ey); VG.stroke(); }
+  disc(wx, wy, 24, '#0c0a12'); disc(wx, wy, 20, '#2a2430'); disc(wx, wy, 13, cssHex(spec.color)); disc(wx - 3, wy - 3, 4, cssHex(mixHex(spec.color, 0xffffff, 0.5)));
+  // the column and the ignition barrel, right of the wheel
+  const kx = X0 + 44, ky = top + 100;
+  R(wx + 20, ky - 14, kx - wx - 10, 30, '#1c1826'); R(wx + 20, ky - 14, kx - wx - 10, 3, '#2a2636');
+  disc(kx, ky, 14, '#0c0a12'); disc(kx, ky, 12, '#b8bcc2'); disc(kx, ky, 9, '#6a6e78'); disc(kx, ky, 6, '#0c0a12'); R(kx - 1, ky - 5, 2, 10, '#2a2a30');
+  const lab = (s, x, y) => { const L = pixLabel(s, 8, 0xd8dce0, 0x0c0a12); blitC(L, x, y, 'center'); };
+  lab('OFF', kx - 18, ky - 26); lab('ACC', kx + 8, ky - 28); lab('ON', kx + 22, ky - 12); lab('START', kx + 24, ky + 8);
+  // ---- the hand with the key: up from the lower right, into the barrel, turning with it ----
+  if (IGN.hand > 0) {
+    const reach = IGN.hand, hx0 = X0 + 150, hy0 = RH + 60, hx = lerp(hx0, kx, reach), hy = lerp(hy0, ky, reach);
+    const ang = IGN.keyA * 0.55, skin = cssHex(drv.skin || SKIN[0]), skin2 = cssHex(shadeHex(drv.skin || SKIN[0], 0.78)), cuff = cssHex(drv.shirt || 0xffffff);
+    VG.save(); VG.translate(hx, hy); VG.rotate(ang); VG.scale(1.6, 1.6);
+    const slot = IGN.t >= IGN_T.slot ? 1 : clamp((IGN.t - IGN_T.reach) / (IGN_T.slot - IGN_T.reach), 0, 1);
+    const kz = 14 - slot * 10;                                       // the key's shaft, out of the barrel until it is in
+    R(-1.5, 0, 3, kz + 2, '#d8b040'); R(-0.5, 2, 1, kz, '#f2d870'); R(1.5, 4, 1.5, 2, '#d8b040'); R(1.5, 8, 1.5, 2, '#d8b040');
+    // the head of the key, and the fob on its ring
+    R(-7, kz + 1, 14, 12, '#0c0a12'); R(-5, kz + 3, 10, 8, '#2a2430'); R(-3, kz + 5, 6, 2, cssHex(spec.color));
+    disc(9, kz + 12, 4, '#b8bcc2'); disc(9, kz + 12, 2.5, '#0c0a12'); R(10, kz + 14, 10, 7, '#ff6a8a'); R(12, kz + 16, 6, 3, '#ffffff');
+    // the hand: fingers closed over the key head, the thumb on top, the cuff behind
+    R(-12, kz + 4, 26, 24, '#0c0a12');
+    R(-10, kz + 6, 22, 20, skin);
+    for (let k = 0; k < 4; k++) { R(-10 + k * 5.5, kz + 6, 4.5, 9, k % 2 ? skin2 : skin); R(-10 + k * 5.5, kz + 14, 4.5, 1, skin2); }
+    R(-11, kz + 2, 9, 6, skin); R(-11, kz + 2, 9, 1, '#0c0a12'); R(-12, kz + 2, 1, 6, '#0c0a12');
+    R(-13, kz + 24, 30, 6, '#0c0a12'); R(-12, kz + 25, 28, 5, cuff);
+    R(-12, kz + 30, 28, 40, '#0c0a12'); R(-11, kz + 31, 26, 40, cuff);
+    VG.restore();
+  }
+  // the crank shakes the whole dash a little; the catch gives it one thump
+  VG.restore();
+  if (IGN.crank && Math.random() < 0.5) { const s = Math.random() < 0.5 ? 1 : -1; VG.drawImage(VG.canvas, 0, top + dy, RW, RH - top - dy, s, top + dy, RW, RH - top - dy); }
+}
+// a round gauge: the dark face, its ring, the ticks over a 270° sweep, the red band, the needle lit from the dash lamps
+function gaugeDraw(cx, cy, r, v, label, redline, lit) {
+  VG.fillStyle = '#2a2a34'; VG.beginPath(); VG.arc(cx, cy, r + 3, 0, TAU); VG.fill();
+  VG.fillStyle = '#101014'; VG.beginPath(); VG.arc(cx, cy, r, 0, TAU); VG.fill();
+  const a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, n = label === 'rpm' ? 8 : 10;
+  if (label === 'rpm') { VG.strokeStyle = '#c82a2a'; VG.lineWidth = 4; VG.beginPath(); VG.arc(cx, cy, r - 5, a0 + (a1 - a0) * 0.86, a1); VG.stroke(); }
+  for (let k = 0; k <= n; k++) { const a = a0 + ((a1 - a0) * k) / n, big = k % 2 === 0; VG.strokeStyle = lit ? '#e8e8f0' : '#6a6a74'; VG.lineWidth = big ? 2 : 1; VG.beginPath(); VG.moveTo(cx + Math.cos(a) * (r - (big ? 10 : 7)), cy + Math.sin(a) * (r - (big ? 10 : 7))); VG.lineTo(cx + Math.cos(a) * (r - 3), cy + Math.sin(a) * (r - 3)); VG.stroke(); }
+  const L = pixLabel(label, 8, lit ? 0xe8e8f0 : 0x6a6a74, 0x101014); blitC(L, cx, cy + r * 0.45, 'center');
+  const a = a0 + (a1 - a0) * clamp(v, 0, 1.04);
+  VG.strokeStyle = '#ff7a2a'; VG.lineWidth = 2; VG.beginPath(); VG.moveTo(cx - Math.cos(a) * 6, cy - Math.sin(a) * 6); VG.lineTo(cx + Math.cos(a) * (r - 8), cy + Math.sin(a) * (r - 8)); VG.stroke();
+  VG.fillStyle = '#3a3a44'; VG.beginPath(); VG.arc(cx, cy, 4, 0, TAU); VG.fill();
+  if (lit) { VG.fillStyle = 'rgba(255,220,160,.07)'; VG.beginPath(); VG.arc(cx, cy, r, 0, TAU); VG.fill(); }
+}
+addEventListener('pointerdown', () => igniteSkip(), true);
+addEventListener('keydown', (e) => { if (e.code === 'Enter' || e.code === 'Space') igniteSkip(); }, true);
+
 // ===================== tyre effects: wheelspin smoke off the line, smoke in a slide, dust off the road, skid marks =====================
 // Puffs are pixel sprites thrown out from the rear tyres on screen; skid marks are laid on the road itself,
 // in road coordinates, and painted into the road raster so they stay put as the car drives away from them.
@@ -5639,6 +5915,17 @@ function fxInit() {
     px.outline(C[1]);
     FX.img[k] = px.toCanvas();
   }
+}
+// a hit on another car: sparks and bits of glass and plastic burst from where they met, and the car jolts
+// side: -1/1 for the side it happened on, 0 for the nose; k: how hard
+function fxHit(side, k) {
+  if (PC.scrX == null) return;
+  const bw = PC.scrBW || 120, bx = PC.scrX + side * bw * 0.45, by = PC.scrY - (side ? 10 : bw * 0.48);   // a nose hit bursts over the roof, where the nose is
+  const n = Math.round(10 + 18 * k);
+  for (let i = 0; i < n; i++) puff(bx + (Math.random() - 0.5) * (side ? 6 : bw * 0.5), by - Math.random() * 12, (side || (Math.random() - 0.5) * 2) * (60 + Math.random() * 160), -20 - Math.random() * 160, 2, 3, 0.2 + Math.random() * 0.3, 'sparks', 1);
+  for (let i = 0; i < Math.round(4 + 8 * k); i++) puff(bx + (Math.random() - 0.5) * 20, by - Math.random() * 10, (Math.random() - 0.5) * 140, -40 - Math.random() * 120, 2, 2, 0.4 + Math.random() * 0.3, 'glass', 1);
+  for (let i = 0; i < 3; i++) puff(bx + (Math.random() - 0.5) * 16, by, (Math.random() - 0.5) * 30, -10 - Math.random() * 20, 6, 16, 0.5 + Math.random() * 0.3, 'smoke', 0.5);
+  FX.hopV = Math.min(FX.hopV, -40 - 60 * k); FX.jolt = Math.max(FX.jolt || 0, 0.25 + 0.35 * k); FX.joltDir = side || (Math.random() < 0.5 ? -1 : 1);
 }
 // sparks thrown from the side of the car in a scrape, on the side it touched
 function fxScrape(side) {
@@ -5683,6 +5970,7 @@ function fxUpdate(dt) {
   FX.hopV += 520 * dt; FX.hopY += FX.hopV * dt;
   if (FX.hopY > 0) { FX.hopY = 0; FX.hopV = FX.driftK > 0.3 && v > 10 ? (-Math.abs(FX.hopV) * 0.35 - 6 * FX.driftK) * pose.chatter : 0; }
   FX.shimmyX = Math.sin(G.t * 80) * pose.shimmy * FX.driftK;
+  if (FX.jolt > 0) FX.jolt = Math.max(0, FX.jolt - dt * 1.4);
   // weight transfer: squat under power, the tail lifts under braking
   FX.pitch = lerp(FX.pitch || 0, clamp(-dv * 0.004, -0.05, 0.04), clamp(dt * 8, 0, 1));
   const braking = PC.brake > 0.8 && v > 18 && !PC.offroad ? 1 : 0;
@@ -5737,6 +6025,7 @@ function fxDraw() {
   for (const q of FX.puffs) {
     const u = q.t / q.life;
     if (q.kind === 'sparks') { VG.globalAlpha = 1; VG.fillStyle = u < 0.3 ? '#ffffff' : u < 0.6 ? '#7af6ff' : '#ffd23a'; VG.fillRect(Math.round(q.x), Math.round(q.y), u < 0.5 ? 3 : 2, u < 0.5 ? 3 : 2); continue; }
+    if (q.kind === 'glass') { VG.globalAlpha = 1; VG.fillStyle = (Math.floor(q.t * 30) & 1) ? '#ffffff' : '#ff6a4a'; VG.fillRect(Math.round(q.x), Math.round(q.y), 2, 2); continue; }
     const s = Math.round(q.s0 + (q.s1 - q.s0) * Math.sqrt(u)), im = FX.img[q.kind] || FX.img.smoke, h = Math.round(s * 0.8);
     VG.globalAlpha = q.a * (u < 0.6 ? 1 : 1 - ((u - 0.6) / 0.4) ** 2);
     VG.drawImage(im, Math.round(q.x - s / 2), Math.round(q.y - h / 2), s, h);
@@ -5744,34 +6033,19 @@ function fxDraw() {
   VG.globalAlpha = 1;
 }
 
-// ===================== avatars: a little pixel portrait over an opponent's car, and a name =====================
-// A photo is cut to a circle, boxed down to 24 pixels and posterized, so it sits in the picture like everything else.
+// ===================== avatars: a photo over an opponent's car, and a name =====================
+// The photo is cut square and kept at 720 pixels, so the face is the face (and the gasp is readable);
+// it is drawn on the HUD layer, smooth, clipped round — a sticker above the pixel car.
 // The player's own is kept in the settings; a ghost or an online opponent carries theirs along with their name.
-const AV_N = 24;
+const AV_N = 720;
 const AVATAR = { me: null, name: '' };
-function avatarPixelate(img, n) {
-  n = n || AV_N;
+function avatarPhoto(img, n) {
+  n = Math.min(n || AV_N, Math.max(64, Math.min(img.width, img.height)));
   const s = Math.min(img.width, img.height), sx = (img.width - s) / 2, sy = (img.height - s) / 2;
-  // two steps down for a cleaner box filter
-  const mid = canvas(n * 4, n * 4), gm = mid.getContext('2d'); gm.imageSmoothingEnabled = true; gm.imageSmoothingQuality = 'high'; gm.drawImage(img, sx, sy, s, s, 0, 0, n * 4, n * 4);
-  const c = canvas(n, n), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mid, 0, 0, n, n);
-  const id = g.getImageData(0, 0, n, n), d = id.data, r = n / 2;
-  // a little contrast and colour first, then six levels a channel, the way a 16-bit arcade palette would hold it
-  let lo = 255, hi = 0;
-  for (let i = 0; i < d.length; i += 4) { const l = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10; lo = Math.min(lo, l); hi = Math.max(hi, l); }
-  const span = Math.max(40, hi - lo);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const i = (y * n + x) * 4, dx = x + 0.5 - r, dy = y + 0.5 - r;
-    if (dx * dx + dy * dy > r * r) { d[i + 3] = 0; continue; }
-    const m = (d[i] + d[i + 1] + d[i + 2]) / 3;
-    for (let k = 0; k < 3; k++) {
-      let v = m + (d[i + k] - m) * 1.3;                      // more colour
-      v = ((v - lo) / span) * 235 + 10;                      // stretched
-      d[i + k] = clamp(Math.round(v / 51) * 51, 0, 255);
-    }
-    d[i + 3] = 255;
-  }
-  g.putImageData(id, 0, 0);
+  // step down in halves for a clean filter, then the final size
+  let cur = img, cw = s, ch = s, ox = sx, oy = sy;
+  while (cw / 2 > n) { const m = canvas(Math.round(cw / 2), Math.round(ch / 2)), g = m.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(cur, ox, oy, cw, ch, 0, 0, m.width, m.height); cur = m; cw = m.width; ch = m.height; ox = oy = 0; }
+  const c = canvas(n, n), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(cur, ox, oy, cw, ch, 0, 0, n, n);
   return c;
 }
 // decode a stored data URL into a canvas (async; cb gets the canvas or null)
@@ -5789,7 +6063,7 @@ function avatarSet(file, cb) {
   const url = URL.createObjectURL(file), im = new Image();
   im.onload = () => {
     URL.revokeObjectURL(url);
-    const c = avatarPixelate(im); AVATAR.me = c; SET.avatar = c.toDataURL('image/png'); SAVE.save('settings', SET);
+    const c = avatarPhoto(im); AVATAR.me = c; SET.avatar = c.toDataURL('image/jpeg', 0.82); SAVE.save('settings', SET);
     if (cb) cb(c);
   };
   im.onerror = () => { URL.revokeObjectURL(url); if (cb) cb(null); };
@@ -5799,9 +6073,11 @@ function avatarClear() { AVATAR.me = null; delete SET.avatar; SAVE.save('setting
 // the badge over a car on the race screen: a thin pole up from the roof, the ringed portrait on top, the name above
 // x: the car's centre on screen, yTop: the top of the car's picture, k: the projection scale at the car
 // fx: { t, kind } a surprise in progress — a face gasps (stretched tall, eyebrows up, a "!!"), a thing just pops
+// The pole, ring, name and "!!" are pixels in the picture; the photo and the gasp over it are queued for the HUD layer.
+const BADGE_Q = [];
 function drawBadge(x, yTop, k, name, img, fx) {
   if (k < 2.2) return;
-  const d0 = Math.round(clamp(k * 0.5, 10, 30)), pole = Math.round(clamp(k * 0.9, 12, 44));
+  const d0 = Math.round(clamp(k * 0.6, 12, 40)), pole = Math.round(clamp(k * 0.9, 12, 44));
   let sx = 1, sy = 1, lift = 0, bang = 0;
   if (fx && fx.t < fx.dur) {
     const u = fx.t / fx.dur, pop = Math.sin(Math.min(1, u * 1.6) * Math.PI);   // up fast, back down
@@ -5814,21 +6090,36 @@ function drawBadge(x, yTop, k, name, img, fx) {
   // the pole, dark with a light core
   VG.fillStyle = '#140a1a'; VG.fillRect(cx - 1, top, 3, pole + 2);
   VG.fillStyle = '#fff6e0'; VG.fillRect(cx, top + 1, 1, pole);
-  // the ring, then the picture, scaled by the surprise
+  // the ring, scaled by the surprise; the picture goes on later, over everything
   const w = Math.round(d0 * sx), h = Math.round(d0 * sy), rx = w / 2, ry = h / 2;
   VG.fillStyle = '#140a1a'; VG.beginPath(); VG.ellipse(cx, cy, rx + 3, ry + 3, 0, 0, TAU); VG.fill();
   VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.ellipse(cx, cy, rx + 1.5, ry + 1.5, 0, 0, TAU); VG.fill();
-  if (img) VG.drawImage(img, cx - rx, cy - ry, w, h);
+  if (img) BADGE_Q.push({ cx, cy, rx, ry, img, bang: bang > 0 && d0 >= 12 ? bang : 0 });
   else { VG.fillStyle = '#5a6a9a'; VG.beginPath(); VG.ellipse(cx, cy, rx, ry, 0, 0, TAU); VG.fill(); VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy - ry * 0.2, rx * 0.36, 0, TAU); VG.fill(); VG.fillRect(cx - rx * 0.55, cy + ry * 0.25, rx * 1.1, ry * 0.6); }
-  if (bang > 0 && d0 >= 12) {
-    // raised brows and a gasp: two arcs over the eyes' height, the mouth an O, and a "!!" beside the head
-    VG.strokeStyle = '#140a1a'; VG.lineWidth = Math.max(1, d0 / 12); VG.beginPath();
-    VG.arc(cx - rx * 0.36, cy - ry * 0.28, rx * 0.22, Math.PI * 1.15, Math.PI * 1.85); VG.arc(cx + rx * 0.36, cy - ry * 0.28, rx * 0.22, Math.PI * 1.15, Math.PI * 1.85); VG.stroke();
-    VG.fillStyle = '#140a1a'; VG.beginPath(); VG.ellipse(cx, cy + ry * 0.45, rx * 0.16, ry * 0.2, 0, 0, TAU); VG.fill();
-    const B = pixText('!!', { s: d0 >= 20 ? 2 : 1, fill: 0xffe060, out: 0x140a1a, it: 0 }); VG.globalAlpha = bang; blitC(B, cx + rx + 3, cy - ry - 2, 'left'); VG.globalAlpha = 1;
-  }
+  if (bang > 0 && d0 >= 12) { const B = pixText('!!', { s: d0 >= 20 ? 2 : 1, fill: 0xffe060, out: 0x140a1a, it: 0 }); VG.globalAlpha = bang; blitC(B, cx + rx + 3, cy - ry - 2, 'left'); VG.globalAlpha = 1; }
   if (name && d0 >= 14) { const L = pixLabel(name, d0 >= 22 ? 11 : 9, 0xfff6e0, 0x140a1a); blitC(L, cx, cy - ry - L.height - 2, 'center'); }
   VG.imageSmoothingEnabled = prev;
+}
+// the HUD layer, in screen pixels: the photos, round, smooth; on a gasp the brows go up and the mouth drops open
+function drawBadgePhotos() {
+  if (!BADGE_Q.length) return;
+  const kx = innerWidth / RW, ky = innerHeight / RH;
+  hud.save(); hud.imageSmoothingEnabled = true; hud.imageSmoothingQuality = 'high';
+  for (const b of BADGE_Q) {
+    const cx = b.cx * kx, cy = b.cy * ky, rx = b.rx * kx, ry = b.ry * ky;
+    hud.save(); hud.beginPath(); hud.ellipse(cx, cy, rx, ry, 0, 0, TAU); hud.clip();
+    hud.drawImage(b.img, cx - rx, cy - ry, rx * 2, ry * 2);
+    if (b.bang > 0) {
+      hud.strokeStyle = '#140a1a'; hud.lineWidth = Math.max(1.5, rx / 7); hud.lineCap = 'round'; hud.beginPath();
+      hud.arc(cx - rx * 0.38, cy - ry * 0.3, rx * 0.24, Math.PI * 1.15, Math.PI * 1.85); hud.stroke(); hud.beginPath();
+      hud.arc(cx + rx * 0.38, cy - ry * 0.3, rx * 0.24, Math.PI * 1.15, Math.PI * 1.85); hud.stroke();
+      hud.fillStyle = '#140a1a'; hud.beginPath(); hud.ellipse(cx, cy + ry * 0.48, rx * 0.17, ry * 0.22, 0, 0, TAU); hud.fill();
+      hud.fillStyle = '#ff6a7a'; hud.beginPath(); hud.ellipse(cx, cy + ry * 0.55, rx * 0.09, ry * 0.09, 0, 0, TAU); hud.fill();
+    }
+    hud.restore();
+  }
+  hud.restore();
+  BADGE_Q.length = 0;
 }
 // a surprise for someone's badge: faces gasp, things pop
 function badgeSurprise(who) { who.fx = { t: 0, dur: who.avatarKind === 'thing' ? 0.6 : 1.0, kind: who.avatarKind === 'thing' ? 'thing' : 'face' }; }
@@ -6261,7 +6552,11 @@ function drawStripItems(a, b, clip) {
     const ip = interp(a, b, it.gs);
     if (ip.cz < 0.6) continue;
     const xs = X0 + (ip.cx + ip.rx * it.o.x) * ip.k, ys = Y0 - ip.cy * ip.k, fog = fogAt(ip.cz);
-    if (it.k === 5) { drawVehicle(it.o, xs, ys, ip.k, clip, fog); continue; }
+    if (it.k === 5) {
+      // which way the vehicle shows itself: the road's heading here, less the bearing we see it at
+      const hd = Math.atan2(b.cx - a.cx, Math.max(0.05, b.cz - a.cz)), br = Math.atan2(ip.cx + ip.rx * it.o.x, ip.cz);
+      drawVehicle(it.o, xs, ys, ip.k, clip, fog, hd - br); continue;
+    }
     if (it.k === 7) { drawGhost(xs, ys, ip.k, clip); continue; }
     if (it.k === 8) { drawHazard(it.o, xs, ys, ip.k, clip, fog); continue; }
     if (it.k === 9) { drawTramX(it.o, X0 + ip.cx * ip.k, ys, ip.k, clip, fog); continue; }
@@ -6381,6 +6676,8 @@ function botDrive(dt) {
   // follow the leader in this lane: never closer than a car length and a bit
   const lead = clearAhead(xt);
   if (lead < horizon) { let lv = 0; for (const o of TRAFFIC.list) if (o.p === p && Math.abs(o.s - s - lead) < 0.5 && Math.abs(o.x - xt) < 2.3) lv = o.v; const gap = lead - 7; vSafe = Math.min(vSafe, gap < 4 ? Math.max(0, lv - 2) : Math.sqrt(Math.max(0, lv * lv + 2 * 12 * gap))); }
+  // a tram across the road ahead: stop short of it while it is crossing, like anyone would
+  for (const xg of HAZ.xings) if (xg.p === p && xg.on && xg.s > s - 3 && xg.s - s < 140) { const gap = Math.max(0, xg.s - s - 12); vSafe = Math.min(vSafe, Math.sqrt(2 * 14 * gap)); }
   // forks: drift toward the side we want over the last stretch
   if (p.children.length && p.L - s < 380) {
     const want = BOT.forks[BOT.forkI] || (Math.random() < 0.5 ? 'L' : 'R');
@@ -6448,7 +6745,7 @@ function render() {
   if (HUD.carVisible !== false) { drawPlayerCar(PC.spr); fxDraw(); }
   const b = performance.now();
   postFX();
-  drawPixHud();
+  if (RACE.state === 'ignition') drawIgnition(); else drawPixHud();
   const c = performance.now();
   const P = RV.prof; if (P) { P.car = (P.car || 0) + b - a; P.fx = (P.fx || 0) + c - b; }
 }
@@ -6464,7 +6761,7 @@ function frame(now) {
   if (G.state === 'race') {
     updateCamera(G.paused ? 0 : dt);
     updateBackdrop();
-    engineUpdate(PC.rpm, PC.redline, RACE.state === 'run' || RACE.state === 'countdown' ? PC.throttle : 0, PC.v, PC.slip, PC.offroad, G.mode !== 'play', PC.drift > 0 && !PC.crash);
+    engineUpdate(PC.rpm, PC.redline, RACE.state === 'run' || RACE.state === 'countdown' ? PC.throttle : 0, PC.v, PC.slip, PC.offroad, G.mode !== 'play' || (RACE.state === 'ignition' && !IGN.caught), PC.drift > 0 && !PC.crash);
     uiFrame();
   }
   render();
@@ -6502,7 +6799,7 @@ async function boot() {
 }
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
-  G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, avatarSet, gapLeft, nearIntervals,
+  G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, gapLeft, nearIntervals,
   get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); },
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
@@ -6519,7 +6816,7 @@ window.__kr = {
   atlas(i) { return ATLAS.pages[i || 0].lv[0].toDataURL('image/png'); },
   // one fixed step with a drawn frame, for recording: returns the game screen as a PNG data URL
   step(dt) { const steps = Math.max(1, Math.ceil(dt / 0.02)), h = dt / steps; for (let i = 0; i < steps; i++) tick(h); if (G.state === 'race') { updateCamera(dt); updateBackdrop(); uiFrame(); } render(); drawHud(dt); return view.toDataURL('image/png'); },
-  spawn(type, ds, x, v) { const p = PC.piece, veh = spawnVehicle(p, PC.s + ds) || spawnVehicle(p, PC.s + ds + 30); if (!veh) return null; veh.s = PC.s + ds; veh.type = type; const set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan; veh.spr = SPR[set.rear[0]]; const T = VTYPES[type] || VTYPES.sedan; veh.len = T.len; veh.wid = T.wid; veh.x = x; veh.v = veh.v0 = v == null ? veh.v : v; TRAFFIC.list.push(veh); return veh.spr.name; },
+  spawn(type, ds, x, v) { const p = PC.piece, veh = spawnVehicle(p, PC.s + ds) || spawnVehicle(p, PC.s + ds + 30); if (!veh) return null; veh.s = PC.s + ds; veh.type = type; const set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan; veh.spr = SPR[set.rear[0]]; veh.turn = set.turn ? set.turn[0] : null; const T = VTYPES[type] || VTYPES.sedan; veh.len = T.len; veh.wid = T.wid; veh.x = x; veh.v = veh.v0 = v == null ? veh.v : v; TRAFFIC.list.push(veh); return veh.spr.name; },
   cars() { const W = CFW, H = CFH, c = canvas(W * 5, H * 2 + H * 2), x = c.getContext('2d'); CARS.forEach((sp, i) => { const s = carSprites(sp); x.drawImage(s.frames[2][i & 1][0], (i % 5) * W, Math.floor(i / 5) * H); }); const s0 = carSprites(CARS[0]); s0.frames.forEach((row, k) => { x.drawImage(row[0][0], k * W, H * 2); x.drawImage(row[1][1], k * W, H * 3); }); return c.toDataURL('image/png'); },
   sheet(i) { const s = carSprites(CARS[i]), sd = carSide(CARS[i]); const c = canvas(Math.max(s.w * 5, sd.width), s.h * 2 + sd.height + 8); const x = c.getContext('2d'); s.frames.forEach((row, k) => { x.drawImage(row[0][0], k * s.w, 0); x.drawImage(row[1][1], k * s.w, s.h); }); x.drawImage(sd, 0, s.h * 2 + 8); return c.toDataURL('image/png'); },
 };
@@ -6634,7 +6931,7 @@ function onUiClick(e) {
     case 'restart': G.paused = false; startPlay(); break;
     case 'recenter': tiltRecenter(); resume(); break;
     case 'quit': G.paused = false; toTitle(); break;
-    case 'back': show(UI.from || 'title'); break;
+    case 'back': show(UI.from && UI.from !== UI.scr ? UI.from : 'title'); break;
     case 'again': startPlay(); break;
     case 'ending': startEnding(); break;
     case 'title': toTitle(); break;
@@ -6657,68 +6954,47 @@ function openSelect() {
   UI.turnT = 0; drawThumbs();
   if (!UI.turnRaf) UI.turnRaf = requestAnimationFrame(turnLoop);
 }
-// the showroom: a turntable under sweeping spotlights; the car warms its tyres, throws a drift each way with
-// smoke and flame, then sits straight while the two of them wave — on a loop, with the side view beside it
-const SHOW = { puffs: [], t0: 0, car: -1 };
+// the showroom: the car goes round on a lit turntable under sweeping spotlights, mirrored in the floor; each time its
+// tail comes past the pipes spit flame and the brake lamps flare, and the two of them wave when it faces the crowd
+const SHOW = { car: -1, puffs: [] };
 function turnLoop() {
   UI.turnRaf = 0;
   if (UI.scr !== 'select') return;
   UI.turnRaf = requestAnimationFrame(turnLoop);
-  const spec = CARS[UI.sel], side = carSide(spec, 52), rear = carSprites(spec), cv = $('turn'), g2 = cv.getContext('2d');
+  const spec = CARS[UI.sel], cv = $('turn'), g2 = cv.getContext('2d');
   if (SHOW.car !== UI.sel) { SHOW.car = UI.sel; SHOW.puffs.length = 0; UI.turnT = 0; }
-  const dt = 1 / 60; UI.turnT += dt; const t = UI.turnT, T = t % 9;   // the loop: 0-2.4 burnout, 2.4-6.4 drifts, 6.4-9 wave
+  const dt = 1 / 60; UI.turnT += dt; const t = UI.turnT;
   g2.imageSmoothingEnabled = false; g2.clearRect(0, 0, cv.width, cv.height);
-  const W = cv.width, H = cv.height, fy = H - 34;
+  const W = cv.width, H = cv.height, fy = H - 30, tx = W / 2, ty = fy + 4;
   // the floor and the turntable, its rim lights chasing round
   g2.fillStyle = 'rgba(10,6,24,.55)'; g2.fillRect(0, fy, W, H - fy);
-  const tx = W - 118, ty = fy + 6;
-  g2.fillStyle = 'rgba(40,30,70,.9)'; g2.beginPath(); g2.ellipse(tx, ty, 112, 16, 0, 0, TAU); g2.fill();
-  g2.fillStyle = 'rgba(80,60,130,.9)'; g2.beginPath(); g2.ellipse(tx, ty - 3, 108, 14, 0, 0, TAU); g2.fill();
-  for (let k = 0; k < 18; k++) { const a = (k / 18) * TAU + t * 1.2, lit = (k + Math.floor(t * 6)) % 3 === 0; g2.fillStyle = lit ? '#ffd23a' : '#5a4a8a'; g2.fillRect(Math.round(tx + Math.cos(a) * 104) - 1, Math.round(ty - 3 + Math.sin(a) * 12) - 1, 3, 2); }
+  g2.fillStyle = 'rgba(40,30,70,.9)'; g2.beginPath(); g2.ellipse(tx, ty, 150, 20, 0, 0, TAU); g2.fill();
+  g2.fillStyle = 'rgba(80,60,130,.9)'; g2.beginPath(); g2.ellipse(tx, ty - 3, 146, 18, 0, 0, TAU); g2.fill();
+  for (let k = 0; k < 24; k++) { const a = (k / 24) * TAU + t * 1.2, lit = (k + Math.floor(t * 6)) % 3 === 0; g2.fillStyle = lit ? '#ffd23a' : '#5a4a8a'; g2.fillRect(Math.round(tx + Math.cos(a) * 142) - 1, Math.round(ty - 3 + Math.sin(a) * 16) - 1, 3, 2); }
   // spotlights sweeping from the top corners
-  for (const [x0, col, ph] of [[W * 0.62, 'rgba(255,210,58,', 0], [W * 0.98, 'rgba(255,120,200,', 2.1]]) {
-    const ax = tx + Math.sin(t * 0.8 + ph) * 70;
+  for (const [x0, col, ph] of [[W * 0.2, 'rgba(255,210,58,', 0], [W * 0.8, 'rgba(255,120,200,', 2.1]]) {
+    const ax = tx + Math.sin(t * 0.8 + ph) * 90;
     const gr = g2.createLinearGradient(0, 0, 0, fy); gr.addColorStop(0, col + '0.0)'); gr.addColorStop(1, col + '0.22)');
-    g2.fillStyle = gr; g2.beginPath(); g2.moveTo(x0, 0); g2.lineTo(ax - 40, fy); g2.lineTo(ax + 40, fy); g2.closePath(); g2.fill();
+    g2.fillStyle = gr; g2.beginPath(); g2.moveTo(x0, 0); g2.lineTo(ax - 50, fy); g2.lineTo(ax + 50, fy); g2.closePath(); g2.fill();
   }
   g2.fillStyle = 'rgba(255,178,62,.35)'; g2.fillRect(0, fy, W, 2);
-  // the side view, bobbing, headlights on
-  const sx = 14, bob = Math.round(Math.sin(t * 3) * 0.6);
-  g2.fillStyle = 'rgba(0,0,0,.4)'; g2.beginPath(); g2.ellipse(sx + side.width / 2, fy + 2, side.width * 0.46, 5, 0, 0, TAU); g2.fill();
-  g2.drawImage(side, sx, fy - side.height + 4 + bob);
-  // the stunt from behind
-  const nF = rear.frames.length, midF = (nF - 1) >> 1;
-  let si = midF, roll = 0, shake = 0, smoke = 0, flame = 0, brake = 0, wave = false, lean = 0;
-  if (T < 2.4) { shake = 1; smoke = 1.6; flame = 1; brake = T % 0.5 < 0.25 ? 1 : 0; }
-  else if (T < 6.4) { const u = (T - 2.4) / 4, dir = u < 0.5 ? -1 : 1, k = Math.sin(((u * 2) % 1) * Math.PI); si = clamp(midF + dir * Math.round(k * 2.4), 0, nF - 1); roll = -dir * 0.3 * k; smoke = 1.1 * k; flame = 0.5; lean = dir * k; }
-  else { wave = true; brake = T > 8.6 ? 1 : 0; }
-  const img = rear.frames[si][brake][Math.floor(t * 8) & 1];
-  const rk = 0.82, rw = img.width * rk, rh = img.height * rk, rx = tx - rw / 2 + (shake ? Math.round(Math.sin(t * 60) * 1.2) : 0);
-  const ry = fy - rh + (img.height - rear.ay + 3) * rk + 2, pivX = tx + (roll < 0 ? -1 : 1) * rw * 0.4, pivY = fy + 2;
-  // smoke behind the tyres, rising
-  if (smoke > 0 && Math.random() < smoke * 0.6) { const tyre = roll !== 0 ? (roll < 0 ? 1 : -1) : (Math.random() < 0.5 ? -1 : 1); SHOW.puffs.push({ x: tx + tyre * rw * 0.34 + (Math.random() - 0.5) * 8, y: fy - 2, vx: tyre * (10 + Math.random() * 30), vy: -(14 + Math.random() * 18), s: 8 + Math.random() * 8, t: 0, life: 0.9 + Math.random() * 0.5 }); }
+  // the car: one turn every eight seconds, the frame nearest its angle, standing on the turntable's centre
+  const yaw = (t * (TAU / 8) + 0.55) % TAU, fi = Math.round((yaw / TAU) * TURN_N) % TURN_N, img = carTurnFrame(spec, fi);
+  const k = 1.45, w = img.width * k, hgt = img.height * k, x = tx - w / 2, y = fy - TURN_OPT.gy * k, cy = Math.cos(yaw);
+  // its reflection in the floor, fading down
+  g2.save(); g2.beginPath(); g2.rect(0, fy, W, H - fy); g2.clip(); g2.globalAlpha = 0.2; g2.translate(0, fy * 2 + 2); g2.scale(1, -1); g2.drawImage(img, x, y, w, hgt); g2.restore();
+  g2.fillStyle = 'rgba(0,0,0,.35)'; g2.beginPath(); g2.ellipse(tx, fy + 2, w * 0.3, 6, 0, 0, TAU); g2.fill();
+  // smoke and flame while the tail faces us, as if the throttle were blipped
+  const rear = cy > 0.86, blip = rear && (Math.floor(t * 20) & 1);
+  if (rear && Math.random() < 0.5) SHOW.puffs.push({ x: tx + (Math.random() - 0.5) * w * 0.5, y: fy - 2, vx: (Math.random() - 0.5) * 40, vy: -(10 + Math.random() * 16), s: 8 + Math.random() * 8, t: 0, life: 0.8 + Math.random() * 0.5 });
   for (let i = SHOW.puffs.length - 1; i >= 0; i--) { const q = SHOW.puffs[i]; q.t += dt; if (q.t > q.life) { SHOW.puffs.splice(i, 1); continue; } q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 1 - dt * 1.5; }
   const smokeImg = FX.img && FX.img.smoke;
-  g2.fillStyle = 'rgba(0,0,0,.4)'; g2.beginPath(); g2.ellipse(tx, fy + 2, rw * 0.36, 5, 0, 0, TAU); g2.fill();
-  if (smokeImg) for (const q of SHOW.puffs) { if (q.y < fy - 8) continue; const u = q.t / q.life, s2 = Math.round(q.s * (1 + u * 2)); g2.globalAlpha = 0.85 * (1 - u * u); g2.drawImage(smokeImg, Math.round(q.x - s2 / 2), Math.round(q.y - s2 * 0.4), s2, Math.round(s2 * 0.8)); }
+  if (smokeImg) for (const q of SHOW.puffs) { const u = q.t / q.life, s2 = Math.round(q.s * (1 + u * 2)); g2.globalAlpha = 0.7 * (1 - u * u); g2.drawImage(smokeImg, Math.round(q.x - s2 / 2), Math.round(q.y - s2 * 0.4), s2, Math.round(s2 * 0.8)); }
   g2.globalAlpha = 1;
-  g2.save(); g2.translate(pivX, pivY); g2.rotate(roll); g2.translate(-pivX, -pivY);
-  g2.drawImage(img, rx, ry, rw, rh);
-  if (rear.heads) { const ph = [0, 1, 0, 2][Math.floor(t * 6) & 3], sh = rear.shift[si]; for (const h of rear.heads) g2.drawImage(h.frames[ph], Math.round(rx + (h.x + sh - lean * 3) * rk), Math.round(ry + h.y * rk), h.frames[0].width * rk, h.frames[0].height * rk); }
-  // flames at the pipes while the tyres spin
-  if (flame > 0 && (Math.floor(t * 20) & 1)) for (const px2 of [-0.1, 0.1]) { const fx = Math.round(tx + px2 * rw), fyy = Math.round(fy - 10 * rk); g2.fillStyle = '#ff8a1a'; g2.fillRect(fx - 3, fyy, 6, 4 + Math.round(Math.random() * 6 * flame)); g2.fillStyle = '#ffe060'; g2.fillRect(fx - 1, fyy, 2, 3 + Math.round(Math.random() * 4 * flame)); }
-  // the two of them waving: the crew's arms, borrowed from the race
-  if (wave && (rear.heads || rear.headPos)) {
-    const crew = CREW[spec.id] || [], H2 = rear.heads ? rear.heads.map((h) => [h.x + h.frames[0].width / 2 + rear.shift[si], h.y + h.frames[0].height / 2]) : (rear.headPos[si] || []);
-    ARM_CTX = g2; g2.save(); g2.translate(rx, ry); g2.scale(rk, rk);
-    H2.forEach((hc, i) => { const o = crew[i] || {}; if (o.dog) return; const skin = cssHex(o.skin || 0xf2c8a0), shirt = cssHex(o.shirt || 0xffffff), side2 = i ? 1 : -1, sxp = hc[0] + side2 * 9, syp = hc[1] + 7, up = Math.round(Math.sin(t * 7 + i) * 3);
-      const ex = sxp + side2 * 8, ey = syp - 6, fxp = hc[0] + side2 * 6, fyp = hc[1] - 19 + up;
-      limb(sxp, syp, ex, ey, 4, shirt, '#140a1a'); limb(ex, ey, fxp, fyp + 3, 3, skin, '#140a1a'); openHand(fxp + ((Math.floor(t * 7) & 1) ? 2 : -2), fyp, skin, '#140a1a', (Math.floor(t * 7) & 1) ? 2 : -2); });
-    g2.restore(); ARM_CTX = null;
-  }
-  g2.restore();
+  g2.drawImage(img, x, y, w, hgt);
+  if (blip) for (const px2 of [-0.08, 0.08]) { const fx = Math.round(tx + px2 * w * Math.max(0.3, cy)), fyy = Math.round(fy - 9 * k); g2.fillStyle = '#ff8a1a'; g2.fillRect(fx - 3, fyy, 6, 4 + Math.round(Math.random() * 6)); g2.fillStyle = '#ffe060'; g2.fillRect(fx - 1, fyy, 2, 3 + Math.round(Math.random() * 4)); }
   // sparkles over the turntable
-  for (let k = 0; k < 3; k++) { const ph = (t * 0.7 + k * 0.33) % 1, ax = tx + Math.sin(k * 2.1 + t) * 90, ay = fy - 110 + Math.cos(k * 1.3 + t * 1.7) * 40; if (ph < 0.5) { g2.fillStyle = '#fff6e0'; g2.fillRect(ax - 1, ay - 4, 2, 8); g2.fillRect(ax - 4, ay - 1, 8, 2); } }
+  for (let q = 0; q < 3; q++) { const ph = (t * 0.7 + q * 0.33) % 1, ax = tx + Math.sin(q * 2.1 + t) * 120, ay = fy - 110 + Math.cos(q * 1.3 + t * 1.7) * 40; if (ph < 0.5) { g2.fillStyle = '#fff6e0'; g2.fillRect(ax - 1, ay - 4, 2, 8); g2.fillRect(ax - 4, ay - 1, 8, 2); } }
 }
 function stopTurn() { if (UI.turnRaf) cancelAnimationFrame(UI.turnRaf); UI.turnRaf = 0; }
 function drawThumbs() {
@@ -6845,9 +7121,9 @@ function openSettings() {
 // the preview in the settings: the pixel portrait blown up, or an empty ring
 function avatarPreview() {
   const c = $('av-prev'); if (!c) return;
-  const g = c.getContext('2d'); g.clearRect(0, 0, 72, 72); g.imageSmoothingEnabled = false;
+  const g = c.getContext('2d'); g.clearRect(0, 0, 72, 72); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
   g.fillStyle = '#140a1a'; g.beginPath(); g.arc(36, 36, 36, 0, TAU); g.fill(); g.fillStyle = '#fff6e0'; g.beginPath(); g.arc(36, 36, 33, 0, TAU); g.fill();
-  if (AVATAR.me) g.drawImage(AVATAR.me, 6, 6, 60, 60);
+  if (AVATAR.me) { g.save(); g.beginPath(); g.arc(36, 36, 30, 0, TAU); g.clip(); g.drawImage(AVATAR.me, 6, 6, 60, 60); g.restore(); }
   else { g.fillStyle = '#5a6a9a'; g.beginPath(); g.arc(36, 36, 30, 0, TAU); g.fill(); g.fillStyle = '#fff6e0'; g.beginPath(); g.arc(36, 30, 11, 0, TAU); g.fill(); g.fillRect(19, 44, 34, 18); }
 }
 function openOnline() {
@@ -6865,7 +7141,7 @@ function renderOnline() {
       <div class="row"><span class="lbl">開房間</span><div class="seg"><button class="btn big" data-net="host">建立房間</button></div></div>
       <div class="row"><span class="lbl">加入</span><div class="avrow"><input class="txt code" id="net-code" maxlength="6" placeholder="房號 6 碼" autocapitalize="characters" autocomplete="off"><button class="btn" data-net="join">加入房間</button></div></div>
       ${NET.err ? `<p class="note" style="color:#ff8aa0">${NET.err}</p>` : ''}
-      <div class="actions"><button class="btn" data-act="back">返回</button></div>`;
+      <div class="actions"><button class="btn" data-go="title">返回主選單</button></div>`;
     return;
   }
   const players = netPlayers();
@@ -7113,12 +7389,29 @@ function netWire(P, pc, connId) {
   pc.onconnectionstatechange = () => { P.conn = pc.connectionState; if (pc.connectionState === 'failed' || pc.connectionState === 'closed' || pc.connectionState === 'disconnected') { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = '和房主斷線了'; netLobbyChanged(); } } };
   pc.ondatachannel = (e) => netChannel(P, e.channel);
 }
+const NET_PART = 12000;   // a photo does not fit one data-channel message: it goes in parts, reassembled on the other side
 function netChannel(P, ch) {
   if (ch.label === 'ctl') P.ctl = ch; else P.st = ch;
-  ch.onmessage = (e) => { let m; try { m = JSON.parse(e.data); } catch (err) { return; } netOnMsg(P, m); };
+  ch.onmessage = (e) => {
+    let m; try { m = JSON.parse(e.data); } catch (err) { return; }
+    if (m.t === 'part') {
+      const q = P.parts || (P.parts = {}), r = q[m.id] || (q[m.id] = { n: m.n, got: 0, d: new Array(m.n) });
+      if (m.i >= 0 && m.i < r.n && r.d[m.i] == null) { r.d[m.i] = String(m.d); r.got++; }
+      if (r.got === r.n) { delete q[m.id]; try { m = JSON.parse(r.d.join('')); } catch (err) { return; } } else return;
+    }
+    netOnMsg(P, m);
+  };
   ch.onopen = () => { if (ch.label === 'ctl' && !NET.host) { netMe(); netCtl(P, { t: 'hello', name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car }); } };
 }
-function netCtl(P, m) { try { if (P.ctl && P.ctl.readyState === 'open') P.ctl.send(JSON.stringify(m)); } catch (e) { /* dropped */ } }
+function netCtl(P, m) {
+  try {
+    if (!P.ctl || P.ctl.readyState !== 'open') return;
+    const s = JSON.stringify(m);
+    if (s.length <= NET_PART) { P.ctl.send(s); return; }
+    const id = Math.random().toString(36).slice(2, 8), n = Math.ceil(s.length / NET_PART);
+    for (let i = 0; i < n; i++) P.ctl.send(JSON.stringify({ t: 'part', id, i, n, d: s.slice(i * NET_PART, (i + 1) * NET_PART) }));
+  } catch (e) { /* dropped */ }
+}
 function netSt(P, m) { try { if (P.st && P.st.readyState === 'open') P.st.send(JSON.stringify(m)); } catch (e) { /* dropped */ } }
 function netAll(m, except) { for (const P of NET.peers.values()) if (P !== except) netCtl(P, m); }
 // ---------- host ----------
@@ -7185,7 +7478,7 @@ function netLobbyChanged() { if (NET.onLobby) NET.onLobby(); if (NET.host) netAl
 function netSetCar(i) { NET.me.car = i; if (NET.host) netLobbyChanged(); else for (const P of NET.peers.values()) netCtl(P, { t: 'car', car: i }); }
 // ---------- messages ----------
 function netOnMsg(P, m) {
-  if (m.t === 'hello') { P.name = String(m.name || '').slice(0, 10); P.avatar = typeof m.avatar === 'string' && m.avatar.length < 20000 ? m.avatar : ''; P.avatarKind = m.avatarKind === 'thing' ? 'thing' : 'face'; P.car = clamp(m.car | 0, 0, CARS.length - 1); avatarDecode(P.avatar, (im) => { P.img = im; }); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); if (NET.phase === 'race' || NET.phase === 'countdown') netCtl(P, { t: 'start', in: 0, late: true }); }
+  if (m.t === 'hello') { P.name = String(m.name || '').slice(0, 10); P.avatar = typeof m.avatar === 'string' && m.avatar.length < 600000 && /^data:image\/(png|jpeg);base64,/.test(m.avatar) ? m.avatar : ''; P.avatarKind = m.avatarKind === 'thing' ? 'thing' : 'face'; P.car = clamp(m.car | 0, 0, CARS.length - 1); avatarDecode(P.avatar, (im) => { P.img = im; }); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); if (NET.phase === 'race' || NET.phase === 'countdown') netCtl(P, { t: 'start', in: 0, late: true }); }
   else if (m.t === 'car') { P.car = clamp(m.car | 0, 0, CARS.length - 1); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); }
   else if (m.t === 'lobby' && !NET.host) {
     // the host's roster: everyone else, so we can draw them; the host itself is P
