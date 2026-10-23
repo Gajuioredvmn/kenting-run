@@ -6034,10 +6034,10 @@ function fxDraw() {
 }
 
 // ===================== avatars: a photo over an opponent's car, and a name =====================
-// The photo is cut square and kept at 720 pixels, so the face is the face (and the gasp is readable);
+// The photo is cut square and kept at 1080 pixels, so the face is the face (and the gasp is readable);
 // it is drawn on the HUD layer, smooth, clipped round — a sticker above the pixel car.
 // The player's own is kept in the settings; a ghost or an online opponent carries theirs along with their name.
-const AV_N = 720;
+const AV_N = 1080;
 const AVATAR = { me: null, name: '' };
 function avatarPhoto(img, n) {
   n = Math.min(n || AV_N, Math.max(64, Math.min(img.width, img.height)));
@@ -6063,7 +6063,7 @@ function avatarSet(file, cb) {
   const url = URL.createObjectURL(file), im = new Image();
   im.onload = () => {
     URL.revokeObjectURL(url);
-    const c = avatarPhoto(im); AVATAR.me = c; SET.avatar = c.toDataURL('image/jpeg', 0.82); SAVE.save('settings', SET);
+    const c = avatarPhoto(im); AVATAR.me = c; SET.avatar = c.toDataURL('image/jpeg', 0.85); SAVE.save('settings', SET);
     if (cb) cb(c);
   };
   im.onerror = () => { URL.revokeObjectURL(url); if (cb) cb(null); };
@@ -6101,12 +6101,17 @@ function drawBadge(x, yTop, k, name, img, fx) {
   VG.imageSmoothingEnabled = prev;
 }
 // the HUD layer, in screen pixels: the photos, round, smooth; on a gasp the brows go up and the mouth drops open
+function viewRect() {
+  // the game picture is letterboxed inside its canvas box (object-fit: contain): find its scale and offset in screen pixels
+  const r = view.getBoundingClientRect(), k = Math.min(r.width / RW, r.height / RH);
+  return { k, ox: r.left + (r.width - RW * k) / 2, oy: r.top + (r.height - RH * k) / 2 };
+}
 function drawBadgePhotos() {
   if (!BADGE_Q.length) return;
-  const kx = innerWidth / RW, ky = innerHeight / RH;
+  const V = viewRect(), kx = V.k, ky = V.k;
   hud.save(); hud.imageSmoothingEnabled = true; hud.imageSmoothingQuality = 'high';
   for (const b of BADGE_Q) {
-    const cx = b.cx * kx, cy = b.cy * ky, rx = b.rx * kx, ry = b.ry * ky;
+    const cx = V.ox + b.cx * kx, cy = V.oy + b.cy * ky, rx = b.rx * kx, ry = b.ry * ky;
     hud.save(); hud.beginPath(); hud.ellipse(cx, cy, rx, ry, 0, 0, TAU); hud.clip();
     hud.drawImage(b.img, cx - rx, cy - ry, rx * 2, ry * 2);
     if (b.bang > 0) {
