@@ -9029,7 +9029,8 @@ function netWire(P, pc, connId) {
   // giving up on it; 'failed' and 'closed' are final
   pc.onconnectionstatechange = () => {
     const st = pc.connectionState; P.conn = st;
-    const gone = () => { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = '和房主斷線了（房主的手機要保持亮著、頁面在前面）'; NET.lost = true; NET.status = ''; netLobbyChanged(); } };
+    // never got through at all: that is the network between the two phones, not a drop
+    const gone = () => { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = P.opened ? '和房主斷線了（房主的手機要保持亮著、頁面在前面）' : '連不上房主：兩邊的網路擋住了直連。兩台連同一個 Wi-Fi 最穩；用行動網路的話換一台開房間試試'; NET.lost = true; NET.status = ''; netLobbyChanged(); } };
     clearTimeout(P.discTO);
     if (st === 'failed' || st === 'closed') gone();
     else if (st === 'disconnected') { P.discTO = setTimeout(() => { if (P.pc === pc && pc.connectionState === 'disconnected') gone(); }, 8000); if (P.host) { NET.status = '和房主的連線不穩，等一下…'; netLobbyChanged(); } }
@@ -9049,7 +9050,7 @@ function netChannel(P, ch) {
     }
     netOnMsg(P, m);
   };
-  ch.onopen = () => { if (ch.label === 'ctl' && !NET.host) { netMe(); netCtl(P, { t: 'hello', name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car }); } };
+  ch.onopen = () => { if (ch.label === 'ctl') P.opened = true; if (ch.label === 'ctl' && !NET.host) { netMe(); netCtl(P, { t: 'hello', name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car }); } };
 }
 function netCtl(P, m) {
   try {
@@ -9088,7 +9089,7 @@ function netJoin(code) {
   code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (code.length !== 6) { NET.err = '房號是 6 個字'; netLobbyChanged(); return; }
   NET.on = true; NET.host = false; NET.phase = 'lobby'; NET.err = ''; NET.code = code; NET.status = '連線中…'; NET.joinT = G.t; netWake(true);
-  clearTimeout(NET.joinTO); NET.joinTO = setTimeout(() => { const P = [...NET.peers.values()].find((q) => q.host); if (NET.on && !NET.host && !(P && P.ctl && P.ctl.readyState === 'open')) { NET.err = '連不上房主：房號打錯，或是兩邊的網路擋住了直連'; NET.status = ''; netLobbyChanged(); } }, 15000);
+  clearTimeout(NET.joinTO); NET.joinTO = setTimeout(() => { const P = [...NET.peers.values()].find((q) => q.host); if (NET.on && !NET.host && !(P && P.ctl && P.ctl.readyState === 'open')) { NET.err = '連不上房主：房號打錯，或是兩邊的網路擋住了直連（兩台連同一個 Wi-Fi 最穩）'; NET.status = ''; NET.lost = true; netLobbyChanged(); } }, 15000);
   const hostId = 'kr-' + code, P = netPeer(hostId); P.host = true;
   netSignal('krp-' + netToken(), {
     open() {
