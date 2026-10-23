@@ -100,6 +100,12 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .avrow canvas{width:56px;height:56px;image-rendering:pixelated;border-radius:50%}
 .btn.file{position:relative;overflow:hidden;cursor:pointer} .btn.file input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .txt{font:700 clamp(14px,2.2vh,17px)/1.2 var(--font-ui);color:var(--cream);background:rgba(0,0,0,.35);border:2px solid rgba(255,243,220,.35);border-radius:8px;padding:.45em .7em;width:9em;max-width:100%}
+.av{display:inline-flex;flex:0 0 auto;border-radius:50%;overflow:hidden;background:#5a6a9a;border:2px solid #fff6e0;box-shadow:0 0 0 2px #140a1a} .av img{image-rendering:pixelated;display:block}
+.txt.code{width:7em;letter-spacing:.2em;text-transform:uppercase;font-family:var(--font-num)}
+.code{font:400 clamp(12px,2vh,15px) var(--font-pix);color:var(--sun);letter-spacing:.15em}
+.players{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px} .pl{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.3);font:700 clamp(13px,2.2vh,16px)/1.2 var(--font-ui);color:var(--cream)}
+.pl.me{box-shadow:inset 0 0 0 2px rgba(255,178,62,.6)} .pl .car{opacity:.75;font-weight:500} .pl .tag{margin-left:auto;font:400 10px var(--font-pix);color:var(--sea)} .pl .tag.fin{color:var(--sun)} .pl .t{margin-left:auto;font-family:var(--font-num)}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;counter-reset:r} .rank .pl::before{counter-increment:r;content:counter(r);font:400 12px var(--font-pix);color:var(--sun);width:1.4em}
 .note{grid-column:2/3;margin:-4px 0 0;font:500 clamp(11px,1.8vh,13px)/1.5 var(--font-ui);color:rgba(255,243,220,.8)}
 .radio{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .radio button{text-align:left;padding:.5em .8em;border-radius:10px;background:rgba(255,243,220,.06);color:var(--cream);border:2px solid rgba(255,243,220,.18);font:900 clamp(13px,2.2vh,16px)/1.25 var(--font-ui)}
@@ -681,7 +687,7 @@ const STAGES = {
     ],
   },
   s2a: {
-    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 98,
+    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 92,
     traffic: { per100: 1.5, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 1, pickup: 1, suv: 1, rebar: 1 } },
     next: 's3',
     sections: [
@@ -702,7 +708,7 @@ const STAGES = {
     ],
   },
   s2b: {
-    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 92,
+    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 86,
     traffic: { per100: 1.3, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 2, suv: 1 } },
     next: 's3',
     sections: [
@@ -719,7 +725,7 @@ const STAGES = {
     ],
   },
   s3: {
-    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 84,
+    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 80,
     traffic: { per100: 1.4, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 2, pickup: 1, rebar: 1, logs: 1, wagon: 1 } },
     children: ['s4a', 's4b'],
     sign: { L: ['恆春・墾丁', '台26', '鵝鑾鼻'], R: ['海生館', '濱海公路', '貓鼻頭'] },
@@ -736,7 +742,7 @@ const STAGES = {
     ],
   },
   s4a: {
-    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 82, goal: '鵝鑾鼻燈塔',
+    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 76, goal: '鵝鑾鼻燈塔',
     traffic: { per100: 1.6, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
     sections: [
       { len: 560, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
@@ -749,7 +755,7 @@ const STAGES = {
     ],
   },
   s4b: {
-    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 82, goal: '貓鼻頭',
+    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 76, goal: '貓鼻頭',
     traffic: { per100: 1.2, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2, suv: 2, wagon: 1, logs: 1 } },
     sections: [
       { len: 380, k: 0, lanes: 3, sh: 1.8, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup'] },
@@ -5519,6 +5525,7 @@ function raceStart(carIdx, auto, seq) {
   PC.spr = carSprites(spec);
   pcSetup(spec, auto, seq);
   const p = ROUTE.root; PC.piece = p; PC.s = p.startS || 90; PC.x = LANE * 0.5; PC.dist = 0;
+  if (NET.on && NET.phase === 'race') { const k = netSlot(), lanes = Math.max(1, Math.round((2 * p.hw(PC.s)) / LANE)); PC.x = -p.hw(PC.s) + LANE * ((k % lanes) + 0.5); PC.s -= Math.floor(k / lanes) * 9; }
   Object.assign(RACE, { state: 'countdown', time: STAGES.s1.time, elapsed: 0, score: 0, countdown: 4.2, route: ['s1'], stageNo: 1, splits: [], checked: new Set(), goal: null, crashes: 0, lastBeep: 5, overT: 0, goalT: 0 });
   CAM.init = false;
   HUD.show = true; HUD.msgs.length = 0;
@@ -6244,6 +6251,7 @@ function drawStripItems(a, b, clip) {
     for (const xg of HAZ.xings) if (xg.p === p && xg.on && xg.s >= s0 && xg.s < s1) items.push(item(9, xg, p.gS + xg.s, 0, p));
     if (p.anim.length) for (const an of p.anim) animItems(an, p, s0, s1, items);
     if (GHOST.p === p && GHOST.s >= s0 && GHOST.s < s1) items.push(item(7, GHOST, p.gS + GHOST.s, 0, p));
+    if (NET.on) for (const P of NET.peers.values()) if (P.vis && P.dp === p && P.ds >= s0 && P.ds < s1) { P.x = P.dx; items.push(item(10, P, p.gS + P.ds, 0, p)); }
   }
   if (items.length > 1) items.sort((u, v) => (v.gs - u.gs) || ((u.k === 1 || u.k === 2 || u.k === 4) ? -1 : 1));
   for (let n = 0; n < items.length; n++) {
@@ -6257,6 +6265,7 @@ function drawStripItems(a, b, clip) {
     if (it.k === 7) { drawGhost(xs, ys, ip.k, clip); continue; }
     if (it.k === 8) { drawHazard(it.o, xs, ys, ip.k, clip, fog); continue; }
     if (it.k === 9) { drawTramX(it.o, X0 + ip.cx * ip.k, ys, ip.k, clip, fog); continue; }
+    if (it.k === 10) { drawRival(it.o, xs, ys, ip.k, clip); continue; }
     const o = it.o, S = SPRL[o.id], h = S.wh * o.sc * ip.k;
     const near = h > 26, sway = near && o.sway ? Math.sin(RV.t * 1.4 + o.ph) * 0.035 * o.sway : 0;
     // small far things get their haze from the band laid over the horizon, not one by one
@@ -6446,6 +6455,7 @@ function render() {
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
+  if (G.halt) return;   // tests stop the loop and drive frames by hand
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
   dt *= G.speed;
   if (G.mode === 'ending') { drawEnding(dt); hud.setTransform(1, 0, 0, 1, 0, 0); hud.clearRect(0, 0, hudCanvas.width, hudCanvas.height); return; }
@@ -6468,6 +6478,7 @@ function tick(dt) {
     raceUpdate(dt);
     trafficUpdate(dt);
     GHOST.record(dt); GHOST.update();
+    netUpdate(dt);
     fxUpdate(dt);
   }
 }
@@ -6492,10 +6503,11 @@ async function boot() {
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
   G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, avatarSet, gapLeft, nearIntervals,
-  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, show(n) { show(n); },
+  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); },
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
   speed(k) { G.speed = k; },
+  halt(on) { G.halt = !!on; },
   // run the race without drawing: seconds of game time in fixed steps, stopping at the goal or time-up
   sim(sec, h) { h = h || 1 / 60; const n = Math.round(sec / h); for (let i = 0; i < n; i++) { tick(h); if (RACE.state === 'goal' && RACE.goalT > 1 || RACE.state === 'timeup' && RACE.overT > 1) break; } return this.state(); },
   go(pi, s, x) { PC.piece = ROUTE.pieces[pi]; PC.s = s; PC.x = x == null ? PC.x : x; CAM.init = false; },
@@ -6603,10 +6615,20 @@ function onUiClick(e) {
   if (b.dataset.song != null) { UI.song = +b.dataset.song; musicPlay(UI.song); markSetup(); return; }
   if (b.parentElement.id === 'seg-auto') { UI.gearbox = b.dataset.v; UI.auto = UI.gearbox === 'at'; markSetup(); return; }
   if (b.parentElement.id === 'seg-ctrl') { UI.ctrl = b.dataset.v; markSetup(); return; }
+  if (b.dataset.net) {
+    const k = b.dataset.net;
+    if (k === 'host') netHost();
+    else if (k === 'join') netJoin(($('net-code') || {}).value);
+    else if (k === 'leave') { netLeave(); renderOnline(); }
+    else if (k === 'car') { UI.from = 'online'; show('select'); }
+    else if (k === 'start') { if (NET.phase === 'race') NET.phase = 'lobby'; netHostStart(); }
+    else if (k === 'lobby') { NET.phase = 'lobby'; G.paused = false; toTitle(); show('online'); }
+    return;
+  }
   switch (b.dataset.act) {
     case 'prev': UI.sel = (UI.sel + CARS.length - 1) % CARS.length; openSelect(); break;
     case 'next': UI.sel = (UI.sel + 1) % CARS.length; openSelect(); break;
-    case 'pick': show('setup'); break;
+    case 'pick': if (UI.from === 'online' && NET.on) { netSetCar(UI.sel); show('online'); } else show('setup'); break;
     case 'go': startPlay(); break;
     case 'resume': resume(); break;
     case 'restart': G.paused = false; startPlay(); break;
@@ -6733,7 +6755,9 @@ function startPlay() {
   G.mode = 'play'; G.paused = false; UI.resultShown = false;
   BOT.on = false;
   if (UI.ctrl === 'touch') CTL.mode = 'touchforced'; else if (UI.ctrl === 'tilt' && CTL.tilt.ok) CTL.mode = 'tilt'; else if (UI.ctrl === 'tilt') CTL.mode = 'touch';
+  if (NET.on && NET.phase === 'race') UI.sel = NET.me.car;
   G.state = 'race'; raceStart(UI.sel, UI.auto, UI.gearbox === 'seq');
+  if (NET.on && NET.phase === 'race') { GHOST.on = false; GHOST.p = null; }
   CAM.init = false; HUD.show = true; layoutPads();
   musicPlay(UI.song);
   GHOST.rec = []; GHOST.recT = 0;
@@ -6769,9 +6793,17 @@ function showResult() {
       <tr><td><b>${goal ? '總時間' : '行駛時間'}</b>${newBest ? '<span class="new">NEW RECORD</span>' : ''}</td><td class="t"><b>${fmtTime(RACE.elapsed)}</b></td></tr>
       <tr><td>分數${rank ? '（第 ' + rank + ' 名）' : ''}</td><td class="t">${Math.floor(RACE.score).toLocaleString('en-US')}</td></tr>
       <tr><td>撞車</td><td class="t">${RACE.crashes} 次</td></tr></table>
-    <div class="actions">${goal ? '<button class="btn big" data-act="ending">看結局</button>' : ''}<button class="btn" data-act="again">再跑一次</button><button class="btn ghost" data-act="title">回標題</button></div>`;
+    ${NET.on ? '<div id="net-rank"></div>' : ''}
+    <div class="actions">${goal ? '<button class="btn big" data-act="ending">看結局</button>' : ''}${NET.on ? '<button class="btn" data-net="lobby">回房間</button>' : '<button class="btn" data-act="again">再跑一次</button>'}<button class="btn ghost" data-act="title">回標題</button></div>`;
   show('result');
+  if (NET.on) { NET.onLobby = renderRank; renderRank(); }
   musicPlay(3);
+}
+// the online ranking on the results screen, filling in as the others come home
+function renderRank() {
+  const el = $('net-rank'); if (!el || UI.scr !== 'result') return;
+  const list = netPlayers().slice().sort((a, b) => (a.fin && a.fin.time != null ? a.fin.time : 1e9) - (b.fin && b.fin.time != null ? b.fin.time : 1e9));
+  el.innerHTML = '<h3 class="ttl" style="margin:10px 0 4px">對戰名次</h3><ol class="rank">' + list.map((q) => `<li class="pl${q.me ? ' me' : ''}">${avatarTag(q.avatar, 28)}<b>${q.name}</b><span class="t">${q.fin ? (q.fin.time != null ? fmtTime(q.fin.time) : '未完賽') : '跑步中…'}</span></li>`).join('') + '</ol>';
 }
 function openRecords() {
   const rec = SAVE.load('records', { routes: {}, scores: [] });
@@ -6819,7 +6851,35 @@ function avatarPreview() {
   else { g.fillStyle = '#5a6a9a'; g.beginPath(); g.arc(36, 36, 30, 0, TAU); g.fill(); g.fillStyle = '#fff6e0'; g.beginPath(); g.arc(36, 30, 11, 0, TAU); g.fill(); g.fillRect(19, 44, 34, 18); }
 }
 function openOnline() {
-  $('online').innerHTML = `<h2 class="ttl">連線對戰</h2><p class="desc" style="margin:0 0 12px">最多 8 人同時跑同一條路線，看得到彼此的車。連線功能接上伺服器後就會開放。</p><div class="actions"><button class="btn" data-act="back">返回</button></div>`;
+  NET.onLobby = renderOnline;
+  renderOnline();
+}
+function avatarTag(url, size) { return `<span class="av" style="width:${size}px;height:${size}px">${url ? `<img src="${url}" width="${size}" height="${size}" alt="">` : ''}</span>`; }
+function renderOnline() {
+  const el = $('online'); if (!el || UI.scr !== 'online') return;
+  const meName = (SET.name || '').trim() || '（到設定取個名字）';
+  if (!NET.on || NET.phase === 'idle') {
+    el.innerHTML = `<h2 class="ttl">連線對戰</h2>
+      <p class="desc" style="margin:0 0 10px">最多 8 人同時跑同一條路線，看得到彼此的車和頭像。一個人開房間拿到房號，其他人輸入房號加入；兩邊都要開著這個頁面。</p>
+      <div class="row"><span class="lbl">我</span><div class="avrow">${avatarTag(SET.avatar, 44)}<b>${meName}</b><button class="btn ghost" data-go="settings">改名字／頭像</button></div></div>
+      <div class="row"><span class="lbl">開房間</span><div class="seg"><button class="btn big" data-net="host">建立房間</button></div></div>
+      <div class="row"><span class="lbl">加入</span><div class="avrow"><input class="txt code" id="net-code" maxlength="6" placeholder="房號 6 碼" autocapitalize="characters" autocomplete="off"><button class="btn" data-net="join">加入房間</button></div></div>
+      ${NET.err ? `<p class="note" style="color:#ff8aa0">${NET.err}</p>` : ''}
+      <div class="actions"><button class="btn" data-act="back">返回</button></div>`;
+    return;
+  }
+  const players = netPlayers();
+  const rows = players.map((q) => `<li class="pl${q.me ? ' me' : ''}">${avatarTag(q.avatar, 36)}<b>${q.name || '…'}</b><span class="car">${CARS[q.car] ? CARS[q.car].name : ''}</span>${q.host ? '<span class="tag">房主</span>' : ''}${q.fin ? `<span class="tag fin">${q.fin.time != null ? fmtTime(q.fin.time) : '未完賽'}</span>` : ''}</li>`).join('');
+  const racing = NET.phase === 'race';
+  el.innerHTML = `<h2 class="ttl">連線對戰　<span class="code">房號 ${NET.code}</span></h2>
+    <p class="desc" style="margin:0 0 8px">${NET.host ? '把房號告訴朋友，大家進來後按「開始」。' : (NET.status || '等房主按開始…')}</p>
+    <ul class="players">${rows}</ul>
+    ${NET.err ? `<p class="note" style="color:#ff8aa0">${NET.err}</p>` : ''}
+    <div class="actions">
+      <button class="btn ghost" data-net="leave">離開</button>
+      <button class="btn" data-net="car">選車（${CARS[NET.me.car].name}）</button>
+      ${NET.host ? `<button class="btn big" data-net="start" ${players.length < 1 ? 'disabled' : ''}>${racing ? '再跑一次' : '開始！'}</button>` : ''}
+    </div>`;
 }
 
 // ===================== the ghost: your best run on a route, replayed as a see-through car =====================
@@ -7007,6 +7067,199 @@ function drawEnding(dt) {
     g2.font = '900 16px "Noto Sans TC",sans-serif'; g2.fillStyle = '#fff3dc'; g2.fillText(END.car.name + '　' + fmtTime(RACE.elapsed), RW / 2, RH * 0.32 + 58);
     g2.font = '10px "Press Start 2P",monospace'; g2.fillText('TAP TO CONTINUE', RW / 2, RH * 0.32 + 92);
   }
+}
+
+// ===================== online: up to 8 cars on the same road, over WebRTC, met through the PeerJS cloud =====================
+// One player opens a room and gets a six-letter code; the others join with it. The host's browser relays everyone's
+// position to everyone else a dozen times a second over unreliable data channels; the lobby, the start and the
+// results go over a reliable one. Only the signalling (the handshake) touches a server — the PeerJS public one,
+// spoken to directly over its WebSocket protocol — after that the phones talk to each other.
+const NET_CFG = Object.assign({ host: '0.peerjs.com', port: 443, path: '/', secure: true, key: 'peerjs' }, window.__krPeerCfg || {});
+const NET_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const NET = {
+  on: false, host: false, code: '', id: '', ws: null, hb: 0, peers: new Map(), phase: 'idle', err: '', status: '',
+  me: { name: '', avatar: '', avatarKind: 'face', car: 0, img: null }, results: [], startAt: 0, lastSend: 0, seq: 0, onLobby: null, joinT: 0,
+};
+function netCode() { let c = ''; for (let i = 0; i < 6; i++) c += NET_CODE_CHARS[Math.floor(Math.random() * NET_CODE_CHARS.length)]; return c; }
+function netToken() { return Math.random().toString(36).slice(2, 12); }
+function netMe() { NET.me.name = (SET.name || '').trim() || ('車手' + Math.floor(Math.random() * 90 + 10)); NET.me.avatar = SET.avatar || ''; NET.me.avatarKind = SET.avatarKind || 'face'; NET.me.car = UI.sel; }
+// ---------- signalling ----------
+function netSignal(id, cb) {
+  const url = (NET_CFG.secure ? 'wss' : 'ws') + '://' + NET_CFG.host + ':' + NET_CFG.port + NET_CFG.path + 'peerjs?key=' + NET_CFG.key + '&id=' + encodeURIComponent(id) + '&token=' + netToken() + '&version=1.5.4';
+  let ws;
+  try { ws = new WebSocket(url); } catch (e) { cb.error('連不上配對伺服器'); return null; }
+  NET.ws = ws; NET.id = id;
+  ws.onopen = () => { NET.hb = setInterval(() => { if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'HEARTBEAT' })); }, 5000); };
+  ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.type === 'OPEN') cb.open(); else if (m.type === 'ID-TAKEN') cb.taken(); else if (m.type === 'ERROR') cb.error((m.payload && m.payload.msg) || 'signalling error'); else if (m.type === 'LEAVE' || m.type === 'EXPIRE') cb.leave(m.src); else if (m.type === 'OFFER' || m.type === 'ANSWER' || m.type === 'CANDIDATE') cb.sig(m); };
+  ws.onerror = () => cb.error('配對伺服器連線失敗');
+  ws.onclose = () => { clearInterval(NET.hb); if (NET.on && NET.phase === 'lobby') cb.error('配對伺服器斷線'); };
+  return ws;
+}
+function netSend(msg) { if (NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(msg)); }
+// STUN to find each other, and a public relay for the phones whose carriers hide them behind symmetric NAT
+const RTC_CFG = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject' }] };
+// ---------- peers ----------
+function netPeer(id) {
+  let P = NET.peers.get(id);
+  if (P) return P;
+  P = { id, pc: null, ctl: null, st: null, name: '', avatar: '', avatarKind: 'face', img: null, car: 0, host: false, ready: false, state: null, prev: null, rt: 0, fx: null, wasAhead: false, fin: null, spr: null, conn: 'new' };
+  NET.peers.set(id, P);
+  return P;
+}
+function netDrop(id) { const P = NET.peers.get(id); if (!P) return; try { if (P.pc) P.pc.close(); } catch (e) { /* gone */ } NET.peers.delete(id); netLobbyChanged(); }
+function netWire(P, pc, connId) {
+  P.pc = pc; P.connId = connId;
+  pc.onicecandidate = (e) => { if (e.candidate) netSend({ type: 'CANDIDATE', dst: P.id, payload: { candidate: e.candidate, type: 'data', connectionId: connId } }); };
+  pc.onconnectionstatechange = () => { P.conn = pc.connectionState; if (pc.connectionState === 'failed' || pc.connectionState === 'closed' || pc.connectionState === 'disconnected') { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = '和房主斷線了'; netLobbyChanged(); } } };
+  pc.ondatachannel = (e) => netChannel(P, e.channel);
+}
+function netChannel(P, ch) {
+  if (ch.label === 'ctl') P.ctl = ch; else P.st = ch;
+  ch.onmessage = (e) => { let m; try { m = JSON.parse(e.data); } catch (err) { return; } netOnMsg(P, m); };
+  ch.onopen = () => { if (ch.label === 'ctl' && !NET.host) { netMe(); netCtl(P, { t: 'hello', name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car }); } };
+}
+function netCtl(P, m) { try { if (P.ctl && P.ctl.readyState === 'open') P.ctl.send(JSON.stringify(m)); } catch (e) { /* dropped */ } }
+function netSt(P, m) { try { if (P.st && P.st.readyState === 'open') P.st.send(JSON.stringify(m)); } catch (e) { /* dropped */ } }
+function netAll(m, except) { for (const P of NET.peers.values()) if (P !== except) netCtl(P, m); }
+// ---------- host ----------
+function netHost() {
+  netLeave(); netMe();
+  NET.on = true; NET.host = true; NET.phase = 'lobby'; NET.err = ''; NET.code = netCode(); NET.status = '開房間中…';
+  const open = () => netSignal('kr-' + NET.code, {
+    open() { NET.status = ''; netLobbyChanged(); },
+    taken() { NET.code = netCode(); try { NET.ws.close(); } catch (e) { /* retry */ } open(); },
+    error(msg) { NET.err = msg; netLobbyChanged(); },
+    leave(src) { netDrop(src); },
+    sig(m) {
+      const P = netPeer(m.src);
+      if (m.type === 'OFFER') {
+        const pc = new RTCPeerConnection(RTC_CFG); netWire(P, pc, m.payload.connectionId);
+        pc.setRemoteDescription(m.payload.sdp).then(() => pc.createAnswer()).then((a) => pc.setLocalDescription(a).then(() => a)).then((a) => netSend({ type: 'ANSWER', dst: P.id, payload: { sdp: a, type: 'data', connectionId: m.payload.connectionId, browser: 'kr' } })).catch(() => netDrop(P.id));
+      } else if (m.type === 'CANDIDATE' && P.pc) P.pc.addIceCandidate(m.payload.candidate).catch(() => { /* late */ });
+    },
+  });
+  open();
+  netLobbyChanged();
+}
+// ---------- joining ----------
+function netJoin(code) {
+  netLeave(); netMe();
+  code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 6) { NET.err = '房號是 6 個字'; netLobbyChanged(); return; }
+  NET.on = true; NET.host = false; NET.phase = 'lobby'; NET.err = ''; NET.code = code; NET.status = '連線中…'; NET.joinT = G.t;
+  clearTimeout(NET.joinTO); NET.joinTO = setTimeout(() => { const P = [...NET.peers.values()].find((q) => q.host); if (NET.on && !NET.host && !(P && P.ctl && P.ctl.readyState === 'open')) { NET.err = '連不上房主：房號打錯，或是兩邊的網路擋住了直連'; NET.status = ''; netLobbyChanged(); } }, 15000);
+  const hostId = 'kr-' + code, P = netPeer(hostId); P.host = true;
+  netSignal('krp-' + netToken(), {
+    open() {
+      const pc = new RTCPeerConnection(RTC_CFG), connId = 'dc_' + netToken(); netWire(P, pc, connId);
+      netChannel(P, pc.createDataChannel('ctl', { ordered: true }));
+      netChannel(P, pc.createDataChannel('st', { ordered: false, maxRetransmits: 0 }));
+      pc.createOffer().then((o) => pc.setLocalDescription(o).then(() => o)).then((o) => netSend({ type: 'OFFER', dst: hostId, payload: { sdp: o, type: 'data', connectionId: connId, label: 'kr', serialization: 'json', reliable: true, browser: 'kr' } })).catch(() => { NET.err = '建立連線失敗'; netLobbyChanged(); });
+    },
+    taken() { NET.err = '請再試一次'; netLobbyChanged(); },
+    error(msg) { NET.err = /Could not connect|not found|does not exist/i.test(msg) ? '找不到這個房號' : msg; netLobbyChanged(); },
+    leave(src) { if (src === hostId) { NET.err = '房主離開了'; NET.phase = 'idle'; netLobbyChanged(); } },
+    sig(m) {
+      if (m.src !== hostId || !P.pc) return;
+      if (m.type === 'ANSWER') P.pc.setRemoteDescription(m.payload.sdp).catch(() => { NET.err = '連線失敗'; netLobbyChanged(); });
+      else if (m.type === 'CANDIDATE') P.pc.addIceCandidate(m.payload.candidate).catch(() => { /* late */ });
+    },
+  });
+  netLobbyChanged();
+}
+function netLeave() {
+  clearTimeout(NET.joinTO);
+  if (NET.ws) { try { NET.ws.close(); } catch (e) { /* closing */ } }
+  clearInterval(NET.hb);
+  for (const P of NET.peers.values()) { try { if (P.pc) P.pc.close(); } catch (e) { /* gone */ } }
+  NET.peers.clear(); NET.on = false; NET.host = false; NET.phase = 'idle'; NET.ws = null; NET.err = ''; NET.status = ''; NET.results = []; NET.code = '';
+}
+// ---------- the lobby: who is here ----------
+function netSlot() { const list = netPlayers(); const i = list.findIndex((q) => q.me); return i < 0 ? 0 : i; }
+function netPlayers() {
+  const list = [{ id: NET.id || 'me', me: true, name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car, host: NET.host, fin: NET.myFin || null }];
+  for (const P of NET.peers.values()) if (P.name) list.push({ id: P.id, me: false, name: P.name, avatar: P.avatar, avatarKind: P.avatarKind, car: P.car, host: P.host, fin: P.fin });
+  return list;
+}
+function netLobbyChanged() { if (NET.onLobby) NET.onLobby(); if (NET.host) netAll({ t: 'lobby', players: netPlayers().map((q) => ({ id: q.id, name: q.name, avatar: q.avatar, avatarKind: q.avatarKind, car: q.car, host: q.host, fin: q.fin })) }); }
+function netSetCar(i) { NET.me.car = i; if (NET.host) netLobbyChanged(); else for (const P of NET.peers.values()) netCtl(P, { t: 'car', car: i }); }
+// ---------- messages ----------
+function netOnMsg(P, m) {
+  if (m.t === 'hello') { P.name = String(m.name || '').slice(0, 10); P.avatar = typeof m.avatar === 'string' && m.avatar.length < 20000 ? m.avatar : ''; P.avatarKind = m.avatarKind === 'thing' ? 'thing' : 'face'; P.car = clamp(m.car | 0, 0, CARS.length - 1); avatarDecode(P.avatar, (im) => { P.img = im; }); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); if (NET.phase === 'race' || NET.phase === 'countdown') netCtl(P, { t: 'start', in: 0, late: true }); }
+  else if (m.t === 'car') { P.car = clamp(m.car | 0, 0, CARS.length - 1); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); }
+  else if (m.t === 'lobby' && !NET.host) {
+    // the host's roster: everyone else, so we can draw them; the host itself is P
+    const seen = new Set();
+    for (const q of m.players || []) {
+      if (q.id === NET.id) continue;
+      seen.add(q.id);
+      const Q = q.id === P.id ? P : netPeer(q.id);
+      if (Q.name !== q.name || Q.avatar !== q.avatar) { Q.name = q.name; Q.avatar = q.avatar; Q.avatarKind = q.avatarKind; avatarDecode(Q.avatar, (im) => { Q.img = im; }); }
+      Q.host = !!q.host; Q.fin = q.fin || null; if (Q.car !== q.car || !Q.spr) { Q.car = clamp(q.car | 0, 0, CARS.length - 1); Q.spr = carSprites(CARS[Q.car]); }
+    }
+    for (const id of [...NET.peers.keys()]) if (!seen.has(id) && id !== P.id) NET.peers.delete(id);
+    if (NET.onLobby) NET.onLobby();
+  }
+  else if (m.t === 'start') { netStartRace(m.in || 0, !!m.late); }
+  else if (m.t === 'st') {
+    // a position: from a player (to the host), or relayed by the host (from someone else)
+    const from = NET.host ? P : netPeer(m.id || P.id);
+    if (m.id && !NET.host && m.id === NET.id) return;
+    from.prev = from.state; from.state = m; from.rt = G.t;
+    if (NET.host) { const out = Object.assign({}, m, { id: P.id }); for (const Q of NET.peers.values()) if (Q !== P) netSt(Q, out); }
+  }
+  else if (m.t === 'fin') { const from = NET.host ? P : netPeer(m.id || P.id); from.fin = { time: m.time, route: m.route, car: m.car }; if (NET.host) netLobbyChanged(); else if (NET.onLobby) NET.onLobby(); }
+}
+// ---------- the race ----------
+function netStartRace(delay, late) {
+  if (NET.phase === 'race') return;
+  NET.phase = 'race'; NET.myFin = null; for (const P of NET.peers.values()) { P.fin = null; P.state = null; P.prev = null; }
+  if (NET.host) netAll({ t: 'start', in: delay });
+  startPlay();
+  if (late) { RACE.state = 'run'; RACE.countdown = 0; }
+}
+function netHostStart() { if (NET.host && NET.phase === 'lobby') netStartRace(0, false); }
+function netUpdate(dt) {
+  if (!NET.on || NET.phase !== 'race' || G.mode !== 'play') return;
+  // send where we are, a dozen times a second
+  if (G.t - NET.lastSend > 1 / 12) {
+    NET.lastSend = G.t;
+    const m = { t: 'st', q: NET.seq++, p: ROUTE.pieces.indexOf(PC.piece), s: Math.round(PC.s * 10) / 10, x: Math.round(PC.x * 100) / 100, v: Math.round(PC.v * 10) / 10, si: PC._si == null ? 2 : PC._si, b: PC.brake > 0.1 ? 1 : 0, c: PC.crash ? 1 : 0, d: PC.drift ? 1 : 0, r: +(FX.roll || 0).toFixed(2) };
+    if (NET.host) { const out = Object.assign({}, m, { id: NET.id }); for (const Q of NET.peers.values()) netSt(Q, out); }
+    else for (const Q of NET.peers.values()) if (Q.host) netSt(Q, m);
+  }
+  // the others: advance each one by its speed between packets, and gasp when one goes past us
+  for (const P of NET.peers.values()) {
+    const S = P.state; if (!S) continue;
+    const age = G.t - P.rt, p = ROUTE.pieces[S.p];
+    P.vis = !!p && age < 4;
+    if (!P.vis) continue;
+    P.dp = p; P.ds = S.s + S.v * WORLD_K * Math.min(age, 1); P.dx = S.x;
+    const ahead = P.dp === PC.piece ? P.ds > PC.s : (P.dp === PC.piece.next || PC.piece.children.includes(P.dp));
+    if (ahead && !P.wasAhead && RACE.elapsed > 3 && P.dp === PC.piece && Math.abs(P.ds - PC.s) < 12 && Math.abs(P.dx - PC.x) < 6) badgeSurprise(P);
+    P.wasAhead = ahead;
+    if (P.fx) { P.fx.t += dt; if (P.fx.t > P.fx.dur) P.fx = null; }
+  }
+  // finished: tell the room
+  if ((RACE.state === 'goal' || RACE.state === 'timeup') && !NET.myFin) {
+    NET.myFin = { time: RACE.state === 'goal' ? Math.round(RACE.elapsed * 100) / 100 : null, route: RACE.route.join('>'), car: CARS[RACE.carIdx].id };
+    const m = { t: 'fin', time: NET.myFin.time, route: NET.myFin.route, car: NET.myFin.car };
+    if (NET.host) netLobbyChanged(); else for (const Q of NET.peers.values()) if (Q.host) netCtl(Q, m);
+    if (NET.onLobby) NET.onLobby();
+  }
+}
+// a rival on screen: its car, solid, with the portrait on its pole
+function drawRival(P, x, y, k, clip) {
+  const S = P.spr || carSprites(CARS[P.car || 0]), st = P.state; if (!S || !st) return;
+  const n = S.frames.length, si = clamp(st.si | 0, 0, n - 1), img = S.frames[si][st.b ? 1 : 0][Math.floor(G.t * 8) & 1], sc = k / CPX;
+  const w = img.width * sc, hh = img.height * sc, top = y - S.ay * sc;
+  if (top >= clip) return;
+  VG.fillStyle = 'rgba(10,6,22,0.35)'; VG.fillRect(Math.round(x - S.bw * sc / 2), Math.round(y - 1), Math.round(S.bw * sc), Math.max(1, Math.round(2 * sc)));
+  if (st.c) { VG.save(); VG.translate(x, y - hh * 0.4); VG.rotate(Math.sin(G.t * 6) * 0.5); VG.drawImage(img, -S.ax * sc, -(S.ay * sc) + hh * 0.4, w, hh); VG.restore(); }
+  else if (st.r) { VG.save(); VG.translate(x, y); VG.rotate(st.r); VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), -S.ax * sc, -S.ay * sc, w, Math.min(hh, clip - top)); VG.restore(); }
+  else VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), x - S.ax * sc, top, w, Math.min(hh, clip - top));
+  if (S.heads) { const ph = [0, 1, 0, 2][Math.floor(G.t * 6) & 3], sh = S.shift[si]; for (const h of S.heads) VG.drawImage(h.frames[ph], Math.round(x - S.ax * sc + (h.x + sh) * sc), Math.round(top + h.y * sc), h.frames[0].width * sc, h.frames[0].height * sc); }
+  if (top < clip + 10) drawBadge(x, top + 26 * sc, k, P.name || '?', P.img, P.fx);
 }
 
 })();
