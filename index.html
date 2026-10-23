@@ -4286,7 +4286,7 @@ function pcStep(dt, track) {
   // of it. Under the limit the car follows the bend and the wheel moves it across the lanes; over it the car is
   // carried wide no matter how the wheel is turned — only the brakes, or lifting off, bring the speed back under.
   const k = p.curv(PC.s), v = PC.v, c = 0.34 - 0.12 * sp.grip;
-  const auth = (6.6 + 4.2 * sp.steer) * 1.05 * clamp(v / 20, 0.18, 1) * (PC.drift > 0 ? 1.1 : 1);   // quick: the whole road in about a second
+  const auth = (6.6 + 4.2 * sp.steer) * 1.05 * clamp(v / 20, 0, 1) * (PC.drift > 0 ? 1.1 : 1);   // quick: the whole road in about a second; a standing car does not move sideways
   const cent = k * v * v * c;
   const latMax = tyreLimit(sp, PC.drift > 0, PC.offroad > 0) * c;
   const overG = Math.max(0, Math.abs(cent) - latMax);
@@ -4309,6 +4309,7 @@ function pcStep(dt, track) {
   else target = inPart + outPart - cent + PC.wind - (PC.drift ? PC.driftDir * 0.9 : 0);
   // grip: past the limit the tyres squeal and the car slides
   PC.slip = lerp(PC.slip, overG > 0 || PC.drift ? 1 : PC.limitK > 0.85 ? 0.5 : 0, dt * 4);
+  if (v < 0.4) target = 0;
   PC.vx = lerp(PC.vx, target, clamp(dt * (PC.drift ? 7 : 15), 0, 1));
   PC.x += PC.vx * dt;
   // ---- edges: off the paving on either side the ground slows you down; a long way out you are turned back ----
