@@ -96,6 +96,10 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .row .lbl{font:900 clamp(13px,2.2vh,16px)/1 var(--font-ui);color:var(--sun)}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
 .seg .btn{font-size:clamp(13px,2.2vh,16px);padding:.55em .9em}
+.avrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.avrow canvas{width:56px;height:56px;image-rendering:pixelated;border-radius:50%}
+.btn.file{position:relative;overflow:hidden;cursor:pointer} .btn.file input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.txt{font:700 clamp(14px,2.2vh,17px)/1.2 var(--font-ui);color:var(--cream);background:rgba(0,0,0,.35);border:2px solid rgba(255,243,220,.35);border-radius:8px;padding:.45em .7em;width:9em;max-width:100%}
 .note{grid-column:2/3;margin:-4px 0 0;font:500 clamp(11px,1.8vh,13px)/1.5 var(--font-ui);color:rgba(255,243,220,.8)}
 .radio{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .radio button{text-align:left;padding:.5em .8em;border-radius:10px;background:rgba(255,243,220,.06);color:var(--cream);border:2px solid rgba(255,243,220,.18);font:900 clamp(13px,2.2vh,16px)/1.25 var(--font-ui)}
@@ -484,15 +488,15 @@ function drawBackdrop(g, set, camAz, t, alpha) {
 // A stage is a list of sections (length, peak curvature, rise, cross-section, what lies on each side).
 // A Piece is one stage laid into the world from a start point; forks hang two child pieces off the end.
 //
-// Cross-section, left to right (x is metres from the centre of OUR carriageway, + to the right):
-//   [opposite shoulder][opposite lanes 2*O][median M][our lanes -W..W][scooter lane / shoulder SH] | ground
-// Traffic on our side runs with us; the opposite carriageway behind the median carries oncoming traffic.
+// Cross-section, left to right (x is metres from the centre of the road, + to the right):
+//   ground | [left shoulder M][the lanes -W..W, all running our way][scooter lane / shoulder SH] | ground
+// The whole road runs one way, the arcade way: every vehicle on it is going where we are going, only slower.
+// (M keeps its old name from the days of a median; it is the left shoulder now. O, the oncoming road, is always 0.)
 const DS = 2;            // centreline sample spacing (m)
 const LANE = 3.5;        // lane width (m)
-const OPP_SH = 1.2;      // outer shoulder of the opposite carriageway
 const FORK_LEN = 300;    // the widened stretch before a split
 const DIVERGE_LEN = 460; // the first stretch of each child, bending away from its sibling
-const SEC_DEFAULT = { lanes: 2, sh: 2.4, med: 1.0, mt: 'barrier', opp: 2 };
+const SEC_DEFAULT = { lanes: 3, sh: 2.4, shl: 1.6 };
 
 function curveProfile(t) { return sstep(clamp(t / 0.3, 0, 1)) * sstep(clamp((1 - t) / 0.3, 0, 1)); }
 
@@ -510,7 +514,7 @@ class Piece {
     let prev = SEC_DEFAULT;
     for (const s0 of def.sections) {
       const s = Object.assign({}, s0);
-      for (const k of ['lanes', 'sh', 'med', 'mt', 'opp']) if (s[k] == null) s[k] = prev[k];
+      for (const k of ['lanes', 'sh', 'shl']) if (s[k] == null) s[k] = prev[k];
       stageSecs.push(s); prev = s;
     }
     const first = stageSecs[0], last = stageSecs[stageSecs.length - 1];
@@ -523,7 +527,7 @@ class Piece {
       this.forkLanes = [cl, cr];
       this.forkOff = [-(cr * LANE) / 2, (cl * LANE) / 2];         // child centres relative to ours at the split
       this.forkDiv = ((cl - cr) * LANE) / 2;                       // the line between the two carriageways
-      secs.push(Object.assign({}, last, { len: FORK_LEN, k: 0, dy: 0, lanes: cl + cr, med: 26, mt: 'plant', tags: ['forksign', 'forktrees'], fork: true }));
+      secs.push(Object.assign({}, last, { len: FORK_LEN, k: 0, dy: 0, lanes: cl + cr, tags: ['forksign'], fork: true }));
     }
     this.secs = secs;
     // ---- integrate the centreline ----
@@ -536,8 +540,8 @@ class Piece {
     this.SEC = new Uint16Array(N); this.F = new Float32Array(N);
     let x = start.x, y = start.y, z = start.z, h = start.h;
     // cross-section state, eased from section to section
-    const cs = this.opts.startCS ? Object.assign({}, this.opts.startCS) : { W: (first.lanes * LANE) / 2, SH: first.sh, M: first.med, O: first.opp ? (first.opp * LANE) / 2 : 0 };
-    if (this.side === 1) { cs.M = 0; cs.O = 0; }     // nothing on the inner side of a right branch at first
+    const cs = this.opts.startCS ? Object.assign({}, this.opts.startCS) : { W: (first.lanes * LANE) / 2, SH: first.sh, M: first.shl, O: 0 };
+    if (this.side === 1) cs.M = 0;                   // no shoulder on the inner side of a right branch at first
     if (this.side === -1) cs.SH = 0;                 // nor beside the inner edge of a left branch
     this.X[0] = x; this.Y[0] = y; this.Z[0] = z; this.H[0] = h;
     this.W[0] = cs.W; this.SH[0] = cs.SH; this.M[0] = cs.M; this.O[0] = cs.O;
@@ -546,11 +550,9 @@ class Piece {
     for (let j = 0; j < secs.length; j++) {
       const s = secs[j], m = Math.round(s.len / DS), y0 = y;
       const from = Object.assign({}, cs);
-      const to = { W: (s.lanes * LANE) / 2, SH: s.sh, M: s.med, O: s.opp ? (s.opp * LANE) / 2 : 0 };
-      if (s.diverge && this.side === 1) { to.M = 0; to.O = 0; }
+      const to = { W: (s.lanes * LANE) / 2, SH: s.sh, M: s.shl, O: 0 };
+      if (s.diverge && this.side === 1) to.M = 0;
       if (s.diverge && this.side === -1) to.SH = 0;
-      // after the divergence, a right branch's oncoming road slides in from far away
-      if (this.side === 1 && j === 1) { from.M = Math.max(from.M, 70); }
       this.secStartS.push(idx * DS);
       for (let i = 0; i < m; i++) {
         const t = (i + 0.5) / m, kk = (s.k || 0) * curveProfile(t);
@@ -561,8 +563,7 @@ class Piece {
         const e = s.fork ? sstep(clamp(into / (s.len * 0.55), 0, 1)) : s.diverge ? sstep(clamp(into / (s.len * 0.9), 0, 1)) : sstep(clamp(into / 120, 0, 1));
         cs.W = lerp(from.W, to.W, s.fork ? sstep(clamp(into / (s.len * 0.45), 0, 1)) : e);
         cs.SH = lerp(from.SH, to.SH, e);
-        cs.M = lerp(from.M, to.M, s.fork ? sstep(clamp(into / (s.len * 0.8), 0, 1)) : (this.side === 1 && j === 1) ? sstep(clamp(into / 380, 0, 1)) : e);
-        cs.O = this.side === 1 && j === 1 ? lerp(from.O, to.O, sstep(clamp((into - 40) / 300, 0, 1))) : lerp(from.O, to.O, e);
+        cs.M = lerp(from.M, to.M, e); cs.O = 0;
         if (this.side === -1 && s.diverge) cs.SH = to.SH = lerp(0, first.sh, sstep(clamp((into - 120) / 300, 0, 1)));
         idx++;
         this.X[idx] = x; this.Y[idx] = y; this.Z[idx] = z; this.H[idx] = h; this.K[idx] = kk;
@@ -585,8 +586,8 @@ class Piece {
   hw(s) { return this.at(this.W, s); }
   shoulder(s) { return this.at(this.SH, s); }
   fork(s) { return this.at(this.F, s); }
-  // the edges a car can reach: the median barrier on the left, the outer edge of the shoulder on the right
-  leftWall(s) { return -this.at(this.W, s) - 0.35; }
+  // the edges of the paving: beyond either one the ground begins
+  leftEdge(s) { return -this.at(this.W, s) - this.at(this.M, s); }
   rightEdge(s) { return this.at(this.W, s) + this.at(this.SH, s); }
   // world point at distance s and lateral offset x (right is +x); straight extrapolation off either end
   pos(s, x, out) {
@@ -606,7 +607,7 @@ class Piece {
   slope(s) { const a = clamp(s - 3, 0, this.L), b = clamp(s + 3, 0, this.L); return b > a ? (this.yAt(b) - this.yAt(a)) / (b - a) : 0; }
   yAt(s) { return this.at(this.Y, s); }
   // outer edges of the paved road on each side (where the ground begins)
-  outerL(i) { return -(this.W[i] + this.M[i] + 2 * this.O[i] + (this.O[i] > 0.05 ? OPP_SH : 0)); }
+  outerL(i) { return -(this.W[i] + this.M[i]); }
   outerR(i) { return this.W[i] + this.SH[i]; }
 }
 
@@ -657,15 +658,15 @@ function sideBands(type) { return SIDE_BANDS[type] || SIDE_BANDS.grass; }
 // tags: what the scenery builder places along it. Forks: children [left, right].
 const STAGES = {
   s1: {
-    label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: 62,
-    traffic: { per100: 1.9, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1 } },
+    label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: 78,
+    traffic: { per100: 2.0, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1 } },
     children: ['s2b', 's2a'],
     sign: { L: ['山線', '國3・沿山公路', '大武山'], R: ['海線', '台17・東港', '大鵬灣'] },
     sections: [
-      { len: 420, k: 0, lanes: 3, sh: 2.6, med: 3.2, mt: 'plant', opp: 2, L: 'city', R: 'harbor', tags: ['start', 'qilou', 'kerbtrees', 'promenade', 'cranes', 'ships'] },
+      { len: 420, k: 0, lanes: 4, sh: 2.6, shl: 2.2, L: 'city', R: 'harbor', tags: ['start', 'qilou', 'kerbtrees', 'promenade', 'cranes', 'ships'] },
       { len: 600, k: 0.0028, dy: 4, L: 'city', R: 'harbor', tags: ['qilou', 'kerbtrees', 'promenade', 'cranes', 'ships'] },
       { len: 380, k: -0.0036, dy: -4, L: 'city', R: 'harbor', tags: ['citytower', 'lightrail', 'promenade', 'cranes', 'ships'] },
-      { len: 320, k: 0.0042, med: 1.2, mt: 'barrier', L: 'city', R: 'industrial', tags: ['qilou', 'containers', 'lamps'] },
+      { len: 320, k: 0.0042, L: 'city', R: 'industrial', tags: ['qilou', 'containers', 'lamps'] },
       { len: 360, k: -0.002, dy: 12, L: 'city', R: 'industrial', tags: ['overpass', 'containers', 'lamps'] },
       { len: 340, k: 0.003, dy: -12, L: 'town', R: 'grass', tags: ['townhouse', 'lamps', 'airport'] },
       { len: 600, k: -0.0032, L: 'town', R: 'grass', tags: ['airport', 'plane', 'betelstand', 'palmgroup'] },
@@ -674,17 +675,17 @@ const STAGES = {
     ],
   },
   s2a: {
-    label: '東港・台17海線', name: '海線・大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 66,
-    traffic: { per100: 1.4, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 1, bus: 1, pickup: 1 } },
+    label: '東港・台17海線', name: '海線・大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 76,
+    traffic: { per100: 1.5, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 1, bus: 1, pickup: 1 } },
     next: 's3',
     sections: [
-      { len: 300, k: 0, lanes: 2, sh: 2.4, med: 0.7, mt: 'yellow', opp: 2, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel', 'palmgroup'] },
-      { len: 700, k: 0.0012, dy: 7, med: 1.0, mt: 'barrier', L: 'water', R: 'water', bridge: 'girder', tags: ['bridgelamps', 'sandbars'] },
-      { len: 560, k: -0.0035, dy: -7, med: 0.7, mt: 'yellow', L: 'farm', R: 'farm', tags: ['farmhouse', 'betel', 'betelstand', 'banana'] },
+      { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel', 'palmgroup'] },
+      { len: 700, k: 0.0012, dy: 7, L: 'water', R: 'water', bridge: 'girder', tags: ['bridgelamps', 'sandbars'] },
+      { len: 560, k: -0.0035, dy: -7, L: 'farm', R: 'farm', tags: ['farmhouse', 'betel', 'betelstand', 'banana'] },
       { len: 600, k: 0.004, L: 'town', R: 'harbor', tags: ['townhouse', 'templegate', 'fishboats', 'seafood', 'lamps'] },
       { len: 420, k: -0.0026, L: 'water', R: 'beach', tags: ['mangrove', 'sailboat', 'palmgroup', 'circuit'] },
-      { len: 300, k: 0, dy: 8, med: 1.0, mt: 'barrier', L: 'water', R: 'water', bridge: 'bascule', tags: ['bridgelamps', 'sailboat'] },
-      { len: 340, k: -0.0042, dy: -8, med: 0.7, mt: 'yellow', L: 'water', R: 'beach', tags: ['mangrove', 'palmgroup', 'liuqiu'] },
+      { len: 300, k: 0, dy: 8, L: 'water', R: 'water', bridge: 'bascule', tags: ['bridgelamps', 'sailboat'] },
+      { len: 340, k: -0.0042, dy: -8, L: 'water', R: 'beach', tags: ['mangrove', 'palmgroup', 'liuqiu'] },
       { len: 440, k: 0.0036, L: 'fishpond', R: 'fishpond', tags: ['ponds', 'betel', 'farmhouse'] },
       { len: 440, k: -0.003, dy: 5, L: 'fishpond', R: 'fishpond', tags: ['ponds', 'waxapple', 'farmhouse'] },
       { len: 520, k: 0.0045, dy: -5, L: 'orchard', R: 'beach', tags: ['waxapple', 'oysters', 'palmgroup', 'tetrapods'] },
@@ -692,43 +693,43 @@ const STAGES = {
     ],
   },
   s2b: {
-    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 64,
-    traffic: { per100: 1.2, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 1 } },
+    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 76,
+    traffic: { per100: 1.3, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 1 } },
     next: 's3',
     sections: [
-      { len: 300, k: 0, lanes: 2, sh: 2.4, med: 0.7, mt: 'yellow', opp: 2, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel'] },
+      { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel'] },
       { len: 620, k: 0.001, dy: 10, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps'] },
-      { len: 700, k: 0.0032, dy: -10, lanes: 2, sh: 2.4, med: 0.7, mt: 'yellow', L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand'] },
-      { len: 520, k: -0.0045, sh: 1.8, med: 0.7, mt: 'yellow', L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
+      { len: 700, k: 0.0032, dy: -10, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand'] },
+      { len: 520, k: -0.0045, sh: 1.8, L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
       { len: 460, k: 0.005, dy: 14, L: 'mountain', R: 'hills', tags: ['tribalgate', 'stonehouse', 'betel', 'coffee'] },
       { len: 440, k: -0.0048, dy: -10, L: 'mountain', R: 'orchard', tags: ['totem', 'mangogroup', 'stonehouse'] },
-      { len: 320, k: 0, med: 1.0, mt: 'barrier', L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps'] },
-      { len: 600, k: 0.0042, dy: 8, med: 0.7, mt: 'yellow', L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'tribalgate'] },
+      { len: 320, k: 0, L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps'] },
+      { len: 600, k: 0.0042, dy: 8, L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'tribalgate'] },
       { len: 420, k: -0.003, dy: -12, L: 'hills', R: 'orchard', tags: ['mangogroup', 'betelstand', 'temple'] },
     ],
   },
   s3: {
-    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 67,
-    traffic: { per100: 1.3, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 1, pickup: 1 } },
+    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 76,
+    traffic: { per100: 1.4, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 1, pickup: 1 } },
     children: ['s4a', 's4b'],
     sign: { L: ['恆春・墾丁', '台26', '鵝鑾鼻'], R: ['海生館', '濱海公路', '貓鼻頭'] },
     sections: [
-      { len: 420, k: 0, lanes: 2, sh: 2.0, med: 2.6, mt: 'plant', opp: 1, L: 'town', R: 'harbor', tags: ['checkpoint', 'station', 'townhouse', 'fishboats', 'lamps'] },
-      { len: 560, k: 0.0028, dy: 4, med: 0.7, mt: 'yellow', L: 'slope', R: 'shore', tags: ['railway', 'mangostall'] },
+      { len: 420, k: 0, lanes: 3, sh: 2.0, L: 'town', R: 'harbor', tags: ['checkpoint', 'station', 'townhouse', 'fishboats', 'lamps'] },
+      { len: 560, k: 0.0028, dy: 4, L: 'slope', R: 'shore', tags: ['railway', 'mangostall'] },
       { len: 480, k: -0.0038, dy: 8, L: 'slope', R: 'cliff', tags: ['coastplants', 'guardR'] },
       { len: 420, k: 0.0045, dy: -8, L: 'slope', R: 'shore', tags: ['mangostall'] },
       { len: 520, k: -0.003, L: 'orchard', R: 'shore', tags: ['mangostall', 'mangogroup'] },
-      { len: 380, k: 0, med: 2.6, mt: 'plant', L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand'] },
-      { len: 640, k: 0.0032, dy: 10, med: 0.7, mt: 'yellow', L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 380, k: 0, L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand'] },
+      { len: 640, k: 0.0032, dy: 10, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
       { len: 520, k: -0.004, dy: -10, L: 'farm', R: 'shore', tags: ['onion', 'bigtemple'] },
       { len: 300, k: 0, L: 'farm', R: 'grass', tags: ['palmgroup', 'forksign'] },
     ],
   },
   s4a: {
-    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 64, goal: '鵝鑾鼻燈塔',
-    traffic: { per100: 1.5, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1 } },
+    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 74, goal: '鵝鑾鼻燈塔',
+    traffic: { per100: 1.6, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1 } },
     sections: [
-      { len: 560, k: 0, lanes: 2, sh: 2.0, med: 0.7, mt: 'yellow', opp: 1, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
+      { len: 560, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
       { len: 440, k: 0.003, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps'] },
       { len: 820, k: -0.0026, dy: 3, L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat'] },
       { len: 600, k: 0.0036, dy: -3, L: 'town', R: 'town', tags: ['nightmarket', 'neon', 'lamps'] },
@@ -738,10 +739,10 @@ const STAGES = {
     ],
   },
   s4b: {
-    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 64, goal: '貓鼻頭',
-    traffic: { per100: 1.1, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2 } },
+    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 74, goal: '貓鼻頭',
+    traffic: { per100: 1.2, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2 } },
     sections: [
-      { len: 380, k: 0, lanes: 2, sh: 1.8, med: 0.7, mt: 'yellow', opp: 1, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup'] },
+      { len: 380, k: 0, lanes: 3, sh: 1.8, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup'] },
       { len: 160, k: 0, dy: 3, L: 'water', R: 'water', bridge: 'cable', tags: [] },
       { len: 520, k: 0.0034, dy: -3, L: 'farm', R: 'beach', tags: ['palmgroup', 'tetrapods'] },
       { len: 160, k: 0, L: 'water', R: 'water', bridge: 'cable', tags: [] },
@@ -765,8 +766,8 @@ function layPiece(stageId, start, opts) {
   const d = p.def;
   if (d.children) {
     const e = p.end, rx = Math.cos(e.h), rz = Math.sin(e.h), off = p.forkOff, [cl, cr] = p.forkLanes;
-    // the left branch keeps the oncoming road (behind a wide planted median); the right one keeps the shoulder
-    const csL = { W: (cl * LANE) / 2, SH: 0, M: e.cs.M, O: e.cs.O };
+    // the left branch keeps the left shoulder, the right one the right shoulder; each grows the other after they part
+    const csL = { W: (cl * LANE) / 2, SH: 0, M: e.cs.M, O: 0 };
     const csR = { W: (cr * LANE) / 2, SH: e.cs.SH, M: 0, O: 0 };
     const L = layPiece(d.children[0], { x: e.x + rx * off[0], y: e.y, z: e.z + rz * off[0], h: e.h }, { side: -1, parent: p, startCS: csL, gS: p.gS + p.L });
     const R = layPiece(d.children[1], { x: e.x + rx * off[1], y: e.y, z: e.z + rz * off[1], h: e.h }, { side: 1, parent: p, startCS: csR, gS: p.gS + p.L });
@@ -1931,8 +1932,8 @@ function paintLand() {
 // A rail is laid as short wall segments, each wearing one tile of its texture, so a balustrade post passes
 // every 2.4 m and a stone wall shows its courses: pixels, not shaded polygons. L = tile length (m), h = height (m).
 const RAIL_TEX = {
-  balustrade: { L: 2.4, h: 1.0 }, railing: { L: 2.4, h: 1.1 }, guard: { L: 4, h: 0.8 }, concrete: { L: 4, h: 0.8 }, parapet: { L: 4, h: 1.05 },
-  fence: { L: 3, h: 2.2 }, hedge: { L: 2, h: 0.95 }, kerb: { L: 2, h: 0.2 }, stonewall: { L: 3, h: 1.4 },
+  balustrade: { L: 2.4, h: 1.0, solid: true }, railing: { L: 2.4, h: 1.1, solid: true }, guard: { L: 4, h: 0.8, solid: true }, concrete: { L: 4, h: 0.8, solid: true }, parapet: { L: 4, h: 1.05, solid: true },
+  fence: { L: 3, h: 2.2 }, hedge: { L: 2, h: 0.95 }, kerb: { L: 2, h: 0.2 }, stonewall: { L: 3, h: 1.4, solid: true },
 };
 const RPPM = 26;   // pixels per metre on rail textures
 function paintRailTex(kind, seed) {
@@ -2451,6 +2452,8 @@ class Deco {
     s0 = Math.max(0, s0); s1 = Math.min(this.p.L, s1);
     if (!tex) { this.p.rails.push(Object.assign({ s0, s1, sg, off, kind }, o || {})); return; }
     for (let s = s0; s < s1 - 0.05; s += T.L) { const e = Math.min(s1, s + T.L); this.wall(s, e, sg, off, 0, T.h, 'rail_' + kind, { collide: false, u1: (e - s) / T.L, col: 0, sideCol: 0 }); }
+    // a solid rail is a wall to the car: brushing it costs speed, there is no driving through a stone wall
+    if (T.solid && !(o && o.collide === false)) for (let s = s0; s < s1; s += 4) this.collide(Math.min(s + 2, s1), this.lat(s + 2, sg, off), 0.3, 2.2, 'wall');
   }
   // a hanging wire through points [{s, x, y}] (y above the road)
   wire(pts) { for (let i = 0; i + 1 < pts.length; i++) this.p.wires.push({ s: pts[i].s, x0: pts[i].x, y0: pts[i].y, s1: pts[i + 1].s, x1: pts[i + 1].x, y1: pts[i + 1].y }); }
@@ -2516,13 +2519,6 @@ function decoratePiece(p) {
       if (L.far && due(sg, 'far', s, L.far[0])) { const off = r.range(L.far[2][0], L.far[2][1]); if (off < room) plant(D, r.pick(L.far[1]), s, D.lat(s, sg, off), r.range(1.1, 1.6) * (1 + off / 300), { collide: false }); }
       if (L.hill && due(sg, 'hill', s, L.hill[0])) { const off = r.range(L.hill[2][0], L.hill[2][1]); if (off < room) plant(D, r.pick(L.hill[1]), s, D.lat(s, sg, off), r.range(1.8, 2.8) * (1 + off / 500), { collide: false }); }
     }
-    // planted medians: a clipped hedge with flowers, and palms or trees where it's wide
-    const M = p.M[i], mt = p.secs[p.SEC[i]].mt;
-    if (mt === 'plant' && M > 1.4) {
-      const mx = -p.W[i] - M / 2;
-      if (s % 6 < 2) plant(D, r() < 0.75 ? 'hedge' : 'flowers', s, mx + r.range(-M / 5, M / 5), Math.min(1, M / 3.5), { collide: false, flip: false });
-      if (M > 4 && due(0, 'med', s, M > 12 ? 9 : 16)) plant(D, M > 12 ? r.pick(['banyan', 'palm', 'royal']) : 'royal', s, mx + r.range(-M / 6, M / 6), 1, { collide: false });
-    }
   }
   poleLine(D);
   postLine(D);
@@ -2531,8 +2527,6 @@ function decoratePiece(p) {
   p.secs.forEach((sec, j) => {
     const s0 = p.secStartS[j], s1 = j + 1 < p.secs.length ? p.secStartS[j + 1] : p.L;
     if (sec.bridge) TAGS._bridge(D, s0, s1, sec);
-    // the concrete barrier down a divided road's median, laid as textured segments
-    if (sec.mt === 'barrier' && sec.med > 0.4) { const O = sec.opp ? (sec.opp * LANE) / 2 : 0; D.rail(s0 + 2, s1 - 2, -1, -(sec.med / 2 + 2 * O + (O > 0.05 ? OPP_SH : 0)) - 0.15, 'concrete'); }
     for (const sg of [-1, 1]) { const t = sg > 0 ? sec.R : sec.L; if (t === 'city' || t === 'town' || t === 'plaza' || t === 'harbor') D.rail(s0, s1, sg, 0, 'kerb'); if (SIDE_DRESS[t]) SIDE_DRESS[t](D, s0, s1, sg); }
     for (const t of sec.tags || []) if (TAGS[t]) TAGS[t](D, s0, s1, sec);
   });
@@ -2701,7 +2695,7 @@ const TAGS = {
   },
   townhouse(D, s0, s1, sec) { for (const sg of [-1, 1]) { const t = sg > 0 ? sec.R : sec.L; if (t === 'city' || t === 'town') houseRow(D, s0, s1, sg, t === 'city' ? 7.5 : 4.8); } },
   scooterstore(D, s0, s1) { every(s0, s1, 25, 4, D.rnd, (s) => D.spr('scooters', s, D.lat(s, -1, 1.8), { collide: false })); },
-  lamps(D, s0, s1, sec) { lampRow(D, s0, s1, 1, 0.7, 34, 'lamp1'); if (sec.mt === 'plant' && sec.med > 4) every(s0, s1, 34, 0, D.rnd, (s) => D.spr('lamp2', s, -D.p.hw(s) - D.p.at(D.p.M, s) / 2, { flip: false, collide: false })); },
+  lamps(D, s0, s1, sec) { lampRow(D, s0, s1, 1, 0.7, 34, 'lamp1'); lampRow(D, s0 + 17, s1, -1, 0.7, 34, 'lamp1'); },
   lightrail(D, s0, s1) {
     // Kaohsiung's light rail: two tracks on a strip of lawn between the pavement and the buildings, no overhead wires
     D.p.grounds = D.p.grounds || [];
@@ -2830,7 +2824,7 @@ const TAGS = {
     D.rail(s0, s1, -1, 0.1, 'parapet'); D.rail(s0, s1, 1, 0.1, 'parapet');
     const p = D.p;
     if (sec.bridge === 'cable') {
-      const sm = (s0 + s1) / 2, i = Math.round(sm / DS), mx = -p.W[i] - p.M[i] / 2, H = 68;
+      const sm = (s0 + s1) / 2, i = Math.round(sm / DS), mx = p.outerL(i) - 1.8, H = 68;
       D.spr('pylon', sm, mx, { flip: false, collide: true });
       for (let k = 1; k <= 9; k++) for (const dir of [-1, 1]) {
         const sa = sm + dir * k * 24;
@@ -2954,7 +2948,7 @@ const CREW = {
 // Each car is painted from behind (the race view) and from the side (showroom and endings) straight from its numbers:
 // width, tail height, the shape of the deck, its tail lights, its extras and its two passengers.
 // Steering frames lean the top of the car into the turn and show a strip of its flank.
-const CAR_STEERS = [-3, -2, -1, 0, 1, 2, 3];
+const CAR_STEERS = [-2, -1, 0, 1, 2];        // full left, half left, straight, half right, full right
 const CPX = 68;                            // pixels per metre across the car in the race view; frames are drawn 1:1
 const CFW = 224, CFH = 124, CGY = 112;     // frame size, and the row the rear tyres stand on
 const CAR_REAR = 1.3;                      // the rear wheels' contact line lies this far behind PC.s
@@ -3004,7 +2998,7 @@ function paintHeadBack(px, x, y, o, phase) {
 // Every frame is the same solid turned about its rear axle and seen from one fixed camera, so all five frames share
 // one scale and one ground point. Surfaces take their tone from what they are (deck, shoulder, flank, tail), not from
 // a lighting model, and the details are drawn on as pixel shapes: lamps, plate, pipes, mirrors, heads.
-const CAR_YAW = [-0.62, -0.36, -0.18, 0, 0.18, 0.36, 0.62];   // drift left, hard left, left, straight, right, hard right, drift right (radians)
+const CAR_YAW = [-0.62, -0.36, 0, 0.36, 0.62];   // the nose angle of each frame: full lock, half lock, straight (radians)
 const CAM_S = { D: 6.2, H: 1.75 };                // the sprite camera: metres behind the rear axle, and its height
 const VSQ = 0.86;                                 // bodies sit a touch lower than their side-view numbers
 const REAR_OH = 0.62;                             // a short rear overhang, so the rear tyres stand out under the tail
@@ -3032,7 +3026,7 @@ function clipV(pts, v0, v1) {
 function carMetrics(spec) { return { BW: Math.round(spec.W * CPX) }; }
 function paintCarRear(spec, steer, brake, phase) {
   const px = new Pix(CFW, CFH), cx = CFW / 2, P = carPal(spec.color), G = carGeo(spec);
-  const yaw = CAR_YAW[steer + 3], cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const yaw = CAR_YAW[steer + 2], cy = Math.cos(yaw), sy = Math.sin(yaw);
   const zT = G.secs[0].z, f = CPX * (CAM_S.D + zT), Y0s = CGY - (CAM_S.H * f) / CAM_S.D;
   const chrome = !!spec.chrome, interior = spec.interior, crew = CREW[spec.id] || [];
   // car space (x right, y up, z forward, origin on the ground under the rear axle) to the sprite
@@ -3159,8 +3153,10 @@ function paintCarRear(spec, steer, brake, phase) {
     const hr = [pr(x - 0.15, A.top + 0.2, seatZ + 0.02), pr(x + 0.15, A.top + 0.2, seatZ + 0.02), pr(x + 0.14, A.top + 0.34, seatZ + 0.04), pr(x - 0.14, A.top + 0.34, seatZ + 0.04)];
     items.push({ d: depth(x, seatZ), draw: () => { px.poly(flat(q), seat[1]); px.line(q[3][0], q[3][1], q[2][0], q[2][1], seat[2], 1); px.poly(flat(hr), seat[0]); px.line(hr[3][0], hr[3][1], hr[2][0], hr[2][1], seat[2], 1); } });
   }
+  px.headPos = [];
   crew.forEach((o, i) => {
     const x = sxs[i ? 1 : 0], hp = pr(x, A.top + 0.42, headZ);
+    px.headPos.push([Math.round(hp[0]), Math.round(hp[1])]);
     items.push({ d: depth(x, headZ) - 0.01, draw: () => paintHeadBack(px, Math.round(hp[0]), Math.round(hp[1]), o, phase) });
   });
   // ---- extras ----
@@ -3301,20 +3297,25 @@ function carSprites(spec) {
   const key = spec.id + (SET.refCar !== false ? ':ref' : '');
   if (CAR_SPR[key]) return CAR_SPR[key];
   if (SET.refCar !== false && typeof refCarSprites === 'function') { const r = refCarSprites(spec); if (r) return (CAR_SPR[key] = r); }
-  const frames = CAR_STEERS.map((s) => [false, true].map((b) => [0, 1].map((ph) => paintCarRear(spec, s, b, ph * 1.7).toCanvas())));
-  const out = { frames, steers: CAR_STEERS, w: CFW, h: CFH, ax: CFW / 2, ay: CGY + 3, bw: carMetrics(spec).BW, side: null };
+  const headPos = [];
+  const frames = CAR_STEERS.map((s, si) => [false, true].map((b) => [0, 1].map((ph) => { const px = paintCarRear(spec, s, b, ph * 1.7); if (!b && !ph) headPos[si] = px.headPos; return px.toCanvas(); })));
+  const out = { frames, steers: CAR_STEERS, w: CFW, h: CFH, ax: CFW / 2, ay: CGY + 3, bw: carMetrics(spec).BW, side: null, headPos };
   CAR_SPR[key] = out;
   return out;
 }
 function carSide(spec, scale) { const key = spec.id + ':' + (scale || 52); return CAR_SPR[key] || (CAR_SPR[key] = paintCarSide(spec, scale).toCanvas()); }
 // ---------- drawing the player's car ----------
 const _pc = { x: 0, y: 0, z: 0 }, _pq = { x: 0, y: 0, k: 0, cz: 0 };
-// which frame: the steering, the bend pulling the nose round, and in a drift the nose swung right out (each car its own amount)
+// which frame: straight, half lock or full lock, read straight off the wheel so the picture always answers the hand.
+// The thresholds have a little hysteresis so the picture never flickers while the wheel sits near one of them.
 function carSteerIndex(spr) {
-  const pose = (PC.spec && PC.spec.pose) || POSE_DEFAULT, n = spr.frames.length, mid = (n - 1) >> 1;
-  let sv = PC.steerIn * 1.7 + (PC.yaw || 0) * 9;
-  if (FX.driftK > 0.02) sv += FX.swing * pose.yawK * 3.4;
-  return clamp(Math.round(clamp(sv, -mid - 0.45, mid + 0.45)) + mid, 0, n - 1);
+  const n = spr.frames.length, mid = (n - 1) >> 1, a = Math.abs(PC.steerIn), cur = Math.abs((PC._si == null ? mid : PC._si) - mid);
+  let lv = a > 0.72 ? 2 : a > 0.28 ? 1 : 0;
+  if (cur === 2 && a > 0.62) lv = 2; else if (cur === 1 && a > 0.2 && a <= 0.82) lv = 1; else if (cur === 0 && a <= 0.36) lv = 0;
+  if (PC.drift && lv < 2 && Math.sign(PC.steerIn) === PC.driftDir) lv = 2;   // sideways, the nose is right round
+  const si = clamp(mid + Math.sign(PC.steerIn || 1) * Math.min(lv, mid), 0, n - 1);
+  PC._si = si;
+  return si;
 }
 function carFrame(spr) {
   const si = carSteerIndex(spr), brake = PC.brake > 0.1 || RACE.state === 'goal' ? 1 : 0, fl = Math.floor(G.t * 8) & 1;
@@ -3358,7 +3359,63 @@ function drawPlayerCar(spr) {
     const ph = PC.v > 4 ? [0, 1, 0, 2][Math.floor(G.t * (5 + PC.v * 0.15)) & 3] : 0;
     for (const h of spr.heads) VG.drawImage(h.frames[ph], Math.round(x - spr.ax + h.x + sh + FX.hx - FX.pivot * 3 * dk), Math.round(yG - spr.ay - lift + h.y + FX.hy));
   }
+  if (FX.cheer) drawCheer(spr, x - spr.ax, yG - spr.ay - lift, dk);
   if (posed) VG.restore();
+}
+// ---------- the crew's arms: pixel limbs drawn over the frame at the heads ----------
+// where each head's centre is on the frame, for this steering picture
+function headCentres(spr, dk) {
+  const si = PC._si == null ? (spr.frames.length - 1) >> 1 : PC._si, out = [];
+  if (spr.heads) { const sh = spr.shift[si]; for (const h of spr.heads) out.push([Math.round(h.x + h.frames[0].width / 2 + sh + FX.hx - FX.pivot * 3 * dk), Math.round(h.y + h.frames[0].height / 2 + FX.hy)]); }
+  else if (spr.headPos && spr.headPos[si]) for (const q of spr.headPos[si]) out.push([q[0], q[1]]);
+  return out;
+}
+// a limb: a thick stroke of square pixels from (x0,y0) to (x1,y1), outlined
+function limb(x0, y0, x1, y1, w, col, outl) {
+  const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+  VG.fillStyle = outl;
+  for (let i = 0; i <= n; i++) { const t = i / n; VG.fillRect(Math.round(x0 + (x1 - x0) * t) - (w >> 1) - 1, Math.round(y0 + (y1 - y0) * t) - (w >> 1) - 1, w + 2, w + 2); }
+  VG.fillStyle = col;
+  for (let i = 0; i <= n; i++) { const t = i / n; VG.fillRect(Math.round(x0 + (x1 - x0) * t) - (w >> 1), Math.round(y0 + (y1 - y0) * t) - (w >> 1), w, w); }
+}
+function fist(x, y, skin, outl, thumb) {
+  VG.fillStyle = outl; VG.fillRect(x - 4, y - 4, 8, 8); VG.fillStyle = skin; VG.fillRect(x - 3, y - 3, 6, 6); VG.fillStyle = shadeCss(skin, 0.82); VG.fillRect(x - 3, y + 1, 6, 2);
+  if (thumb) { VG.fillStyle = outl; VG.fillRect(x - 2, y - 9, 4, 6); VG.fillStyle = skin; VG.fillRect(x - 1, y - 8, 2, 5); }
+}
+function openHand(x, y, skin, outl, tilt) {
+  VG.fillStyle = outl; VG.fillRect(x - 4, y - 5, 8, 9); VG.fillStyle = skin; VG.fillRect(x - 3, y - 4, 6, 7);
+  for (let k = 0; k < 3; k++) { VG.fillStyle = outl; VG.fillRect(x - 3 + k * 2 + tilt, y - 8, 2, 4); VG.fillStyle = skin; VG.fillRect(x - 3 + k * 2 + tilt, y - 7, 1, 3); }
+}
+const _cssC = new Map();
+function shadeCss(hex, k) { const key = hex + ':' + k; let v = _cssC.get(key); if (!v) { v = cssHex(shadeHex(hex, k)); _cssC.set(key, v); } return v; }
+function drawCheer(spr, ox, oy, dk) {
+  const c = FX.cheer, crew = (PC.spec && CREW[PC.spec.id]) || [], H = headCentres(spr, dk);
+  if (!H.length) return;
+  const outl = '#140a1a', t = c.t;
+  const arm = (i, side, kind) => {
+    // side: +1 the arm on the right of the body (the car's right), -1 the left
+    const o = crew[i] || {}, skin = cssHex(o.skin || 0xf2c8a0), shirt = cssHex(o.shirt || 0xffffff), hx = ox + H[i][0], hy = oy + H[i][1];
+    const sx = hx + side * 9, sy = hy + 7;   // the shoulder, just beside and below the head
+    if (kind === 'thumb') {
+      // the driver's hand off the wheel for a moment: out to the side at head height, thumb up
+      const ex = sx + side * 9, ey = sy - 2, px2 = ex + side * 4, py = hy - 4;
+      limb(sx, sy, ex, ey, 4, shirt, outl); limb(ex, ey, px2, py, 3, skin, outl); fist(px2, py - 2, skin, outl, true);
+      return;
+    }
+    // a raised arm: upper arm out and up in the sleeve, forearm up to the fist above the head
+    let lift = 0, hand = 'fist', tilt = 0;
+    if (kind === 'fist') lift = t < 0.35 ? 0 : t < 0.6 ? 6 : 0;                       // pumped: up, down a touch, up again
+    if (kind === 'wave') { hand = 'open'; tilt = (Math.floor(t * 7) & 1) ? 2 : -2; }
+    if (kind === 'vee' || kind === 'goal') lift = Math.round(Math.sin(t * 9) * 2);
+    const ex = sx + side * 8, ey = sy - 6 + lift * 0.5, fx = hx + side * 6, fy = hy - 19 + lift;
+    limb(sx, sy, ex, ey, 4, shirt, outl); limb(ex, ey, fx, fy + 3, 3, skin, outl);
+    if (hand === 'open') openHand(fx + tilt, fy, skin, outl, tilt); else fist(fx, fy, skin, outl, false);
+  };
+  if (c.kind === 'bark') return;   // the dog: nothing to raise; its head bob is in the picture
+  if (c.kind === 'thumb' && crew[0] && !crew[0].dog) arm(0, 1, 'thumb');
+  else if (c.kind === 'vee' && crew[1] && !crew[1].dog) { arm(1, -1, 'vee'); arm(1, 1, 'vee'); }
+  else if (c.kind === 'goal') { for (let i = 0; i < H.length && i < 2; i++) { if (crew[i] && crew[i].dog) continue; if (i === 0) arm(0, 1, 'vee'); else { arm(1, -1, 'vee'); arm(1, 1, 'vee'); } } }
+  else if (crew[1] && !crew[1].dog) arm(1, 1, c.kind);   // the passenger's outside arm, away from the driver
 }
 
 // ===================== the player's car cut from the reference art: ten frames, five steers x brake =====================
@@ -3371,11 +3428,13 @@ function loadRefCars() {
 function refCarSprites(spec) {
   const R = CAR_REF[spec.id], im = CAR_REF_IMG[spec.id]; if (!R || !im) return null;
   const m = R.meta, frames = [];
-  const NS = m.steers || 5;
-  for (let s = 0; s < NS; s++) { frames.push([0, 1].map((b) => { const c = canvas(m.fw, m.fh); c.getContext('2d').drawImage(im, (b * NS + s) * m.fw, 0, m.fw, m.fh, 0, 0, m.fw, m.fh); return [c, c]; })); }
+  // the sheet holds seven nose angles; the game uses five of them: full lock, half lock, straight
+  const NS = m.steers || 5, cols = NS === 7 ? [0, 1, 3, 5, 6] : [0, 1, 2, 3, 4];
+  for (const s of cols) { frames.push([0, 1].map((b) => { const c = canvas(m.fw, m.fh); c.getContext('2d').drawImage(im, (b * NS + s) * m.fw, 0, m.fw, m.fh, 0, 0, m.fw, m.fh); return [c, c]; })); }
+  const shift = (m.shift || [0, 0, 0, 0, 0, 0, 0]), shift5 = cols.map((c) => shift[c] || 0);
   // the two of them, cut out separately: three wind phases each, placed over the cockpit and moved by inertia
   const heads = (m.heads || []).map((h) => ({ x: h.x, y: h.y, frames: [0, 1, 2].map((p) => { const c = canvas(h.w, h.h); c.getContext('2d').drawImage(im, h.sx + p * h.w, h.sy, h.w, h.h, 0, 0, h.w, h.h); return c; }) }));
-  return { frames, steers: CAR_STEERS, w: m.fw, h: m.fh, ax: m.ax, ay: m.ay, bw: m.bw, side: null, ref: true, heads, shift: m.shift || [0, 0, 0, 0, 0, 0, 0] };
+  return { frames, steers: CAR_STEERS, w: m.fw, h: m.fh, ax: m.ax, ay: m.ay, bw: m.bw, side: null, ref: true, heads, shift: shift5 };
 }
 
 // ===================== solids: little 3D models of vehicles, painted face by face in flat pixel tones =====================
@@ -3669,12 +3728,12 @@ const REDLINE = { v12: 8200, v8: 6600, i6: 7200, i4: 7600, flat6: 7800, turbo: 8
 const WORLD_K = 1.35;   // the world passes a little faster than the speedo says, the arcade way
 const PC = {
   spec: null, car: null, piece: null, s: 0, x: 0, v: 0, vx: 0, rpm: 900, gear: 1, gears: 6, auto: true,
-  throttle: 0, brake: 0, steer: 0, steerIn: 0, shiftT: 0, shiftTo: 0, neutral: false,
+  throttle: 0, brake: 0, steer: 0, steerIn: 0, shiftT: 0, shiftTo: 0, neutral: false, seq: false,
   drift: 0, driftDir: 0, slip: 0, offroad: 0, surface: 'road', wall: 0, crash: null, yaw: 0, roll: 0, pitch: 0, bump: 0,
   vtop: 80, vmax: [], redline: 7600, dist: 0, wind: 0, windT: 0, lastHit: 0, scrape: 0, airY: 0,
 };
-function pcSetup(spec, auto) {
-  PC.spec = spec; PC.gears = spec.gears; PC.auto = auto !== false; PC.redline = REDLINE[spec.engine] || 7500;
+function pcSetup(spec, auto, seq) {
+  PC.spec = spec; PC.gears = spec.gears; PC.auto = auto !== false; PC.seq = !!seq; PC.redline = REDLINE[spec.engine] || 7500;
   PC.vtop = spec.top / 3.6;
   PC.vmax = [0]; for (let g = 1; g <= spec.gears; g++) PC.vmax.push(PC.vtop * Math.pow(g / spec.gears, 0.74));
   // engine pull, then aerodynamic drag chosen so the top gear tops out right at the redline
@@ -3751,24 +3810,39 @@ function pcStep(dt, track) {
   const k = p.curv(PC.s), v = PC.v;
   const auth = (6.6 + 4.2 * sp.steer) * 1.5 * clamp(v / 20, 0.18, 1) * (PC.drift > 0 ? 1.4 : 1);   // quick: a lane in a third of a second
   const cent = k * v * v * (0.34 - 0.12 * sp.grip) * (PC.drift > 0 ? 0.62 : 1);
-  // start a drift: a brake tap while steering hard at speed
-  if (!PC.drift && PC.brake > 0.25 && Math.abs(PC.steerIn) > 0.55 && v > ((sp.pose && sp.pose.driftV) || 26)) { PC.drift = 1; PC.driftDir = Math.sign(PC.steerIn); sfxSkid(true); }
+  // start a drift: a brake tap while steering hard at speed, or the wheel held hard over at speed — on a big bend
+  // the tail steps out almost at once, on a straight only after the lock has been held a moment
+  const dv0 = (sp.pose && sp.pose.driftV) || 26, lock = Math.abs(PC.steerIn) > 0.86, bend = Math.abs(cent) > 2.2 && Math.sign(PC.steerIn) === Math.sign(k);
+  PC.lockT = lock ? (PC.lockT || 0) + dt : 0;
+  if (!PC.drift && v > dv0 * 0.8 && !PC.offroad) {
+    if (PC.brake > 0.25 && Math.abs(PC.steerIn) > 0.55 && v > dv0) { PC.drift = 1; PC.driftDir = Math.sign(PC.steerIn); sfxSkid(true); }
+    else if (lock && PC.lockT > (bend ? 0.1 : 0.45)) { PC.drift = 1; PC.driftDir = Math.sign(PC.steerIn); sfxSkid(true); }
+  }
   if (PC.drift) { if (Math.abs(PC.steerIn) < 0.3 || v < 17 || Math.sign(PC.steerIn) !== PC.driftDir) { PC.drift = 0; sfxSkid(false); } }
   // grip: past the limit the car washes wide by itself
   const over = Math.max(0, Math.abs(cent) - (4.5 + 4 * sp.grip));
   PC.slip = lerp(PC.slip, over > 0 || PC.drift ? 1 : 0, dt * 4);
-  const target = PC.steerIn * auth - cent - Math.sign(cent) * over * 0.6 + PC.wind;
+  const target = PC.steerIn * auth - cent - Math.sign(cent) * over * 0.6 + PC.wind - (PC.drift ? PC.driftDir * 0.9 : 0);
   PC.vx = lerp(PC.vx, target, clamp(dt * (PC.drift ? 7 : 15), 0, 1));
   PC.x += PC.vx * dt;
-  // ---- edges: median barrier on the left (scrape), off-road on the right ----
-  const lw = p.leftWall(PC.s), re = p.rightEdge(PC.s);
-  if (PC.x < lw) { if (v > 8) { PC.v *= 1 - 0.35 * dt * 3; PC.scrape = 0.25; sfxScrape(); } PC.x = lw; PC.vx = Math.max(PC.vx, 1.5); }
-  PC.offroad = PC.x > re + 0.4 ? 1 : 0;
-  PC.surface = PC.offroad ? (p.sec(PC.s).R || 'grass') : 'road';
+  // ---- edges: off the paving on either side the ground slows you down; a long way out you are turned back ----
+  const le = p.leftEdge(PC.s), re = p.rightEdge(PC.s);
+  PC.offroad = PC.x > re + 0.4 || PC.x < le - 0.4 ? 1 : 0;
+  PC.surface = PC.offroad ? ((PC.x < 0 ? p.sec(PC.s).L : p.sec(PC.s).R) || 'grass') : 'road';
   if (PC.x > re + 32) { PC.x = re + 32; PC.vx = Math.min(PC.vx, 0); }
-  // ---- static obstacles: trees, poles, gates, buildings ----
+  if (PC.x < le - 32) { PC.x = le - 32; PC.vx = Math.max(PC.vx, 0); }
+  // ---- walls: rails, parapets, shop fronts — you grind along them, you never get through them ----
+  const wall = findCollider(p, PC.s, PC.x, 2.1, 0.92, 'wall');
+  if (wall) {
+    const mid = (wall.x0 + wall.x1) / 2, inward = mid > 0 ? -1 : 1;
+    PC.x = mid > 0 ? wall.x0 - 0.95 : wall.x1 + 0.95;
+    if (inward > 0) PC.vx = Math.max(PC.vx, 1.5); else PC.vx = Math.min(PC.vx, -1.5);
+    if (performance.now() - PC.lastHit > 300 && v > 6) { PC.lastHit = performance.now(); PC.v *= 0.9; PC.scrape = 0.25; sfxScrape(); shake(0.12); if (typeof fxScrape === 'function') fxScrape(-inward); }
+    else if (v > 6) PC.v *= 1 - 0.25 * dt;     // and it keeps scrubbing speed while you lean on it
+  }
+  // ---- static obstacles: trees, poles, gates ----
   if (performance.now() - PC.lastHit > 400) {
-    const hit = findCollider(p, PC.s, PC.x, 2.1, 0.92);
+    const hit = findCollider(p, PC.s, PC.x, 2.1, 0.92, 'solid');
     if (hit) {
       PC.lastHit = performance.now();
       const mid = (hit.x0 + hit.x1) / 2, side = PC.x > mid ? 1 : -1, glancing = PC.x < hit.x0 - 0.2 || PC.x > hit.x1 + 0.2;
@@ -3797,12 +3871,12 @@ function pcCrash(k) {
   onCrash();
 }
 // colliders are sorted by s0; scan the few near s
-function findCollider(p, s, x, hl, hw) {
+function findCollider(p, s, x, hl, hw, kind) {
   const C = p.colliders;
   let lo = 0, hi = C.length;
   while (lo < hi) { const m = (lo + hi) >> 1; if (C[m].s0 < s - 40) lo = m + 1; else hi = m; }
   for (let i = lo; i < C.length && C[i].s0 < s + hl; i++) {
-    const c = C[i]; if (c.kind === 'none' || c.s1 < s - hl) continue;
+    const c = C[i]; if (c.kind === 'none' || c.s1 < s - hl || (kind && c.kind !== kind)) continue;
     if (x + hw > c.x0 && x - hw < c.x1) return c;
   }
   return null;
@@ -3815,7 +3889,7 @@ const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) >
 const CTL = {
   steer: 0, gas: 0, brake: 0, tilt: { ok: false, asked: false, theta: 0, zero: 0, last: 0, raw: 0 }, mode: 'touch', sens: 18,
   keys: {}, touches: new Map(), pads: {}, shift: null, knob: { x: -1, y: -1, active: false, t: 0 }, lastGestureT: -9, guide: true,
-  steerTouch: null, padRects: null,
+  steerTouch: null, padRects: null, seqFlash: { up: 0, dn: 0 },
 };
 const SHIFT_UNIT = 46;   // css px from neutral to the end of a slot
 // gate slots: column -1, 0, 1 at the top (odd gears) and bottom (even gears)
@@ -3854,6 +3928,17 @@ function layoutPads() {
   CTL.pads.box = { x: W - pw * 2 - 34, y: Math.max(64, CTL.pads.gas.y - 150), w: pw * 2 + 16, h: 132 };
   if (CTL.mode === 'tilt') { CTL.pads.gate = { x: 0, y: H * 0.22, w: W * 0.42, h: H * 0.78 }; CTL.pads.steer = null; }
   else { CTL.pads.gate = { x: 0, y: H * 0.16, w: W * 0.36, h: H * 0.42 }; CTL.pads.steer = { x: 0, y: H * 0.58, w: W * 0.42, h: H * 0.42 }; }
+  // the simple manual: two big paddles on the left, up a gear above, down a gear below
+  const sw = Math.min(150, W * 0.15), top = CTL.mode === 'tilt' ? H * 0.3 : H * 0.14, span = CTL.mode === 'tilt' ? H * 0.64 : H * 0.42, gap = 12;
+  CTL.pads.up = { x: 18, y: top, w: sw, h: (span - gap) / 2 };
+  CTL.pads.dn = { x: 18, y: top + (span - gap) / 2 + gap, w: sw, h: (span - gap) / 2 };
+}
+function seqShift(dir) {
+  if (PC.auto || !PC.seq || G.state !== 'race') return;
+  const g = clamp((PC.neutral ? 0 : PC.gear) + dir, 1, PC.gears);
+  if (g !== PC.gear || PC.neutral) { pcShift(g); PC.neutral = false; }
+  const s = gateSlot(g); CTL.knob.x = s.x; CTL.knob.y = s.y; CTL.lastGestureT = G.t;
+  CTL.seqFlash[dir > 0 ? 'up' : 'dn'] = 0.18;
 }
 const inR = (r, x, y) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
 function touchDown(id, x, y) {
@@ -3862,7 +3947,10 @@ function touchDown(id, x, y) {
   if (inR(P.pause, x, y)) { CTL.touches.set(id, { kind: 'pause' }); onPausePressed(); return; }
   if (inR(P.gas, x, y)) { CTL.touches.set(id, { kind: 'gas' }); return; }
   if (inR(P.brake, x, y)) { CTL.touches.set(id, { kind: 'brake' }); return; }
-  if (!PC.auto && inR(P.gate, x, y)) {
+  if (!PC.auto && PC.seq) {
+    if (inR(P.up, x, y)) { CTL.touches.set(id, { kind: 'up' }); seqShift(1); return; }
+    if (inR(P.dn, x, y)) { CTL.touches.set(id, { kind: 'dn' }); seqShift(-1); return; }
+  } else if (!PC.auto && inR(P.gate, x, y)) {
     const s0 = gateSlot(PC.neutral ? 0 : PC.gear);
     CTL.touches.set(id, { kind: 'gate', ox: x, oy: y, kx: s0.x, ky: s0.y, path: [] });
     CTL.knob.active = true; CTL.knob.x = s0.x; CTL.knob.y = s0.y; CTL.lastGestureT = G.t; return;
@@ -4003,17 +4091,24 @@ function engineStart(kind) {
   E.sq.connect(E.sqf); E.sqf.connect(E.sqg); E.sqg.connect(AU.sfx); E.sq.start();
   E.rough = noiseSrc(true); E.rf = ctx.createBiquadFilter(); E.rf.type = 'lowpass'; E.rf.frequency.value = 260; E.rg = ctx.createGain(); E.rg.gain.value = 0;
   E.rough.connect(E.rf); E.rf.connect(E.rg); E.rg.connect(AU.sfx); E.rough.start();
+  // the squeal of a slide: a buzzing tone and its octave, warbling, through a peaky band — the arcade "eeeee"
+  E.skF = ctx.createBiquadFilter(); E.skF.type = 'bandpass'; E.skF.frequency.value = 1700; E.skF.Q.value = 1.6;
+  E.skG = ctx.createGain(); E.skG.gain.value = 0; E.skF.connect(E.skG); E.skG.connect(AU.sfx);
+  const mkS = (type, gain) => { const o = ctx.createOscillator(); o.type = type; const g = ctx.createGain(); g.gain.value = gain; o.connect(g); g.connect(E.skF); o.start(); return o; };
+  E.sk1 = mkS('sawtooth', 0.5); E.sk2 = mkS('square', 0.22); E.sk3 = mkS('sine', 0.35);
+  E.lfo = ctx.createOscillator(); E.lfo.type = 'sine'; E.lfo.frequency.value = 7; E.lfoG = ctx.createGain(); E.lfoG.gain.value = 0;
+  E.lfo.connect(E.lfoG); E.lfoG.connect(E.sk1.frequency); E.lfoG.connect(E.sk2.frequency); E.lfo.start();
   E.lastR = 0; E.popT = 0;
   AU.eng = E;
 }
 function engineStop() {
   const E = AU.eng; if (!E) return; AU.eng = null;
   const t = AU.ctx.currentTime;
-  E.out.gain.setTargetAtTime(0, t, 0.05); E.wg.gain.setTargetAtTime(0, t, 0.05); E.sqg.gain.setTargetAtTime(0, t, 0.05); E.rg.gain.setTargetAtTime(0, t, 0.05);
-  setTimeout(() => { for (const x of E.osc) x.o.stop(); E.nz.stop(); E.wind.stop(); E.sq.stop(); E.rough.stop(); if (E.wh) E.wh.stop(); }, 400);
+  E.out.gain.setTargetAtTime(0, t, 0.05); E.wg.gain.setTargetAtTime(0, t, 0.05); E.sqg.gain.setTargetAtTime(0, t, 0.05); E.rg.gain.setTargetAtTime(0, t, 0.05); E.skG.gain.setTargetAtTime(0, t, 0.05);
+  setTimeout(() => { for (const x of E.osc) x.o.stop(); E.nz.stop(); E.wind.stop(); E.sq.stop(); E.rough.stop(); E.sk1.stop(); E.sk2.stop(); E.sk3.stop(); E.lfo.stop(); if (E.wh) E.wh.stop(); }, 400);
 }
 // called every frame with the car's state
-function engineUpdate(rpm, redline, throttle, v, slip, offroad, muted) {
+function engineUpdate(rpm, redline, throttle, v, slip, offroad, muted, drift) {
   const E = AU.eng; if (!E || !AU.ctx) return;
   const t = AU.ctx.currentTime, V = E.V, r = clamp(rpm / redline, 0.05, 1.1);
   const f0 = (rpm / 60) * (V.cyl / 2);
@@ -4025,7 +4120,14 @@ function engineUpdate(rpm, redline, throttle, v, slip, offroad, muted) {
   if (E.wh) { E.wh.frequency.setTargetAtTime(1800 + r * 5200, t, 0.05); E.whg.gain.setTargetAtTime(muted ? 0 : 0.018 * r * r * throttle, t, 0.06); }
   const sp = clamp(v / 80, 0, 1.2);
   E.wg.gain.setTargetAtTime(muted ? 0 : sp * sp * 0.22, t, 0.1); E.wf.frequency.setTargetAtTime(300 + sp * 1600, t, 0.1);
-  E.sqg.gain.setTargetAtTime(muted ? 0 : slip * clamp(v / 30, 0, 1) * 0.16, t, 0.04); E.sqf.frequency.setTargetAtTime(1100 + Math.sin(t * 9) * 160, t, 0.03);
+  E.sqg.gain.setTargetAtTime(muted ? 0 : slip * clamp(v / 30, 0, 1) * 0.12, t, 0.04); E.sqf.frequency.setTargetAtTime(1100 + Math.sin(t * 9) * 160, t, 0.03);
+  // the squeal: full voice in a drift, a thinner one when the tyres are only scrubbing; pitch climbs a little with speed
+  const sk = (drift ? 1 : slip * 0.45) * clamp((v - 8) / 22, 0, 1);
+  const f = 560 + v * 3.2 + (drift ? 90 : 0);
+  E.sk1.frequency.setTargetAtTime(f, t, 0.03); E.sk2.frequency.setTargetAtTime(f * 1.5, t, 0.03); E.sk3.frequency.setTargetAtTime(f * 2.01, t, 0.03);
+  E.lfoG.gain.setTargetAtTime(f * 0.045, t, 0.05); E.lfo.frequency.setTargetAtTime(drift ? 6.5 : 9, t, 0.1);
+  E.skF.frequency.setTargetAtTime(1500 + v * 6, t, 0.05);
+  E.skG.gain.setTargetAtTime(muted ? 0 : sk * 0.2, t, drift ? 0.03 : 0.08);
   E.rg.gain.setTargetAtTime(muted ? 0 : offroad * clamp(v / 25, 0, 1) * 0.35, t, 0.05);
   // pops and crackles when lifting off at high revs
   if (E.lastR > 0.6 && throttle < 0.1 && Math.random() < 0.08 && !muted) sfxPop();
@@ -4192,53 +4294,92 @@ function mLead(f, t, dur, type) {
 }
 
 // ===================== traffic: Taiwanese road life — scooters, little blue trucks, tour buses, gravel trucks =====================
-// Vehicles on our carriageway can be hit; oncoming ones on the far side of the median are scenery.
-const TRAFFIC = { list: [], pool: {}, oncoming: [], spawnS: 0, density: 1, passCD: 0 };
+// Everything on the road runs our way, slower than us. The one rule of the arcade: however thick the traffic,
+// there is always a gap wide enough for a car, so a run is never blocked — only made harder.
+const TRAFFIC = { list: [], pool: {}, oncoming: [], spawnS: 0, density: 1, passCD: 0, lastPass: 0 };
 const VTYPES = {
   sedan: { len: 4.5, wid: 1.8 }, taxi: { len: 4.6, wid: 1.8 }, pickup: { len: 5.0, wid: 1.9 }, bluetruck: { len: 4.8, wid: 1.7 },
   bus: { len: 11.5, wid: 2.5 }, gravel: { len: 8.0, wid: 2.5 }, scooter: { len: 1.9, wid: 0.8 },
 };
+const GAP_CAR = 2.4;        // the gap a car needs between the clearances (the player's car is 1.85 m wide)
+const GAP_CLEAR = 0.5;      // the clearance kept beside every vehicle when checking for a gap
 function trafficReset() {
   TRAFFIC.list.length = 0; TRAFFIC.oncoming.length = 0; TRAFFIC.spawnS = PC.s + 120;
 }
 function pickType(mix) { let tot = 0; for (const k in mix) tot += mix[k]; let r = Math.random() * tot; for (const k in mix) { r -= mix[k]; if (r <= 0) return k; } return 'sedan'; }
-function spawnVehicle(p, s, oncoming) {
-  const mix = p.def.traffic ? p.def.traffic.mix : { sedan: 1 };
-  const type = oncoming ? pickType({ sedan: 4, bus: 1, bluetruck: 2, scooter: 2, gravel: 1, taxi: 1 }) : pickType(mix);
-  const T = VTYPES[type] || VTYPES.sedan, set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan;
-  const names = oncoming ? set.front : set.rear, spr = SPR[names[Math.floor(Math.random() * names.length)]];
-  const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
-  let x, v;
-  if (type === 'scooter' && !oncoming && p.shoulder(s) > 1.5) x = hw + p.shoulder(s) * 0.5 + (Math.random() - 0.5) * 0.6;
-  else x = -hw + LANE * (Math.floor(Math.random() * lanes) + 0.5);
-  if (type === 'scooter') v = rnd(10, 15); else if (type === 'bus' || type === 'gravel') v = rnd(13, 19); else v = rnd(16, 25);
-  const veh = { spr, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: !!oncoming, passed: false, hitT: 0 };
-  if (oncoming) { veh.x = -hw - p.at(p.M, s) - p.at(p.O, s) * 2 + LANE * (Math.floor(Math.random() * Math.max(1, Math.round(p.at(p.O, s) * 2 / LANE))) + 0.5); veh.v = rnd(18, 26); }
-  return veh;
-}
 const rnd = (a, b) => a + Math.random() * (b - a);
+// the lateral intervals every vehicle near s occupies (besides `skip`); a candidate at (s, len) counts as near
+// when the two would be side by side with less than `gap` metres of road between their ends
+const _iv = [];
+function nearIntervals(p, s, len, skip, gap) {
+  _iv.length = 0;
+  for (const o of TRAFFIC.list) {
+    if (o === skip || o.p !== p) continue;
+    if (Math.abs(o.s - s) >= (o.len + len) / 2 + gap) continue;
+    _iv.push([o.x - o.wid / 2 - GAP_CLEAR, o.x + o.wid / 2 + GAP_CLEAR]);
+  }
+  return _iv;
+}
+// is there still a car-wide gap across the paving at s, with the intervals `iv` plus one more vehicle at x?
+function gapLeft(p, s, iv, x, wid) {
+  const lo = -p.hw(s), hi = p.hw(s) + Math.max(0, p.shoulder(s) - 0.3);
+  const all = iv.slice(); if (x != null) all.push([x - wid / 2 - GAP_CLEAR, x + wid / 2 + GAP_CLEAR]);
+  all.sort((a, b) => a[0] - b[0]);
+  let cur = lo;
+  for (const [a, b] of all) { if (a - cur >= GAP_CAR) return true; cur = Math.max(cur, b); }
+  return hi - cur >= GAP_CAR;
+}
+function spawnVehicle(p, s) {
+  const mix = p.def.traffic ? p.def.traffic.mix : { sedan: 1 };
+  const type = pickType(mix);
+  const T = VTYPES[type] || VTYPES.sedan, set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan;
+  const spr = SPR[set.rear[Math.floor(Math.random() * set.rear.length)]];
+  const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
+  // a lane (scooters ride the shoulder when there is one); never one that would close the last gap
+  const iv = nearIntervals(p, s, T.len, null, 14), picks = [];
+  if (type === 'scooter' && p.shoulder(s) > 1.5) picks.push(hw + p.shoulder(s) * 0.5 + (Math.random() - 0.5) * 0.6);
+  for (let k = 0; k < lanes; k++) picks.push(-hw + LANE * (k + 0.5) + (Math.random() - 0.5) * 0.5);
+  for (let i = picks.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = picks[i]; picks[i] = picks[j]; picks[j] = t; }
+  let x = null;
+  for (const c of picks) if (gapLeft(p, s, iv, c, T.wid)) { x = c; break; }
+  if (x == null) return null;
+  let v;
+  if (type === 'scooter') v = rnd(10, 15); else if (type === 'bus' || type === 'gravel') v = rnd(13, 19); else v = rnd(16, 25);
+  return { spr, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0 };
+}
 function trafficUpdate(dt) {
   const p = PC.piece, pd = p.def.traffic || { per100: 1 };
-  const ahead = 760, want = Math.round((ahead / 100) * pd.per100 * TRAFFIC.density);
-  // keep our side populated: new vehicles appear far ahead, never on top of the player
+  const lanes = Math.max(1, Math.round((2 * p.hw(PC.s)) / LANE));
+  const ahead = 760, want = Math.round((ahead / 100) * pd.per100 * TRAFFIC.density * (0.7 + lanes * 0.1));
+  // keep the road populated: new vehicles appear far ahead, never on top of the player, never closing the road
   const mine = TRAFFIC.list.filter((v) => v.p === p);
   if (mine.length < want && RACE.state !== 'countdown') {
     const s = PC.s + rnd(420, ahead);
-    if (s < p.L - 20 && !TRAFFIC.list.some((v) => v.p === p && Math.abs(v.s - s) < 18)) TRAFFIC.list.push(spawnVehicle(p, s, false));
+    if (s < p.L - 20 && !TRAFFIC.list.some((v) => v.p === p && Math.abs(v.s - s) < 12)) { const veh = spawnVehicle(p, s); if (veh) TRAFFIC.list.push(veh); }
   }
-  if (RACE.state === 'countdown' && TRAFFIC.list.length < 3) TRAFFIC.list.push(spawnVehicle(p, PC.s + 90 + TRAFFIC.list.length * 70, false));
-  if (TRAFFIC.oncoming.length < 6 && p.at(p.O, PC.s) > 1 && Math.random() < dt * 1.2) { const s = PC.s + rnd(500, 900); if (s < p.L) TRAFFIC.oncoming.push(spawnVehicle(p, s, true)); }
+  if (RACE.state === 'countdown' && TRAFFIC.list.length < 3) { const veh = spawnVehicle(p, PC.s + 90 + TRAFFIC.list.length * 70); if (veh) TRAFFIC.list.push(veh); }
   // move, follow, avoid
   for (let i = TRAFFIC.list.length - 1; i >= 0; i--) {
     const v = TRAFFIC.list[i];
     if (v.p !== p && v.p !== PC.piece.parent) { TRAFFIC.list.splice(i, 1); continue; }
     let lead = Infinity;
     for (const o of TRAFFIC.list) if (o !== v && o.p === v.p && o.s > v.s && Math.abs(o.x - v.x) < 1.6) lead = Math.min(lead, o.s - v.s);
-    const target = lead < 22 ? Math.min(v.v0, lead < 10 ? 0 : v.v0 * (lead - 10) / 12) : v.v0;
-    v.vPrev = v.v; v.v = lerp(v.v, target, clamp(dt * 1.5, 0, 1)); v.brake = lerp(v.brake, v.v < v.vPrev - 0.02 || target < 1 ? 1 : 0, clamp(dt * 8, 0, 1));
+    let target = lead < 22 ? Math.min(v.v0, lead < 10 ? 0 : v.v0 * (lead - 10) / 12) : v.v0;
+    // pulling alongside would close the road: whoever is not in front hangs back a touch behind the leader of the group
+    if (v.v > 4) {
+      const sN = v.s + v.v * dt, iv = nearIntervals(v.p, sN, v.len, v, 8);
+      if (iv.length && !gapLeft(v.p, sN, iv, v.x, v.wid)) {
+        let front = null;
+        for (const o of TRAFFIC.list) if (o !== v && o.p === v.p && Math.abs(o.s - sN) < (o.len + v.len) / 2 + 8 && o.s > v.s + 0.5 && (!front || o.s > front.s)) front = o;
+        if (front) target = Math.min(target, Math.max(0, front.v - 1.5));
+        else if (!TRAFFIC.list.some((o) => o !== v && o.p === v.p && Math.abs(o.s - sN) < (o.len + v.len) / 2 + 8 && o.v0 < v.v0)) target = Math.min(target, Math.max(0, v.v0 - 3));   // dead level: the quicker one eases off
+      }
+    }
+    v.vPrev = v.v; v.v = lerp(v.v, target, clamp(dt * (target < v.v ? 3 : 1.5), 0, 1)); v.brake = lerp(v.brake, v.v < v.vPrev - 0.02 || target < 1 ? 1 : 0, clamp(dt * 8, 0, 1));
     v.s += v.v * dt;
     if (v.hitT > 0) { v.hitT -= dt; v.x += v.push * dt; v.push *= 0.9; }
-    v.x = clamp(v.x, v.p.leftWall(v.s) + v.wid / 2, v.p.rightEdge(v.s) - v.wid / 2 + 0.3);
+    const hw = v.p.hw(v.s);
+    v.x = clamp(v.x, -hw + v.wid / 2, hw + Math.max(0, v.p.shoulder(v.s) - 0.3) - v.wid / 2);
     if (v.s < PC.s - 90 || v.s > v.p.L - 4) { TRAFFIC.list.splice(i, 1); continue; }
     // the player meets them
     if (!PC.crash && v.p === PC.piece) {
@@ -4253,13 +4394,12 @@ function trafficUpdate(dt) {
           if (typeof fxScrape === 'function') fxScrape(-Math.sign(dx || 1));
         }
       }
-      if (!v.passed && ds < -2 && Math.abs(dx) < 4.5) { v.passed = true; sfxPass(clamp((PC.v - v.v) / 20, 0.3, 1), clamp(dx / 4, -1, 1)); RACE.score += Math.abs(dx) < 2.6 ? 300 : 100; }
+      if (!v.passed && ds < -2 && Math.abs(dx) < 4.5) {
+        v.passed = true; const close = Math.abs(dx) < 2.6;
+        sfxPass(clamp((PC.v - v.v) / 20, 0.3, 1), clamp(dx / 4, -1, 1)); RACE.score += close ? 300 : 100;
+        if (typeof fxPassed === 'function') fxPassed(v, close);
+      }
     }
-  }
-  for (let i = TRAFFIC.oncoming.length - 1; i >= 0; i--) {
-    const v = TRAFFIC.oncoming[i];
-    v.s -= v.v * dt;
-    if (v.p !== p || v.s < PC.s - 40) { TRAFFIC.oncoming.splice(i, 1); continue; }
   }
 }
 // a vehicle on screen: a soft shadow, the picture, its brake lights glowing when it slows
@@ -4270,14 +4410,14 @@ function drawVehicle(v, x, y, k, clip, fog) {
   if (y <= clip) { VG.fillStyle = 'rgba(0,0,0,0.28)'; VG.beginPath(); VG.ellipse(x, y - 0.5, wpx * 0.56, Math.max(1, wpx * 0.1), 0, 0, TAU); VG.fill(); }
   drawSpr(S, x, y, hpx, 1, false, clip, fog, 0);
   const L = S.meta && S.meta.lights;
-  if (L && (v.brake > 0.3 || v.oncoming) && y - hpx < clip) {
+  if (L && v.brake > 0.3 && y - hpx < clip) {
     const sc = hpx / S.h, x0 = x - wpx / 2;
     VG.globalCompositeOperation = 'lighter';
     for (const [lx, ly, lw, lh] of L) {
-      const cx = x0 + (lx + lw / 2) * sc, cy = y - hpx + (ly + lh / 2) * sc, r = Math.max(2, lw * sc * (v.oncoming ? 0.9 : 1.1));
+      const cx = x0 + (lx + lw / 2) * sc, cy = y - hpx + (ly + lh / 2) * sc, r = Math.max(2, lw * sc * 1.1);
       if (cy > clip) continue;
       const rg = VG.createRadialGradient(cx, cy, 0, cx, cy, r);
-      rg.addColorStop(0, v.oncoming ? 'rgba(255,250,220,0.55)' : 'rgba(255,60,40,0.85)'); rg.addColorStop(1, 'rgba(255,40,20,0)');
+      rg.addColorStop(0, 'rgba(255,60,40,0.85)'); rg.addColorStop(1, 'rgba(255,40,20,0)');
       VG.fillStyle = rg; VG.fillRect(cx - r, cy - r, r * 2, r * 2);
     }
     VG.globalCompositeOperation = 'source-over';
@@ -4323,7 +4463,7 @@ function drawHud(dt) {
   const pb = CTL.pads.pause; if (pb) { arcBox(pb.x, pb.y, pb.w, pb.h, 0.8); hud.fillStyle = '#ffffff'; hud.fillRect(pb.x + 18, pb.y + 11, 5, 18); hud.fillRect(pb.x + 29, pb.y + 11, 5, 18); }
   if (CTL.pads.gas) drawPedals();
   if (CTL.pads.steer && !BOT.on) drawSteerPad();
-  if (!PC.auto) drawShiftBox(dt);
+  if (!PC.auto && PC.seq) drawSeqPads(dt); else if (!PC.auto) drawShiftBox(dt);
   // messages are drawn on the game screen; here they only age
   for (const m of HUD.msgs) m.t += dt;
   HUD.msgs = HUD.msgs.filter((m) => m.t < m.dur);
@@ -4425,6 +4565,26 @@ function drawShiftBox(dt) {
   hud.restore();
   otext(PC.neutral ? 'N' : String(PC.gear), b.x + 10, b.y + 22, 16, PC.neutral ? '#ff4f6d' : '#ffd23a', F_NUM, 'left', '#0c0820', 3);
   hud.restore();
+}
+// the simple manual's paddles: a big UP and a big DOWN on the left, the gear between the two
+function drawSeqPads(dt) {
+  const P = CTL.pads; if (!P.up || !IS_TOUCH) { drawShiftBox(dt); return; }
+  for (const k of ['up', 'dn']) CTL.seqFlash[k] = Math.max(0, CTL.seqFlash[k] - dt);
+  const pad = (r, on, arrow, label, col) => {
+    arcBox(r.x, r.y, r.w, r.h, on ? 0.95 : 0.55, on ? col : '#0c1438');
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    hud.fillStyle = on ? '#05081c' : '#fff3dc'; hud.beginPath();
+    if (arrow > 0) { hud.moveTo(cx, cy - 22); hud.lineTo(cx + 22, cy + 2); hud.lineTo(cx + 9, cy + 2); hud.lineTo(cx + 9, cy + 20); hud.lineTo(cx - 9, cy + 20); hud.lineTo(cx - 9, cy + 2); hud.lineTo(cx - 22, cy + 2); }
+    else { hud.moveTo(cx, cy + 22); hud.lineTo(cx + 22, cy - 2); hud.lineTo(cx + 9, cy - 2); hud.lineTo(cx + 9, cy - 20); hud.lineTo(cx - 9, cy - 20); hud.lineTo(cx - 9, cy - 2); hud.lineTo(cx - 22, cy - 2); }
+    hud.closePath(); hud.fill();
+    otext(label, cx, r.y + r.h - 10, 14, '#fff3dc', F_TC, 'center', '#05081c', 4);
+  };
+  pad(P.up, CTL.seqFlash.up > 0, 1, '升檔 +', '#2a8a3a');
+  pad(P.dn, CTL.seqFlash.dn > 0, -1, '降檔 −', '#b8243a');
+  // the gear, big, between the paddles
+  const gx = P.up.x + P.up.w / 2, gy = P.up.y + P.up.h + 6;
+  hud.fillStyle = 'rgba(10,16,40,.85)'; rrect(gx - 28, gy - 14, 56, 28, 6); hud.fill();
+  otext((PC.neutral ? 'N' : PC.gear) + ' / ' + PC.gears, gx, gy + 7, 18, PC.neutral ? '#ff4f6d' : '#ffd23a', F_NUM, 'center', '#0a1028', 3);
 }
 function drawStartLights(cx, cy) {
   const c = RACE.countdown, lit = c > 3 ? 0 : c > 2 ? 1 : c > 1 ? 2 : c > 0 ? 3 : 4;
@@ -4580,11 +4740,11 @@ function drawPixHud(dt) {
 
 // ===================== the race: countdown, time limit, checkpoints, forks, goal; the chase camera =====================
 const RACE = { state: 'idle', time: 0, elapsed: 0, score: 0, countdown: 0, route: [], stageNo: 1, splits: [], checked: new Set(), goal: null, crashes: 0, lastBeep: 4, carIdx: 0, overT: 0, goalT: 0 };
-function raceStart(carIdx, auto) {
+function raceStart(carIdx, auto, seq) {
   RACE.carIdx = carIdx;
   const spec = CARS[carIdx];
   PC.spr = carSprites(spec);
-  pcSetup(spec, auto);
+  pcSetup(spec, auto, seq);
   const p = ROUTE.root; PC.piece = p; PC.s = p.startS || 90; PC.x = LANE * 0.5; PC.dist = 0;
   Object.assign(RACE, { state: 'countdown', time: STAGES.s1.time, elapsed: 0, score: 0, countdown: 4.2, route: ['s1'], stageNo: 1, splits: [], checked: new Set(), goal: null, crashes: 0, lastBeep: 5, overT: 0, goalT: 0 });
   CAM.init = false;
@@ -4667,7 +4827,29 @@ function updateCamera(dt) {
 // ===================== tyre effects: wheelspin smoke off the line, smoke in a slide, dust off the road, skid marks =====================
 // Puffs are pixel sprites thrown out from the rear tyres on screen; skid marks are laid on the road itself,
 // in road coordinates, and painted into the road raster so they stay put as the car drives away from them.
-const FX = { puffs: [], marks: [], cur: null, img: {}, spawnAcc: 0, spin: 0, lastGear: 1, burst: 0, hx: 0, hy: 0, hvx: 0, hvy: 0, lastV: 0, driftK: 0, roll: 0, rollV: 0, pivot: 1, hopY: 0, hopV: 0, wasDrift: 0, swing: 0, swingV: 0, shimmyX: 0 };
+const FX = { puffs: [], marks: [], cur: null, img: {}, spawnAcc: 0, spin: 0, lastGear: 1, burst: 0, hx: 0, hy: 0, hvx: 0, hvy: 0, lastV: 0, driftK: 0, roll: 0, rollV: 0, pivot: 1, hopY: 0, hopV: 0, wasDrift: 0, swing: 0, swingV: 0, shimmyX: 0, cheer: null, cheerCD: 0, passN: 0 };
+// ---- the crew celebrating a pass: a fist pumped, a wave, a thumbs-up from the driver, both arms up for a close one ----
+// Only when it is sensible: on a straight, no slide, nobody about to be hit; the driver keeps one hand on the wheel.
+function fxPassed(v, close) {
+  if (FX.cheerCD > 0 || FX.cheer || PC.crash || PC.drift || PC.offroad || Math.abs(PC.steerIn) > 0.35 || PC.v < 14) return;
+  FX.passN++;
+  const crew = (PC.spec && CREW[PC.spec.id]) || [], dog = crew[1] && crew[1].dog;
+  let kind, who = 1;
+  if (close || (v.type === 'bus' && Math.random() < 0.6)) kind = dog ? 'bark' : 'vee';
+  else if (Math.random() < 0.28 && PC.v > 20) { kind = 'thumb'; who = 0; }
+  else kind = dog ? 'bark' : Math.random() < 0.6 ? 'fist' : 'wave';
+  FX.cheer = { kind, who, t: 0, dur: kind === 'vee' ? 1.2 : kind === 'thumb' ? 0.7 : 0.95 };
+  FX.cheerCD = 2.2 + Math.random() * 1.5;
+}
+function fxCheerUpdate(dt) {
+  if (FX.cheerCD > 0) FX.cheerCD -= dt;
+  const c = FX.cheer;
+  if (c) {
+    c.t += dt;
+    // cut short the moment it stops being sensible
+    if (c.t > c.dur || PC.crash || (PC.drift && c.kind !== 'goal') || (c.who === 0 && Math.abs(PC.steerIn) > 0.5)) FX.cheer = null;
+  } else if (RACE.state === 'goal' && RACE.goalT > 0.3 && !PC.crash) FX.cheer = { kind: 'goal', who: 2, t: 0, dur: 9 };
+}
 const PUFF_COLS = { smoke: [0xffffff, 0xe6e8ee, 0xc6cad4], sand: [0xfff2cc, 0xe8d8a8, 0xc8b480], grass: [0xd8d0a0, 0xaea678, 0x8a8458], gravel: [0xe0dcd4, 0xb8b4ac, 0x8e8a82], dirt: [0xd8c4a0, 0xb49878, 0x8a7458] };
 function fxInit() {
   for (const k in PUFF_COLS) {
@@ -4684,11 +4866,12 @@ function fxScrape(side) {
   const bx = PC.scrX + side * (PC.scrBW || 120) * 0.5, by = PC.scrY - 10;
   for (let k = 0; k < 10; k++) puff(bx + Math.random() * 4, by - Math.random() * 14, side * (40 + Math.random() * 120), 40 + Math.random() * 120, 2, 3, 0.15 + Math.random() * 0.2, 'sparks', 1);
 }
-function fxReset() { FX.puffs.length = 0; FX.marks.length = 0; FX.cur = null; }
+function fxReset() { FX.puffs.length = 0; FX.marks.length = 0; FX.cur = null; FX.cheer = null; FX.cheerCD = 1; FX.passN = 0; }
 // one puff: screen position, velocity (px/s), size (px), life (s), kind
 function puff(x, y, vx, vy, s0, s1, life, kind, a) { FX.puffs.push({ x, y, vx, vy, s0, s1, t: 0, life, kind, a: a == null ? 0.85 : a }); if (FX.puffs.length > 200) FX.puffs.shift(); }
 function fxUpdate(dt) {
   if (G.state !== 'race' || !PC.piece || PC.scrX == null) { return; }
+  fxCheerUpdate(dt);
   const v = PC.v, th = PC.throttle, pose = (PC.spec && PC.spec.pose) || POSE_DEFAULT;
   // ---- the passengers: thrown outward in a bend, back under power, forward under braking; a damped spring ----
   const dv = dt > 0 ? (v - FX.lastV) / dt : 0; FX.lastV = v;
@@ -4781,6 +4964,77 @@ function fxDraw() {
   VG.globalAlpha = 1;
 }
 
+// ===================== avatars: a little pixel portrait over an opponent's car, and a name =====================
+// A photo is cut to a circle, boxed down to 24 pixels and posterized, so it sits in the picture like everything else.
+// The player's own is kept in the settings; a ghost or an online opponent carries theirs along with their name.
+const AV_N = 24;
+const AVATAR = { me: null, name: '' };
+function avatarPixelate(img, n) {
+  n = n || AV_N;
+  const s = Math.min(img.width, img.height), sx = (img.width - s) / 2, sy = (img.height - s) / 2;
+  // two steps down for a cleaner box filter
+  const mid = canvas(n * 4, n * 4), gm = mid.getContext('2d'); gm.imageSmoothingEnabled = true; gm.imageSmoothingQuality = 'high'; gm.drawImage(img, sx, sy, s, s, 0, 0, n * 4, n * 4);
+  const c = canvas(n, n), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mid, 0, 0, n, n);
+  const id = g.getImageData(0, 0, n, n), d = id.data, r = n / 2;
+  // a little contrast and colour first, then six levels a channel, the way a 16-bit arcade palette would hold it
+  let lo = 255, hi = 0;
+  for (let i = 0; i < d.length; i += 4) { const l = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10; lo = Math.min(lo, l); hi = Math.max(hi, l); }
+  const span = Math.max(40, hi - lo);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const i = (y * n + x) * 4, dx = x + 0.5 - r, dy = y + 0.5 - r;
+    if (dx * dx + dy * dy > r * r) { d[i + 3] = 0; continue; }
+    const m = (d[i] + d[i + 1] + d[i + 2]) / 3;
+    for (let k = 0; k < 3; k++) {
+      let v = m + (d[i + k] - m) * 1.3;                      // more colour
+      v = ((v - lo) / span) * 235 + 10;                      // stretched
+      d[i + k] = clamp(Math.round(v / 51) * 51, 0, 255);
+    }
+    d[i + 3] = 255;
+  }
+  g.putImageData(id, 0, 0);
+  return c;
+}
+// decode a stored data URL into a canvas (async; cb gets the canvas or null)
+function avatarDecode(url, cb) {
+  if (!url) { cb(null); return; }
+  const im = new Image(); im.onload = () => { const c = canvas(im.width, im.height); c.getContext('2d').drawImage(im, 0, 0); cb(c); }; im.onerror = () => cb(null); im.src = url;
+}
+function avatarInit() {
+  AVATAR.name = SET.name || '';
+  avatarDecode(SET.avatar, (c) => { AVATAR.me = c; if (typeof avatarPreview === 'function') avatarPreview(); });
+}
+// a picked or taken photo: pixelate, keep, show
+function avatarSet(file, cb) {
+  if (!file) return;
+  const url = URL.createObjectURL(file), im = new Image();
+  im.onload = () => {
+    URL.revokeObjectURL(url);
+    const c = avatarPixelate(im); AVATAR.me = c; SET.avatar = c.toDataURL('image/png'); SAVE.save('settings', SET);
+    if (cb) cb(c);
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); if (cb) cb(null); };
+  im.src = url;
+}
+function avatarClear() { AVATAR.me = null; delete SET.avatar; SAVE.save('settings', SET); }
+// the badge over a car on the race screen: a ringed portrait, a pointer, the name above it
+// x: the car's centre on screen, yTop: the top of the car's picture, k: the projection scale at the car
+function drawBadge(x, yTop, k, name, img) {
+  if (k < 2.2) return;
+  const d = Math.round(clamp(k * 0.5, 10, 30)), r = d / 2, cy = Math.round(yTop - r - 7), cx = Math.round(x);
+  if (cy + r < -4) return;
+  const prev = VG.imageSmoothingEnabled; VG.imageSmoothingEnabled = false;
+  // the pointer under the ring
+  VG.fillStyle = '#140a1a'; VG.fillRect(cx - 3, cy + r + 1, 6, 1); VG.fillRect(cx - 2, cy + r + 2, 4, 1); VG.fillRect(cx - 1, cy + r + 3, 2, 2);
+  VG.fillStyle = '#fff6e0'; VG.fillRect(cx - 2, cy + r + 1, 4, 1); VG.fillRect(cx - 1, cy + r + 2, 2, 1);
+  // the ring: dark, then cream, then the picture
+  VG.fillStyle = '#140a1a'; VG.beginPath(); VG.arc(cx, cy, r + 3, 0, TAU); VG.fill();
+  VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy, r + 1.5, 0, TAU); VG.fill();
+  if (img) VG.drawImage(img, cx - r, cy - r, d, d);
+  else { VG.fillStyle = '#5a6a9a'; VG.beginPath(); VG.arc(cx, cy, r, 0, TAU); VG.fill(); VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy - r * 0.2, r * 0.36, 0, TAU); VG.fill(); VG.fillRect(cx - r * 0.55, cy + r * 0.25, r * 1.1, r * 0.6); }
+  if (name && d >= 14) { const L = pixLabel(name, d >= 22 ? 11 : 9, 0xfff6e0, 0x140a1a); blitC(L, cx, cy - r - L.height - 1, 'center'); }
+  VG.imageSmoothingEnabled = prev;
+}
+
 // ===================== the renderer: a road raster, then everything else scaled by distance, back to front =====================
 // 1. The camera sits behind the car. The road ahead is cut into slots (2 m apart near, 32 m far); each slot is the
 //    road centre projected to the screen with the cross-section at that point.
@@ -4837,7 +5091,7 @@ function fillB(B, p, s, pid, ppid, off) {
   B.k = FOC / Math.max(0.05, B.cz); B.sx = X0 + B.cx * B.k; B.sy = Y0 - B.cy * B.k; B.rk = B.rx * B.k;
   B.p = p; B.s = s; B.gs = p.gS + s; B.pid = pid; B.ppid = ppid || 0; B.off = off || 0;
   B.W = lerp(p.W[i], p.W[i + 1], t); B.SH = lerp(p.SH[i], p.SH[i + 1], t); B.M = lerp(p.M[i], p.M[i + 1], t); B.O = lerp(p.O[i], p.O[i + 1], t); B.F = lerp(p.F[i], p.F[i + 1], t);
-  B.oL = -(B.W + B.M + 2 * B.O + (B.O > 0.05 ? OPP_SH : 0)); B.oR = B.W + B.SH;
+  B.oL = -(B.W + B.M); B.oR = B.W + B.SH;
   B.sec = p.secs[p.SEC[t < 0.5 ? i : i + 1]]; B.div = p.forkDiv || 0;
   return B;
 }
@@ -4892,14 +5146,13 @@ function nearOf(slot, b, vi) {
     const v = copyB(_virt[vi], slot.r[j]), c = b.p;
     v.cx += b.off * v.rx; v.sx += b.off * v.rk; v.p = c; v.s = 0; v.pid = b.pid; v.gs = c.gS;
     v.W = c.W[0]; v.SH = c.SH[0]; v.M = c.M[0]; v.O = c.O[0]; v.F = 0; v.div = c.forkDiv || 0; v.sec = c.secs[0];
-    v.oL = -(v.W + v.M + 2 * v.O + (v.O > 0.05 ? OPP_SH : 0)); v.oR = v.W + v.SH;
+    v.oL = -(v.W + v.M); v.oR = v.W + v.SH;
     return v;
   }
   return null;
 }
 // ---------- the road raster ----------
 const ASPH = [0x64676e, 0x5a5d64], ASPH_SC = [0x6e7077, 0x64666d], ASPH_DOTS = [0x50525a, 0x7c7e86], PAINT = 0xf4f1e8, YELLOW = 0xf2c33a, KERB = 0xd2ccc0;
-const MED_COL = { barrier: [0xb8b2a6, 0xb0aa9e], plant: [0x5a8a34, 0x548230], yellow: ASPH };
 let _row = 0, _f = 0;
 function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
 const DKC = new Map();
@@ -4959,35 +5212,24 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
     if (b.k === 1 && (hash2(Math.floor(gs * 0.5), Math.floor(t * 6)) > 0.6)) { const x = Math.round(lerp(a0, a1, hash2(Math.floor(gs), Math.floor(t * 3)))); if (x >= 0 && x < RW) RV.fb[_row + x] = fogPx(0xffffff, _f * 0.5); }
   }
 }
-// one row of one road: asphalt, the median, the opposite carriageway, lane lines, edge lines, the fork split
+// one row of one road: asphalt, both shoulders, the lane lines, the edge lines, the fork split
 function roadRow(cx, rk, R, gs, gsN) {
-  const W = R.W, M = R.M, O = R.O, SH = R.SH, oL = R.oL, oR = R.oR, mt = R.sec.mt;
+  const W = R.W, M = R.M, SH = R.SH, oL = R.oL, oR = R.oR;
   const X = (o) => cx + o * rk;
   const stripe = Math.floor(gs / 6) & 1, asph = ASPH[stripe];
   fillSpanD(Math.round(X(oL)), Math.round(X(oR)), asph);
+  // the shoulders wear a paler, coarser asphalt
   if (SH > 0.3) fillSpanD(Math.round(X(W)), Math.round(X(oR)), ASPH_SC[stripe]);
+  if (M > 0.3) fillSpanD(Math.round(X(oL)), Math.round(X(-W)), ASPH_SC[stripe]);
   if (FX.marks.length) fxMarksRow(R.p, gs, X, rk, asph);
   const lw = 0.15 * rk, dash = (gs % 10 + 10) % 10 < 4;
-  // our lanes: dashed lines between them, a solid white edge line before the scooter lane
+  // dashed lines between the lanes, a solid white edge line each side
   const lanes = Math.round((2 * W) / LANE);
   if (dash) for (let k = 1; k < lanes; k++) { const o = -W + k * LANE; if (R.F > 0.05 && Math.abs(o - R.div) < 0.5) continue; lineAt(X(o), lw, PAINT, asph); }
-  if (SH > 0.3) lineAt(X(W - 0.1), lw, PAINT, asph);
-  // the median
-  if (M > 0.05) {
-    if (mt === 'yellow') { lineAt(X(-W - 0.14), lw * 0.9, YELLOW, asph); if (M > 0.45) lineAt(X(-W - M + 0.14), lw * 0.9, YELLOW, asph); }
-    else {
-      const mc = MED_COL[mt] || MED_COL.barrier;
-      if (M > 1.2) fillSpanD(Math.round(X(-W - M)), Math.round(X(-W)), mc[stripe]); else fillSpan(Math.round(X(-W - M)), Math.round(X(-W)), fogPx(mc[stripe], _f));
-      if (mt === 'plant' && M > 0.8) { lineAt(X(-W - 0.12), 0.24 * rk, KERB, mc[0]); lineAt(X(-W - M + 0.12), 0.24 * rk, KERB, mc[0]); }
-      lineAt(X(-W - 0.3), lw, YELLOW, asph);
-    }
-  } else lineAt(X(-W + 0.1), lw, PAINT, asph);
-  // the opposite carriageway, a mirror of ours
-  if (O > 0.3) {
-    const oc = -W - M - O, ol = Math.round((2 * O) / LANE);
-    if (dash) for (let k = 1; k < ol; k++) lineAt(X(oc - O + k * LANE), lw, PAINT, asph);
-    lineAt(X(-W - M - 2 * O + 0.1), lw, PAINT, asph);
-  }
+  lineAt(X(W - 0.1), lw, PAINT, asph);
+  lineAt(X(-W + 0.1), lw, PAINT, asph);
+  // the left edge of the paving, where the ground starts, gets a yellow edge line like the real thing
+  if (M > 0.3) lineAt(X(oL + 0.12), lw * 0.9, YELLOW, asph);
   // a fork: the solid split line, then hatched chevrons widening into the gore
   if (R.F > 0.02) {
     lineAt(X(R.div), 0.2 * rk, PAINT, asph);
@@ -5203,7 +5445,6 @@ function drawStripItems(a, b, clip) {
     for (const r of p.rails) if (r.s1 > s0 && r.s0 < s1) items.push(item(2, r, Math.max(p.gS + r.s0, gsA), Math.min(p.gS + r.s1, gsB), p));
     const sec = (a.p === p ? a : b).sec;
     for (const v of TRAFFIC.list) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
-    for (const v of TRAFFIC.oncoming) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
     if (p.anim.length) for (const an of p.anim) animItems(an, p, s0, s1, items);
     if (GHOST.p === p && GHOST.s >= s0 && GHOST.s < s1) items.push(item(7, GHOST, p.gS + GHOST.s, 0, p));
   }
@@ -5212,11 +5453,6 @@ function drawStripItems(a, b, clip) {
     const it = items[n];
     if (it.k === 1) { wallItem(it.o, a, b, gsA, gsB, clip); continue; }
     if (it.k === 2) { drawRail(it.o, a, b, it.gs, it.gs1, clip, fogAt(a.cz)); continue; }
-    if (it.k === 4) {
-      // the concrete barrier down the median: its face toward our side
-      copyB(_barA, a); copyB(_barB, b); _barA.oL = -a.W - a.M / 2 + 0.3; _barB.oL = -b.W - b.M / 2 + 0.3;
-      drawRail({ kind: 'concrete', sg: -1, off: 0 }, _barA, _barB, gsA, gsB, clip, fogAt(a.cz)); continue;
-    }
     const ip = interp(a, b, it.gs);
     if (ip.cz < 0.6) continue;
     const xs = X0 + (ip.cx + ip.rx * it.o.x) * ip.k, ys = Y0 - ip.cy * ip.k, fog = fogAt(ip.cz);
@@ -5322,16 +5558,21 @@ function botDrive(dt) {
     const k = Math.abs(p.curv(Math.min(p.L, s + d)));
     if (k > 1e-5) { const vm = Math.sqrt((auth * 0.86 * BOT.skill) / (k * cc)); const brakeDist = Math.max(0, d - 10); vSafe = Math.min(vSafe, Math.sqrt(vm * vm + 2 * 18 * brakeDist)); }
   }
-  // choose a lane; dodge whatever is ahead in it
+  // choose a lane: the one with the longest clear run ahead; move only when it is clearly better, and not twice in a second
   const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
   if (BOT.lane >= lanes) BOT.lane = lanes - 1;
-  let xt = -hw + LANE * (BOT.lane + 0.5);
-  const blocked = (lx) => TRAFFIC.list.some((o) => o.p === p && o.s > s - 6 && o.s - s < 30 + v * 1.4 && Math.abs(o.x - lx) < 2.4);
-  if (blocked(xt) && G.t > BOT.laneT) {
-    const opts = []; for (let l = 0; l < lanes; l++) if (l !== BOT.lane && !blocked(-hw + LANE * (l + 0.5))) opts.push(l);
-    if (opts.length) { opts.sort((a, b) => Math.abs(a - BOT.lane) - Math.abs(b - BOT.lane)); BOT.lane = opts[0]; BOT.laneT = G.t + 0.8; xt = -hw + LANE * (BOT.lane + 0.5); }
-    else vSafe = Math.min(vSafe, Math.max(8, v - 6));
+  const laneX = (l) => -hw + LANE * (l + 0.5), horizon = 40 + v * 1.6;
+  const clearAhead = (lx) => { let d = horizon; for (const o of TRAFFIC.list) if (o.p === p && o.s > s - 4 && o.s - s < horizon && Math.abs(o.x - lx) < 2.3) d = Math.min(d, o.s - s); return d; };
+  const cur = clearAhead(laneX(BOT.lane));
+  if (cur < horizon && G.t > BOT.laneT) {
+    let best = BOT.lane, bd = cur + 14;
+    for (let l = 0; l < lanes; l++) { if (l === BOT.lane) continue; const d = clearAhead(laneX(l)); if (d > bd && !TRAFFIC.list.some((o) => o.p === p && Math.abs(o.s - s) < 9 && Math.abs(o.x - laneX(l)) < 2.3)) { best = l; bd = d; } }
+    if (best !== BOT.lane) { BOT.lane = best; BOT.laneT = G.t + 0.9; }
   }
+  let xt = laneX(BOT.lane);
+  // follow the leader in this lane: never closer than a car length and a bit
+  const lead = clearAhead(xt);
+  if (lead < horizon) { let lv = 0; for (const o of TRAFFIC.list) if (o.p === p && Math.abs(o.s - s - lead) < 0.5 && Math.abs(o.x - xt) < 2.3) lv = o.v; const gap = lead - 7; vSafe = Math.min(vSafe, gap < 4 ? Math.max(0, lv - 2) : Math.sqrt(Math.max(0, lv * lv + 2 * 12 * gap))); }
   // forks: drift toward the side we want over the last stretch
   if (p.children.length && p.L - s < 380) {
     const want = BOT.forks[BOT.forkI] || (Math.random() < 0.5 ? 'L' : 'R');
@@ -5413,7 +5654,7 @@ function frame(now) {
   if (G.state === 'race') {
     updateCamera(G.paused ? 0 : dt);
     updateBackdrop();
-    engineUpdate(PC.rpm, PC.redline, RACE.state === 'run' || RACE.state === 'countdown' ? PC.throttle : 0, PC.v, PC.slip, PC.offroad, G.mode !== 'play');
+    engineUpdate(PC.rpm, PC.redline, RACE.state === 'run' || RACE.state === 'countdown' ? PC.throttle : 0, PC.v, PC.slip, PC.offroad, G.mode !== 'play', PC.drift > 0 && !PC.crash);
     uiFrame();
   }
   render();
@@ -5443,13 +5684,14 @@ async function boot() {
   buildWorld();
   for (const id in STAGES) buildBackdrop(STAGES[id].pano, STAGES[id].clouds);
   fxInit();
-  uiInit();
+  uiInit(); avatarInit();
   startAttract();
   requestAnimationFrame(frame);
 }
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
-  G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX,
+  G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, avatarSet, gapLeft, nearIntervals,
+  get SET() { return SET; }, get GHOST() { return GHOST; }, show(n) { show(n); },
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
   speed(k) { G.speed = k; },
@@ -5464,7 +5706,7 @@ window.__kr = {
   atlas(i) { return ATLAS.pages[i || 0].lv[0].toDataURL('image/png'); },
   // one fixed step with a drawn frame, for recording: returns the game screen as a PNG data URL
   step(dt) { const steps = Math.max(1, Math.ceil(dt / 0.02)), h = dt / steps; for (let i = 0; i < steps; i++) tick(h); if (G.state === 'race') { updateCamera(dt); updateBackdrop(); uiFrame(); } render(); drawHud(dt); return view.toDataURL('image/png'); },
-  spawn(type, ds, x, v) { const p = PC.piece, veh = spawnVehicle(p, PC.s + ds, false); veh.type = type; const set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan; veh.spr = SPR[set.rear[0]]; const T = VTYPES[type] || VTYPES.sedan; veh.len = T.len; veh.wid = T.wid; veh.x = x; veh.v = veh.v0 = v == null ? veh.v : v; TRAFFIC.list.push(veh); return veh.spr.name; },
+  spawn(type, ds, x, v) { const p = PC.piece, veh = spawnVehicle(p, PC.s + ds) || spawnVehicle(p, PC.s + ds + 30); if (!veh) return null; veh.s = PC.s + ds; veh.type = type; const set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan; veh.spr = SPR[set.rear[0]]; const T = VTYPES[type] || VTYPES.sedan; veh.len = T.len; veh.wid = T.wid; veh.x = x; veh.v = veh.v0 = v == null ? veh.v : v; TRAFFIC.list.push(veh); return veh.spr.name; },
   cars() { const W = CFW, H = CFH, c = canvas(W * 5, H * 2 + H * 2), x = c.getContext('2d'); CARS.forEach((sp, i) => { const s = carSprites(sp); x.drawImage(s.frames[2][i & 1][0], (i % 5) * W, Math.floor(i / 5) * H); }); const s0 = carSprites(CARS[0]); s0.frames.forEach((row, k) => { x.drawImage(row[0][0], k * W, H * 2); x.drawImage(row[1][1], k * W, H * 3); }); return c.toDataURL('image/png'); },
   sheet(i) { const s = carSprites(CARS[i]), sd = carSide(CARS[i]); const c = canvas(Math.max(s.w * 5, sd.width), s.h * 2 + sd.height + 8); const x = c.getContext('2d'); s.frames.forEach((row, k) => { x.drawImage(row[0][0], k * s.w, 0); x.drawImage(row[1][1], k * s.w, s.h); }); x.drawImage(sd, 0, s.h * 2 + 8); return c.toDataURL('image/png'); },
 };
@@ -5472,7 +5714,7 @@ boot();
 
 // ===================== screens: title, car select, setup, pause, results, records, settings =====================
 // The race keeps running behind the menus as an attract mode: the bot drives stage 1 with the HUD off.
-const UI = { scr: null, sel: 0, auto: true, ctrl: 'tilt', song: 0, turn: null, turnRaf: 0, turnT: 0, unlocked: false, resultShown: false, from: 'title' };
+const UI = { scr: null, sel: 0, auto: true, gearbox: 'at', ctrl: 'tilt', song: 0, turn: null, turnRaf: 0, turnT: 0, unlocked: false, resultShown: false, from: 'title' };
 const SAVE = { load(k, d) { try { const v = localStorage.getItem('kr.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, save(k, v) { try { localStorage.setItem('kr.' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } } };
 const SET = Object.assign({ music: 0.6, sfx: 0.9, sens: 18, quality: 'high', guide: true }, SAVE.load('settings', {}));
 if (SET.sens === 28) SET.sens = 18;   // the old default was too lazy
@@ -5509,7 +5751,7 @@ function uiInit() {
   <section class="scr dim" id="s-setup" hidden>
     <div class="panel card">
       <h2 class="ttl">出發前</h2>
-      <div class="row"><span class="lbl">變速箱</span><div class="seg" id="seg-auto"><button class="btn" data-v="1">AT 自排</button><button class="btn" data-v="0">MT 手排</button></div>
+      <div class="row"><span class="lbl">變速箱</span><div class="seg" id="seg-auto"><button class="btn" data-v="at">AT 自排</button><button class="btn" data-v="mt">MT 手排・H 檔</button><button class="btn" data-v="seq">MT(b) 手排・＋／－</button></div>
         <p class="note" id="note-auto"></p></div>
       <div class="row" id="row-ctrl"><span class="lbl">方向盤</span><div class="seg" id="seg-ctrl"><button class="btn" data-v="tilt">陀螺儀</button><button class="btn" data-v="touch">觸控滑桿</button></div>
         <p class="note" id="note-ctrl"></p></div>
@@ -5558,7 +5800,7 @@ function onUiClick(e) {
   if (b.dataset.go) { if (b.dataset.go === 'settings' || b.dataset.go === 'records' || b.dataset.go === 'online') UI.from = UI.scr; show(b.dataset.go); return; }
   if (b.dataset.car != null) { UI.sel = +b.dataset.car; openSelect(); return; }
   if (b.dataset.song != null) { UI.song = +b.dataset.song; musicPlay(UI.song); markSetup(); return; }
-  if (b.parentElement.id === 'seg-auto') { UI.auto = b.dataset.v === '1'; markSetup(); return; }
+  if (b.parentElement.id === 'seg-auto') { UI.gearbox = b.dataset.v; UI.auto = UI.gearbox === 'at'; markSetup(); return; }
   if (b.parentElement.id === 'seg-ctrl') { UI.ctrl = b.dataset.v; markSetup(); return; }
   switch (b.dataset.act) {
     case 'prev': UI.sel = (UI.sel + CARS.length - 1) % CARS.length; openSelect(); break;
@@ -5629,11 +5871,11 @@ function openSetup() {
   if (UI.unlocked) musicPlay(UI.song);
 }
 function markSetup() {
-  for (const b of document.querySelectorAll('#seg-auto .btn')) b.setAttribute('aria-pressed', (b.dataset.v === '1') === UI.auto ? 'true' : 'false');
+  for (const b of document.querySelectorAll('#seg-auto .btn')) b.setAttribute('aria-pressed', b.dataset.v === UI.gearbox ? 'true' : 'false');
   for (const b of document.querySelectorAll('#seg-ctrl .btn')) b.setAttribute('aria-pressed', b.dataset.v === UI.ctrl ? 'true' : 'false');
   for (const b of document.querySelectorAll('#radio button')) b.setAttribute('aria-pressed', +b.dataset.song === UI.song ? 'true' : 'false');
   const c = CARS[UI.sel];
-  $('note-auto').textContent = UI.auto ? '自動換檔，專心轉彎就好。' : (IS_TOUCH ? `手排：左手在畫面左側畫 H 檔換檔，這台是 ${c.gears} 速。` : `手排：Q / E 降升檔，或按 1–${c.gears} 直接進檔。這台是 ${c.gears} 速。`);
+  $('note-auto').textContent = UI.auto ? '自動換檔，專心轉彎就好。' : UI.gearbox === 'seq' ? (IS_TOUCH ? `簡易手排：左邊上面的鍵升檔、下面的鍵降檔，這台是 ${c.gears} 速。` : `簡易手排：E 升檔、Q 降檔。這台是 ${c.gears} 速。`) : (IS_TOUCH ? `手排：左手在畫面左側畫 H 檔換檔，這台是 ${c.gears} 速。` : `手排：Q / E 降升檔，或按 1–${c.gears} 直接進檔。這台是 ${c.gears} 速。`);
   $('note-ctrl').textContent = UI.ctrl === 'tilt' ? '像握方向盤一樣左右傾斜手機。' : '左手按住左下角左右拖曳轉向。';
 }
 // ---------- the race itself ----------
@@ -5649,7 +5891,7 @@ function startPlay() {
   G.mode = 'play'; G.paused = false; UI.resultShown = false;
   BOT.on = false;
   if (UI.ctrl === 'touch') CTL.mode = 'touchforced'; else if (UI.ctrl === 'tilt' && CTL.tilt.ok) CTL.mode = 'tilt'; else if (UI.ctrl === 'tilt') CTL.mode = 'touch';
-  G.state = 'race'; raceStart(UI.sel, UI.auto);
+  G.state = 'race'; raceStart(UI.sel, UI.auto, UI.gearbox === 'seq');
   CAM.init = false; HUD.show = true; layoutPads();
   musicPlay(UI.song);
   GHOST.rec = []; GHOST.recT = 0;
@@ -5671,7 +5913,7 @@ function showResult() {
   let newBest = false;
   if (goal) {
     const prev = rec.routes[key];
-    if (!prev || RACE.elapsed < prev.t) { rec.routes[key] = { t: RACE.elapsed, car: c.id, auto: UI.auto, d: Date.now() }; newBest = true; GHOST.save(key); }
+    if (!prev || RACE.elapsed < prev.t) { rec.routes[key] = { t: RACE.elapsed, car: c.id, auto: UI.auto, box: UI.gearbox, d: Date.now() }; newBest = true; GHOST.save(key); }
   }
   rec.scores.push({ s: Math.floor(RACE.score), car: c.id, route: key, goal, t: RACE.elapsed, d: Date.now() });
   rec.scores.sort((a, b) => b.s - a.s); rec.scores.length = Math.min(rec.scores.length, 10);
@@ -5680,7 +5922,7 @@ function showResult() {
   const splits = RACE.splits.map((q, i) => `<tr><td>${ROUTE_NAMES[RACE.route[i + 1]] || ROUTE_NAMES[q.id] || q.id}</td><td class="t">${fmtTime(q.t)}</td></tr>`).join('');
   $('result').innerHTML = `
     <div class="res-banner" style="color:${goal ? 'var(--sun)' : 'var(--hot)'}">${goal ? 'GOAL!' : 'TIME UP'}</div>
-    <p class="res-sub">${RACE.route.map((r) => ROUTE_NAMES[r]).join(' → ')}　・　${c.name}　${UI.auto ? 'AT' : 'MT'}</p>
+    <p class="res-sub">${RACE.route.map((r) => ROUTE_NAMES[r]).join(' → ')}　・　${c.name}　${UI.gearbox === 'seq' ? 'MT(b)' : UI.auto ? 'AT' : 'MT'}</p>
     <table class="sp"><tr><td>檢查點</td><td class="t">時間</td></tr>${splits}
       <tr><td><b>${goal ? '總時間' : '行駛時間'}</b>${newBest ? '<span class="new">NEW RECORD</span>' : ''}</td><td class="t"><b>${fmtTime(RACE.elapsed)}</b></td></tr>
       <tr><td>分數${rank ? '（第 ' + rank + ' 名）' : ''}</td><td class="t">${Math.floor(RACE.score).toLocaleString('en-US')}</td></tr>
@@ -5694,7 +5936,7 @@ function openRecords() {
   const routes = [['s1>s2b>s3>s4a', '山線 → 鵝鑾鼻'], ['s1>s2b>s3>s4b', '山線 → 貓鼻頭'], ['s1>s2a>s3>s4a', '海線 → 鵝鑾鼻'], ['s1>s2a>s3>s4b', '海線 → 貓鼻頭']];
   const carName = (id) => (CARS.find((c) => c.id === id) || {}).name || '';
   $('records').innerHTML = `<h2 class="ttl">紀錄</h2>
-    <table class="sp">${routes.map(([k, n]) => { const r = rec.routes[k]; return `<tr><td>${n}</td><td>${r ? carName(r.car) + (r.auto ? ' AT' : ' MT') : '—'}</td><td class="t">${r ? fmtTime(r.t) : '--\'--"--'}</td></tr>`; }).join('')}</table>
+    <table class="sp">${routes.map(([k, n]) => { const r = rec.routes[k]; return `<tr><td>${n}</td><td>${r ? carName(r.car) + (r.box === 'seq' ? ' MT(b)' : r.auto ? ' AT' : ' MT') : '—'}</td><td class="t">${r ? fmtTime(r.t) : '--\'--"--'}</td></tr>`; }).join('')}</table>
     <h2 class="ttl" style="margin-top:14px;font-size:18px">高分榜</h2>
     <table class="sp">${rec.scores.length ? rec.scores.map((s, i) => `<tr><td>${i + 1}</td><td>${carName(s.car)}</td><td>${s.goal ? '完走' : '時間到'}</td><td class="t">${s.s.toLocaleString('en-US')}</td></tr>`).join('') : '<tr><td>還沒有紀錄，跑一場吧！</td></tr>'}</table>
     <div class="actions"><button class="btn" data-act="back">返回</button></div>`;
@@ -5712,11 +5954,26 @@ function openSettings() {
     ${r('sens', '轉向', 10, 40, 1, (v) => '傾斜 ' + v + '° 打滿　（數字小比較靈敏）')}
     <div class="row"><span class="lbl">畫質</span><div class="seg" id="seg-q"><button class="btn" data-q="high">高（速度模糊、遠景）</button><button class="btn" data-q="low">省電</button></div></div>
     <div class="row"><span class="lbl">H 檔提示</span><div class="seg" id="seg-g"><button class="btn" data-gd="1">顯示</button><button class="btn" data-gd="0">隱藏</button></div></div>
+    <div class="row"><span class="lbl">我的頭像</span><div class="avrow"><canvas id="av-prev" width="72" height="72"></canvas>
+      <div class="seg"><label class="btn file">拍照<input type="file" accept="image/*" capture="user" data-av="cam"></label><label class="btn file">選圖<input type="file" accept="image/*" data-av="pick"></label><button class="btn ghost" data-av="clear">清除</button></div>
+      <input class="txt" id="av-name" maxlength="10" placeholder="你的名字" value="${(SET.name || '').replace(/"/g, '&quot;')}" autocomplete="off"></div>
+      <p class="note">連線對戰時，對手會在你的車上看到這張頭像和名字；幽靈車（你上次的紀錄）也會戴著它。</p></div>
     <div class="actions"><button class="btn" data-act="back">完成</button></div>`;
+  avatarPreview();
+  for (const inp of document.querySelectorAll('#settings input[data-av]')) inp.onchange = () => { avatarSet(inp.files && inp.files[0], () => avatarPreview()); inp.value = ''; };
+  $('av-name').oninput = () => { SET.name = $('av-name').value.trim().slice(0, 10); AVATAR.name = SET.name; SAVE.save('settings', SET); };
   const mark = () => { for (const b of document.querySelectorAll('#seg-q .btn')) b.setAttribute('aria-pressed', b.dataset.q === SET.quality ? 'true' : 'false'); for (const b of document.querySelectorAll('#seg-g .btn')) b.setAttribute('aria-pressed', (b.dataset.gd === '1') === SET.guide ? 'true' : 'false'); };
   mark();
   $('settings').oninput = (e) => { const k = e.target.dataset.set; if (!k) return; SET[k] = +e.target.value; $('v-' + k).textContent = k === 'sens' ? '傾斜 ' + SET[k] + '° 打滿　（數字小比較靈敏）' : Math.round(SET[k] * 100) + '%'; applySettings(); SAVE.save('settings', SET); };
-  $('settings').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.q) SET.quality = b.dataset.q; if (b.dataset.gd) SET.guide = b.dataset.gd === '1'; applySettings(); SAVE.save('settings', SET); mark(); };
+  $('settings').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.av === 'clear') { avatarClear(); avatarPreview(); return; } if (b.dataset.q) SET.quality = b.dataset.q; if (b.dataset.gd) SET.guide = b.dataset.gd === '1'; applySettings(); SAVE.save('settings', SET); mark(); };
+}
+// the preview in the settings: the pixel portrait blown up, or an empty ring
+function avatarPreview() {
+  const c = $('av-prev'); if (!c) return;
+  const g = c.getContext('2d'); g.clearRect(0, 0, 72, 72); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#140a1a'; g.beginPath(); g.arc(36, 36, 36, 0, TAU); g.fill(); g.fillStyle = '#fff6e0'; g.beginPath(); g.arc(36, 36, 33, 0, TAU); g.fill();
+  if (AVATAR.me) g.drawImage(AVATAR.me, 6, 6, 60, 60);
+  else { g.fillStyle = '#5a6a9a'; g.beginPath(); g.arc(36, 36, 30, 0, TAU); g.fill(); g.fillStyle = '#fff6e0'; g.beginPath(); g.arc(36, 30, 11, 0, TAU); g.fill(); g.fillRect(19, 44, 34, 18); }
 }
 function openOnline() {
   $('online').innerHTML = `<h2 class="ttl">連線對戰</h2><p class="desc" style="margin:0 0 12px">最多 8 人同時跑同一條路線，看得到彼此的車。連線功能接上伺服器後就會開放。</p><div class="actions"><button class="btn" data-act="back">返回</button></div>`;
@@ -5724,21 +5981,21 @@ function openOnline() {
 
 // ===================== the ghost: your best run on a route, replayed as a see-through car =====================
 const GHOST = {
-  rec: [], recT: 0, play: null, car: null, spr: null, p: null, s: 0, x: 0, on: false,
+  rec: [], recT: 0, play: null, car: null, spr: null, p: null, s: 0, x: 0, on: false, name: '', avatar: null,
   // a sample every 0.1 s: which piece, how far along it, where across it
   record(dt) {
     if (G.mode !== 'play' || RACE.state !== 'run') return;
     GHOST.recT += dt; if (GHOST.recT < 0.1) return; GHOST.recT -= 0.1;
     GHOST.rec.push([ROUTE.pieces.indexOf(PC.piece), Math.round(PC.s * 10) / 10, Math.round(PC.x * 100) / 100]);
   },
-  save(key) { SAVE.save('ghost:' + key, { car: CARS[RACE.carIdx].id, d: GHOST.rec }); SAVE.save('ghost:last', key); },
+  save(key) { SAVE.save('ghost:' + key, { car: CARS[RACE.carIdx].id, d: GHOST.rec, name: SET.name || '', avatar: SET.avatar || '' }); SAVE.save('ghost:last', key); },
   // the fastest finished run we have, to race against from the start
   load() {
     const rec = SAVE.load('records', { routes: {} }); let best = null, bk = null;
     for (const k in rec.routes) if (!best || rec.routes[k].t < best.t) { best = rec.routes[k]; bk = k; }
     const g = bk && SAVE.load('ghost:' + bk, null);
     GHOST.play = g && g.d && g.d.length > 10 ? g : null; GHOST.on = !!GHOST.play;
-    if (GHOST.on) { const c = CARS.find((q) => q.id === g.car) || CARS[0]; GHOST.spr = carSprites(c); GHOST.car = c; }
+    if (GHOST.on) { const c = CARS.find((q) => q.id === g.car) || CARS[0]; GHOST.spr = carSprites(c); GHOST.car = c; GHOST.name = g.name || SET.name || ''; GHOST.avatar = null; avatarDecode(g.avatar || SET.avatar, (im) => { GHOST.avatar = im; }); }
   },
   // where the ghost is RACE.elapsed seconds in; it drops out when its route parts from ours
   update() {
@@ -5761,6 +6018,8 @@ function drawGhost(x, y, k, clip) {
   VG.globalAlpha = 0.45;
   VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - (y - S.ay * sc)) / sc)), x - S.ax * sc, y - S.ay * sc, w, Math.min(hh, clip - (y - S.ay * sc)));
   VG.globalAlpha = 1;
+  // who it is: the portrait and name over the roof
+  if (y - S.ay * sc < clip + 10) drawBadge(x, y - S.ay * sc + 14 * sc, k, GHOST.name || 'GHOST', GHOST.avatar || AVATAR.me);
 }
 
 // ===================== endings: every car has its own story at each of the two goals =====================
