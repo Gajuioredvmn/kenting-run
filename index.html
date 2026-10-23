@@ -673,7 +673,7 @@ const STAGES = {
       { len: 140, k: 0, L: 'cut', R: 'cut', tags: ['underpass', 'deck'] },
       { len: 220, k: 0.0012, dy: 7, L: 'cut', R: 'cut', tags: ['underpass'] },
       { len: 320, k: 0.0042, L: 'city', R: 'industrial', tags: ['qilou', 'containers', 'lamps'] },
-      { len: 360, k: -0.002, dy: 12, L: 'city', R: 'industrial', tags: ['overpass', 'containers', 'lamps'] },
+      { len: 360, k: -0.002, dy: 12, L: 'city', R: 'industrial', tags: ['overpass', 'containers', 'lamps', 'weiwuying'] },
       { len: 380, k: 0.003, dy: -12, L: 'water', R: 'grass', tags: ['pagodas', 'lamps', 'airport'] },
       { len: 600, k: -0.0032, L: 'town', R: 'grass', tags: ['airport', 'plane', 'betelstand', 'palmgroup'] },
       { len: 520, k: 0.0045, dy: 5, L: 'industrial', R: 'industrial', tags: ['refinery', 'chimney', 'lamps'] },
@@ -702,17 +702,18 @@ const STAGES = {
     ],
   },
   s2b: {
-    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 76,
+    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 84,
     traffic: { per100: 1.3, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 1 } },
     next: 's3',
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel', 'dawu'] },
-      { len: 620, k: 0.001, dy: 10, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps', 'glassbridge'] },
-      { len: 700, k: 0.0032, dy: -10, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand'] },
+      { len: 640, k: 0.0022, L: 'orchard', R: 'grass', tags: ['buddha', 'ferris', 'mangogroup', 'betelstand'] },
+      { len: 620, k: 0.001, dy: 10, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps', 'gaoping'] },
+      { len: 700, k: 0.0032, dy: -10, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand', 'wanluan'] },
       { len: 520, k: -0.0045, sh: 1.8, L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
       { len: 460, k: 0.005, dy: 14, L: 'mountain', R: 'hills', tags: ['tribalgate', 'stonehouse', 'betel', 'coffee'] },
       { len: 440, k: -0.0048, dy: -10, L: 'mountain', R: 'orchard', tags: ['totem', 'mangogroup', 'stonehouse'] },
-      { len: 320, k: 0, L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps'] },
+      { len: 320, k: 0, L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps', 'glassbridge'] },
       { len: 600, k: 0.0042, dy: 8, L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'tribalgate'] },
       { len: 420, k: -0.003, dy: -12, L: 'hills', R: 'orchard', tags: ['mangogroup', 'betelstand', 'temple'] },
     ],
@@ -728,7 +729,7 @@ const STAGES = {
       { len: 480, k: -0.0038, dy: 8, L: 'slope', R: 'cliff', tags: ['coastplants', 'guardR'] },
       { len: 420, k: 0.0045, dy: -8, L: 'slope', R: 'shore', tags: ['mangostall'] },
       { len: 520, k: -0.003, L: 'orchard', R: 'shore', tags: ['mangostall', 'mangogroup'] },
-      { len: 380, k: 0, L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand'] },
+      { len: 380, k: 0, L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand', 'fuan', 'sichongxi'] },
       { len: 640, k: 0.0032, dy: 10, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
       { len: 520, k: -0.004, dy: -10, L: 'farm', R: 'shore', tags: ['onion', 'bigtemple'] },
       { len: 300, k: 0, L: 'farm', R: 'grass', tags: ['palmgroup', 'forksign'] },
@@ -739,12 +740,12 @@ const STAGES = {
     traffic: { per100: 1.6, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1 } },
     sections: [
       { len: 560, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
-      { len: 440, k: 0.003, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps'] },
-      { len: 820, k: -0.0026, dy: 3, L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat'] },
+      { len: 440, k: 0.003, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps', 'chuhuo', 'kentingarch'] },
+      { len: 820, k: -0.0026, dy: 3, L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat', 'nuke'] },
       { len: 600, k: 0.0036, dy: -3, L: 'town', R: 'town', tags: ['nightmarket', 'neon', 'lamps'] },
       { len: 700, k: -0.004, L: 'slope', R: 'beach', tags: ['sailrock', 'palmgroup', 'coastplants'] },
       { len: 520, k: 0.003, dy: 10, L: 'grass', R: 'cliff', tags: ['palmgroup', 'guardR', 'lighthouseview', 'longpan'] },
-      { len: 420, k: 0, dy: -2, L: 'plaza', R: 'plaza', tags: ['goal', 'lighthouse', 'palm'] },
+      { len: 420, k: 0, dy: -2, L: 'plaza', R: 'plaza', tags: ['goal', 'lighthouse', 'palm', 'southpoint'] },
     ],
   },
   s4b: {
@@ -2263,6 +2264,89 @@ function paintGlassBridge() {
   px.outline(0x2a2a30);
   return px;
 }
+
+// ---------------- more of them ----------------
+// 鵬灣跨海大橋: the tall white mast of Taiwan's first opening bridge, leaning like a sail, its stays fanning to the deck
+function paintDpPylon() {
+  const W = 120, H = 330, px = new Pix(W, H), x0 = 78, y0 = H - 40, x1 = 44, y1 = 8;
+  // the house at the foot, with the operator's windows
+  px.rect(x0 - 26, y0 - 10, 52, 50, 0xe8e8e4); px.rect(x0 - 26, y0 - 10, 52, 4, 0xc8ccd0); for (let x = x0 - 20; x < x0 + 20; x += 10) px.rect(x, y0 + 4, 6, 10, 0x2a4a6a);
+  // the mast: thick at the foot, slim at the top, lit on its left
+  for (let t = 0; t <= 1; t += 0.004) { const x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t, w = lerp(13, 5, t); px.rect(x - w, y, w, 2, 0xf6f6f2); px.rect(x, y, w * 0.7, 2, 0xd8dce0); px.rect(x + w * 0.7, y, w * 0.3, 2, 0xb8bec6); }
+  px.rect(x1 - 6, 2, 12, 8, 0xd8242a); px.rect(x1 - 1, 0, 2, 4, 0xd8242a);   // the beacon at the top
+  px.outline(0x1e2a3a);
+  return px;
+}
+// 衛武營國家藝術文化中心: the great white roof that rolls like a wave over the park, open underneath
+function paintWeiwuying() {
+  const W = 480, H = 110, px = new Pix(W, H);
+  for (let x = 0; x < W; x++) {
+    const top = 40 - Math.round(Math.sin(x / 70) * 16 + Math.sin(x / 23) * 6), bot = 92 - Math.round(Math.sin(x / 55 + 1) * 10);
+    for (let y = top; y < bot; y++) { const u = (y - top) / Math.max(1, bot - top); px.set(x, y, u < 0.25 ? 0xf6f6f2 : u < 0.6 ? 0xe4e6e8 : 0xc8ccd2); }
+    if ((x % 90) > 30 && (x % 90) < 70) for (let y = bot - 28; y < bot; y++) px.set(x, y, 0x3a4a5a);   // the openings under the roof
+    px.set(x, top, 0xffffff);
+  }
+  px.rect(0, 92, W, 18, 0xd8d2c6); for (let x = 20; x < W; x += 60) px.rect(x, 84, 4, 26, 0x9aa0a6);
+  px.rect(W / 2 - 60, 96, 120, 12, 0x1a3a6a); px.text('衛武營', W / 2, 96, 11, 0xffffff, { align: 'center' });
+  px.outline(0x2a3040);
+  return px;
+}
+// 佛光山大佛: the great golden Buddha seated over the museum, pagodas in two rows before it
+function paintBuddha() {
+  const W = 260, H = 320, px = new Pix(W, H), cx = 130, G = [0x8a5a10, 0xc8901a, 0xf0b830, 0xffe080];
+  px.rect(40, 230, 180, 40, 0xe8e2d0); px.rect(40, 230, 180, 4, 0xf8f4ea);                       // the plinth hall
+  for (let i = 0; i < 4; i++) for (const sx of [-1, 1]) { const x = cx + sx * (30 + i * 28), y = 300; for (let k = 0; k < 5; k++) { const hw = 8 - k, yy = y - k * 10; px.rect(x - hw, yy - 8, hw * 2, 8, 0xd8a040); px.poly([x - hw - 3, yy - 8, x + hw + 3, yy - 8, x, yy - 13], 0xa83a20); } }   // the eight pagodas
+  px.ball(cx, 200, 62, 40, G, -1, -1);                                                             // the folded legs
+  px.ball(cx, 140, 44, 54, G, -1, -1);                                                             // the body
+  px.ball(cx, 70, 26, 28, G, -1, -1); px.ball(cx, 52, 26, 14, [0x4a3010, 0x6a4818, 0x8a6020, 0x8a6020], -1, -1);   // head and curls
+  px.rect(cx - 16, 76, 32, 3, 0x6a4810); px.rect(cx - 6, 62, 12, 3, 0x6a4810);                     // eyes and smile
+  px.ball(cx, 118, 20, 10, G, -1, -1);                                                              // hands in the lap
+  px.outline(0x3a2a08);
+  return px;
+}
+// 義大世界摩天輪: the big wheel over the castle of the outlet mall
+function paintFerris(seed) {
+  const W = 240, H = 300, px = new Pix(W, H), cx = 120, cy = 110, R = 100;
+  px.rect(0, 240, W, 60, 0xf2e8d8); for (let x = 10; x < W; x += 40) { px.rect(x, 222, 20, 18, 0xe8d8c0); px.poly([x - 2, 222, x + 22, 222, x + 10, 206], 0x4a6a9a); }   // the castle
+  for (let x = 16; x < W; x += 24) px.rect(x, 252, 8, 12, 0x3a4a6a);
+  px.line(cx - 40, 240, cx, cy, 0xd8dce0, 6); px.line(cx + 40, 240, cx, cy, 0xd8dce0, 6);         // the A-frame
+  for (let k = 0; k < 24; k++) { const a = (k / 24) * TAU + seed, x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R; px.line(cx, cy, x, y, 0xe8eaec, 1); }
+  for (let a = 0; a < TAU; a += 0.02) { px.set(cx + Math.cos(a) * R, cy + Math.sin(a) * R, 0xffffff); px.set(cx + Math.cos(a) * (R - 3), cy + Math.sin(a) * (R - 3), 0xd8dce0); }
+  const cols = [0xe8343a, 0xf2c21a, 0x3ab85a, 0x2a8ad8, 0xf27a1a, 0xe84a8a];
+  for (let k = 0; k < 24; k++) { const a = (k / 24) * TAU + seed, x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R; px.rect(x - 4, y, 8, 8, cols[k % 6]); px.rect(x - 4, y, 8, 2, 0xffffff); }
+  px.ellipse(cx, cy, 7, 7, 0xd8242a);
+  px.outline(0x2a2a3a);
+  return px;
+}
+// 核三廠: the twin white domes and the tall stack above 南灣
+function paintNuke() {
+  const W = 300, H = 150, px = new Pix(W, H);
+  px.rect(0, 110, W, 40, 0xc8c4bc); px.rect(0, 110, W, 3, 0xe0dcd4);
+  for (const cx of [90, 200]) { px.ball(cx, 112, 46, 54, [0xb8bcc0, 0xd8dcdf, 0xf2f4f6, 0xffffff], -1, -1); px.rect(cx - 46, 100, 92, 12, 0xd8dcdf); }
+  px.rect(258, 10, 14, 100, 0xe8e8e4); px.rect(258, 10, 4, 100, 0xffffff); px.rect(256, 8, 18, 4, 0xd8242a);
+  px.rect(20, 120, 40, 20, 0x8a9aa8); for (let x = 24; x < 60; x += 8) px.rect(x, 124, 4, 8, 0x2a4a6a);
+  px.outline(0x2a3040);
+  return px;
+}
+// 墾丁國家公園牌樓: the white gateway over the road into the park
+function paintKentingArch() {
+  const W = 480, H = 150, px = new Pix(W, H);
+  for (const x of [20, 440]) { px.rect(x, 50, 20, 100, 0xf4f1ea); px.rect(x, 50, 6, 100, 0xffffff); px.rect(x - 4, 44, 28, 8, 0xd8d2c6); }
+  px.rect(20, 34, 440, 22, 0xf4f1ea); px.rect(20, 34, 440, 4, 0xffffff);
+  px.poly([10, 34, 470, 34, 450, 14, 30, 14], 0x2a6a3a); px.rect(60, 18, 360, 12, 0x2a6a3a);     // the green roof
+  px.rect(120, 36, 240, 18, 0x1a3a2a); px.text('墾丁國家公園', 240, 36, 15, 0xffffff, { align: 'center' });
+  px.outline(0x1a2a1a);
+  return px;
+}
+// 台灣最南點: the white sail-shaped marker on the cape
+function paintSouthPoint() {
+  const W = 70, H = 110, px = new Pix(W, H);
+  px.rect(20, 96, 30, 14, 0xbab4a8);
+  px.poly([24, 96, 30, 8, 46, 20, 44, 96], 0xf6f6f2); px.poly([34, 96, 30, 8, 46, 20, 44, 96], 0xd8dce0);
+  px.rect(28, 84, 12, 8, 0x1a3a6a);
+  px.outline(0x2a3040);
+  return px;
+}
 // the sights, registered
 function paintSights() {
   const S = [
@@ -2274,6 +2358,8 @@ function paintSights() {
     ['fangliao', '枋寮', 'Fangliao'], ['mango', '枋山愛文芒果', 'Fangshan Mango'], ['sandimen', '三地門', 'Sandimen'], ['glassbridge', '山川琉璃吊橋', 'Shanchuan Glass Bridge'], ['dawu', '大武山', 'Mt. Dawu'],
     ['aquarium', '國立海洋生物博物館', 'Aquarium'], ['guanshan', '關山夕照', 'Guanshan Sunset'], ['baisha', '白沙灣', 'Baisha Bay'], ['houbihu', '後壁湖', 'Houbihu Harbour'], ['maobitou', '貓鼻頭', 'Maobitou'],
     ['hengchun', '恆春古城', 'Hengchun Old Town'], ['kenting', '墾丁大街', 'Kenting Street'], ['nanwan', '南灣', 'Nanwan Beach'], ['sailrock', '船帆石', 'Sail Rock'], ['eluanbi', '鵝鑾鼻燈塔', 'Eluanbi Lighthouse'], ['longpan', '龍磐公園', 'Longpan Park'],
+    ['weiwuying', '衛武營', 'Weiwuying Arts Center'], ['buddha', '佛光山佛陀紀念館', 'Fo Guang Shan'], ['ferris', '義大世界', 'E-DA World'], ['gaoping', '高屏溪斜張橋', 'Gaoping Bridge'], ['wanluan', '萬巒豬腳', 'Wanluan Pork Knuckle'],
+    ['fuan', '車城福安宮', 'Fuan Temple'], ['sichongxi', '四重溪溫泉', 'Sichongxi Hot Spring'], ['chuhuo', '出火', 'Chuhuo Fire'], ['nuke', '核三廠', 'Maanshan Plant'], ['kentingpark', '墾丁國家公園', 'Kenting National Park'], ['southpoint', '台灣最南點', 'Southernmost Point'],
   ];
   for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0.1, shadow: 0.3 });
   addSprite('kpmc', paintKPMC(), 64, { collide: 0, shadow: 0 });
@@ -2294,6 +2380,13 @@ function paintSights() {
   addSprite('ferry', paintFerry(), 7, { collide: 0, shadow: 0 });
   addSprite('tuna', paintTuna(), 7, { collide: 0.7, shadow: 0.5 });
   addSprite('glassbridge', paintGlassBridge(), 52, { collide: 0, shadow: 0 });
+  addSprite('dppylon', paintDpPylon(), 46, { collide: 0.4, shadow: 0.3 });
+  addSprite('weiwuying', paintWeiwuying(), 22, { collide: 0, shadow: 0 });
+  addSprite('buddha', paintBuddha(), 68, { collide: 0, shadow: 0 });
+  addSprite('ferris', paintFerris(0.3), 70, { collide: 0, shadow: 0 });
+  addSprite('nuke', paintNuke(), 30, { collide: 0, shadow: 0 });
+  addSprite('kentingarch', paintKentingArch(), 14, { collide: 0, shadow: 0 });
+  addSprite('southpoint', paintSouthPoint(), 9, { collide: 0.6, shadow: 0.3 });
 }
 
 // ===================== sprites: banners for the arches, fork signs, place signs, painted road words =====================
@@ -2710,11 +2803,11 @@ function paintTown() {
   addSprite('curveR', paintSignCurve(1), 3.2, { collide: 0.08, shadow: 0.2 });
   for (let i = 0; i < ADS.length; i++) addSprite('billboard#' + i, paintBillboard(ADS[i], 2800 + i), 7.5, { collide: 0.08, shadow: 0.4 });
   for (let i = 0; i < 3; i++) addSprite('betelstand#' + i, paintBetelStand(2900 + i), 4.4, { collide: 0.8, glow: 0.7 });
-  addSprite('mangostall', paintFruitStall(2950, 'mango'), 4.6, { collide: 0.7 });
+  addSprite('mangostall', paintFruitStall(2950, 'mango'), 3.2, { collide: 0.7 });
   ['冰品', '南灣', '衝浪店', '墾丁', '民宿', '海產', '剉冰', '泳裝'].forEach((n, i) => addSprite('beachshop#' + i, paintBeachShop(5200 + i * 7, n), 1, {}));
-  addSprite('waxstall', paintFruitStall(2960, 'wax'), 4.6, { collide: 0.7 });
+  addSprite('waxstall', paintFruitStall(2960, 'wax'), 3.2, { collide: 0.7 });
   const foods = ['烤魷魚', '珍珠奶茶', '炸物', '海產粥', '烤玉米', '冰沙'];
-  for (let i = 0; i < foods.length; i++) addSprite('stall#' + i, paintStall(3000 + i, foods[i]), 5, { collide: 0.8, glow: 0.6 });
+  for (let i = 0; i < foods.length; i++) addSprite('stall#' + i, paintStall(3000 + i, foods[i]), 3.0, { collide: 0.8, glow: 0.6 });
   const neons = [['墾丁', 0xff3aa8], ['夜市', 0x3af0ff], ['海產', 0xffe03a], ['冰店', 0x7aff5a], ['酒吧', 0xff7a3a], ['民宿', 0xc87aff]];
   for (let i = 0; i < neons.length; i++) addSprite('neon#' + i, paintNeon(neons[i][0], neons[i][1]), 3.8, { collide: 0, glow: 1 });
   for (let i = 0; i < 4; i++) addSprite('crowd#' + i, paintCrowd(3100 + i * 11, 10), 1.8, { collide: 0, shadow: 0.3 });
@@ -2929,7 +3022,7 @@ function houseRow(D, s0, s1, sg, off, opts) {
     const S = SPR[name], h = store ? 5 : (S.h / S.w) * w;
     D.wall(s, s + w, sg, off + r.range(0, 0.5), r.range(10, 16), h, name, { side: pickVar('sidewall', r), col: r.pick(WALLS) });
     if (r() < 0.35) D.spr('scooters', s + w / 2, D.lat(s + w / 2, sg, off - 1.6), { collide: false });
-    if (o.vsigns && r() < 0.55) D.spr(pickVar('vsign', r), s + r.range(0.4, 1.2), D.lat(s, sg, off - 0.3), { y: 2.6, flip: sg > 0, collide: false });
+    if (o.vsigns && r() < 0.4) D.spr(pickVar('vsign', r), s + r.range(0.4, 1.2), D.lat(s, sg, off - 0.2), { y: 3.3, scale: 0.85, flip: sg > 0, collide: false });
     s += w + r.range(0, 0.3);
   }
 }
@@ -3128,7 +3221,7 @@ const TAGS = {
   nightmarket(D, s0, s1) {
     sightSign(D, s0 + 30, -1, 'kenting');
     houseRow(D, s0, s1, -1, 6.5, { noStore: false }); houseRow(D, s0, s1, 1, 6.5);
-    every(s0, s1, 11, 2, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1; D.spr('stall', s, D.lat(s, sg, 1.2), { flip: false }); if (D.rnd() < 0.7) D.spr('walkers', s + 4, D.lat(s, sg, 3), { collide: false }); });
+    every(s0, s1, 13, 2, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1; D.spr('stall', s, D.lat(s, sg, 1.6), { flip: false }); if (D.rnd() < 0.7) D.spr('walkers', s + 4, D.lat(s, sg, 3.4), { collide: false }); });
   },
   neon(D, s0, s1) { every(s0, s1, 9, 2, D.rnd, (s) => D.spr('neon', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, 5.2), { y: 3.5, collide: false, flip: false })); },
   sailrock(D, s0, s1) { sightSign(D, (s0 + s1) / 2 - 160, 1, 'sailrock'); const s = (s0 + s1) / 2; D.spr('sailrock', s, D.lat(s, 1, 70), { flip: false, collide: false }); },
@@ -3172,11 +3265,22 @@ const TAGS = {
   // ---------------- Pingtung ----------------
   tuna(D, s0, s1) { const s = s0 + (s1 - s0) * 0.7; sightSign(D, s - 150, 1, 'tuna'); D.spr('tuna', s, D.lat(s, 1, 4), { flip: false }); },
   dapeng() {},
-  glassbridge(D, s0, s1) { sightSign(D, s0 + 40, -1, 'glassbridge'); const s = s0 + (s1 - s0) * 0.55; D.spr('glassbridge', s, D.lat(s, -1, 64), { flip: false, collide: false }); },
+  glassbridge(D, s0, s1) { sightSign(D, s0 + 40, 1, 'glassbridge'); const s = s0 + (s1 - s0) * 0.55; D.spr('glassbridge', s, D.lat(s, 1, 40), { flip: false, collide: false }); },
   dawu(D, s0) { sightSign(D, s0 + 80, -1, 'dawu'); },
   guanshan(D, s0, s1) { sightSign(D, s0 + 60, 1, 'guanshan'); const s = s0 + 240; D.spr('pavilion', s, D.lat(s, 1, 8), { flip: false }); every(s - 30, s + 30, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, 1, D.rnd.range(3, 6)), { collide: false })); },
   baisha(D, s0) { sightSign(D, s0 + 60, 1, 'baisha'); },
   longpan(D, s0) { sightSign(D, s0 + 60, 1, 'longpan'); },
+  weiwuying(D, s0, s1) { sightSign(D, s0 + 20, -1, 'weiwuying'); const s = s0 + 130; D.spr('weiwuying', s, D.lat(s, -1, 24), { flip: false, collide: false }); },
+  buddha(D, s0, s1) { sightSign(D, s0 + 60, -1, 'buddha'); const s = s0 + 300; D.spr('buddha', s, D.lat(s, -1, 40), { flip: false, collide: false }); },
+  ferris(D, s0, s1) { sightSign(D, s0 + 340, 1, 'ferris'); const s = s0 + 520; D.spr('ferris', s, D.lat(s, 1, 34), { flip: false, collide: false }); },
+  gaoping(D, s0) { sightSign(D, s0 + 40, -1, 'gaoping'); },
+  wanluan(D, s0) { sightSign(D, s0 + 80, 1, 'wanluan'); },
+  fuan(D, s0) { sightSign(D, s0 + 60, -1, 'fuan'); },
+  sichongxi(D, s0) { sightSign(D, s0 + 160, -1, 'sichongxi'); },
+  chuhuo(D, s0) { sightSign(D, s0 + 200, 1, 'chuhuo'); },
+  nuke(D, s0, s1) { sightSign(D, s0 + 400, 1, 'nuke'); const s = s0 + 600; D.spr('nuke', s, D.lat(s, 1, 46), { flip: false, collide: false }); },
+  kentingarch(D, s0) { sightSign(D, s0 + 120, 1, 'kentingpark'); overRoad(D, 'kentingarch', s0 + 300, 0, { sx: (D.p.outerR(Math.round((s0 + 300) / DS)) - D.p.outerL(Math.round((s0 + 300) / DS)) + 8) / SPR.kentingarch.ww }); },
+  southpoint(D, s0, s1) { sightSign(D, s0 + 20, 1, 'southpoint'); const s = s0 + 110; D.spr('southpoint', s, D.lat(s, 1, 6), { flip: false }); },
   // ---------------- bridges: parapets both sides; a cable-stayed pylon with its stays, or the towers of an opening span ----------------
   _bridge(D, s0, s1, sec) {
     if (sec.tags && sec.tags.includes('dapeng')) sightSign(D, s0 - 160, 1, 'dapeng');
@@ -3193,8 +3297,11 @@ const TAGS = {
       }
     }
     if (sec.bridge === 'bascule') {
-      const sm = (s0 + s1) / 2;
-      for (const s of [sm - 22, sm + 22]) for (const sg of [-1, 1]) D.spr('btower', s, D.lat(s, sg, 1.4), { flip: sg > 0, collide: true });
+      // 鵬灣跨海大橋: one tall mast on the left at the start of the lifting span, its stays fanning forward over the deck
+      const sm = (s0 + s1) / 2 - 40, i = Math.round(sm / DS), mx = p.outerL(i) - 2.2, H = 44;
+      D.spr('dppylon', sm, mx, { flip: false, collide: true });
+      for (let k = 1; k <= 7; k++) { const sa = sm + k * 16; if (sa > p.L) break; const ia = Math.round(sa / DS); D.wire([{ s: sm, x: mx + 2, y: H - 3 - k * 1.6 }, { s: sa, x: p.outerL(ia) + 0.6, y: 1.2 }]); D.wire([{ s: sm, x: mx + 2, y: H - 3 - k * 1.6 }, { s: sa, x: p.outerR(ia) - 0.6, y: 1.2 }]); }
+      for (let k = 1; k <= 2; k++) { const sa = sm - 24 * k; if (sa < 0) break; const ia = Math.round(sa / DS); D.wire([{ s: sm, x: mx + 2, y: H - 2 - k }, { s: sa, x: p.outerL(ia) - 1, y: 1.2 }]); }
     }
   },
 };
@@ -3698,6 +3805,9 @@ function drawPlayerCar(spr) {
     VG.save(); VG.translate(x, yG - lift - 30); VG.rotate(PC.roll * 0.8 + Math.sin(PC.crash.t * 6) * 0.1); VG.drawImage(img, -spr.ax, -spr.ay + 30); VG.restore();
     return;
   }
+  // clipped a 三寶: one full spin about the car's middle, the picture sliding sideways as it goes round
+  const spinning = HAZ.spinT > 0;
+  if (spinning) { const a = HAZ.spinDir * TAU * sstep(clamp(HAZ.spinT / HAZ.spinDur, 0, 1)); VG.save(); VG.translate(x, yG - lift - 24); VG.rotate(a); VG.translate(-x, -(yG - lift - 24)); }
   // the drift pose: rolled up onto the outside wheels, squashed a touch, hopping
   const pose = (PC.spec && PC.spec.pose) || POSE_DEFAULT;
   const roll = FX.roll, dk = FX.driftK, posed = Math.abs(roll) > 0.004 || dk > 0.02 || FX.hopY < -0.5 || Math.abs(FX.pitch || 0) > 0.005;
@@ -3720,6 +3830,7 @@ function drawPlayerCar(spr) {
   }
   if (FX.cheer) drawCheer(spr, x - spr.ax, yG - spr.ay - lift, dk);
   if (posed) VG.restore();
+  if (spinning) VG.restore();
 }
 // ---------- the crew's arms: pixel limbs drawn over the frame at the heads ----------
 // where each head's centre is on the frame, for this steering picture
@@ -4124,9 +4235,10 @@ function pcStep(dt, track) {
     PC.airY = Math.max(0, c.vy * c.t - 9 * c.t * c.t);
     PC.yaw += c.spin * dt; PC.roll = Math.sin(Math.min(1, c.t / 1.1) * Math.PI) * c.rollK;
     if (c.t > c.dur) {
-      PC.crash = null; PC.airY = 0; PC.yaw = 0; PC.roll = 0; PC.v = 0; PC.vx = 0; PC.drift = 0;
+      // back on the road, rolling slowly, in the gear you were in before it all went wrong
+      PC.crash = null; PC.airY = 0; PC.yaw = 0; PC.roll = 0; PC.v = Math.min(c.v0 * 0.25, 12); PC.vx = 0; PC.drift = 0;
       PC.x = clamp(PC.x, -p.hw(PC.s) + 1.6, p.hw(PC.s) - 1.6);
-      PC.gear = 1; PC.neutral = false; PC.rpm = 1200;
+      PC.gear = c.gear; PC.neutral = false; PC.rpm = 1200;
     }
     PC.rpm = lerp(PC.rpm, 1200, dt * 3);
     return;
@@ -4165,10 +4277,16 @@ function pcStep(dt, track) {
   if (PC.offroad > 0) { const lim = 24; if (PC.v > lim) a -= 9 + (PC.v - lim) * 0.25; else a -= 1.5; }
   PC.v = Math.max(0, PC.v + a * dt);
   PC.rpm = lerp(PC.rpm, rpm, clamp(dt * 14, 0, 1));
-  // ---- steering, centrifugal push, drift ----
-  const k = p.curv(PC.s), v = PC.v;
-  const auth = (6.6 + 4.2 * sp.steer) * 1.5 * clamp(v / 20, 0.18, 1) * (PC.drift > 0 ? 1.4 : 1);   // quick: a lane in a third of a second
-  const cent = k * v * v * (0.34 - 0.12 * sp.grip) * (PC.drift > 0 ? 0.62 : 1);
+  // ---- steering, the bend's push, the tyres' limit, drift ----
+  // The road pushes the car outward by k·v² (scaled into lateral metres per second); the tyres can hold only so much
+  // of it. Under the limit the car follows the bend and the wheel moves it across the lanes; over it the car is
+  // carried wide no matter how the wheel is turned — only the brakes, or lifting off, bring the speed back under.
+  const k = p.curv(PC.s), v = PC.v, c = 0.34 - 0.12 * sp.grip;
+  const auth = (6.6 + 4.2 * sp.steer) * 1.05 * clamp(v / 20, 0.18, 1) * (PC.drift > 0 ? 1.1 : 1);   // quick: the whole road in about a second
+  const cent = k * v * v * c;
+  const latMax = tyreLimit(sp, PC.drift > 0, PC.offroad > 0) * c;
+  const overG = Math.max(0, Math.abs(cent) - latMax);
+  PC.limitK = latMax > 0 ? clamp(Math.abs(cent) / latMax, 0, 2) : 0;    // 1 = right at the limit (the HUD and the tyres use it)
   // start a drift: a brake tap while steering hard at speed, or the wheel held hard over at speed — on a big bend
   // the tail steps out almost at once, on a straight only after the lock has been held a moment
   const dv0 = (sp.pose && sp.pose.driftV) || 26, lock = Math.abs(PC.steerIn) > 0.86, bend = Math.abs(cent) > 2.2 && Math.sign(PC.steerIn) === Math.sign(k);
@@ -4178,10 +4296,15 @@ function pcStep(dt, track) {
     else if (lock && PC.lockT > (bend ? 0.1 : 0.45)) { PC.drift = 1; PC.driftDir = Math.sign(PC.steerIn); sfxSkid(true); }
   }
   if (PC.drift) { if (Math.abs(PC.steerIn) < 0.3 || v < 17 || Math.sign(PC.steerIn) !== PC.driftDir) { PC.drift = 0; sfxSkid(false); } }
-  // grip: past the limit the car washes wide by itself
-  const over = Math.max(0, Math.abs(cent) - (4.5 + 4 * sp.grip));
-  PC.slip = lerp(PC.slip, over > 0 || PC.drift ? 1 : 0, dt * 4);
-  const target = PC.steerIn * auth - cent - Math.sign(cent) * over * 0.6 + PC.wind - (PC.drift ? PC.driftDir * 0.9 : 0);
+  const st = PC.steerIn * auth, inSign = Math.sign(cent);
+  let inPart = cent !== 0 && st * inSign > 0 ? st : 0, outPart = st - inPart;
+  // turning in gets lazier as the tyres near their limit
+  inPart *= 0.35 + 0.65 * Math.sqrt(clamp(1 - PC.limitK, 0, 1));
+  let target;
+  if (overG > 0) target = outPart - inSign * (1.2 + overG * 5) + PC.wind;                                   // thrown wide
+  else target = inPart + outPart - cent + PC.wind - (PC.drift ? PC.driftDir * 0.9 : 0);
+  // grip: past the limit the tyres squeal and the car slides
+  PC.slip = lerp(PC.slip, overG > 0 || PC.drift ? 1 : PC.limitK > 0.85 ? 0.5 : 0, dt * 4);
   PC.vx = lerp(PC.vx, target, clamp(dt * (PC.drift ? 7 : 15), 0, 1));
   PC.x += PC.vx * dt;
   // ---- edges: off the paving on either side the ground slows you down; a long way out you are turned back ----
@@ -4221,11 +4344,15 @@ function pcStep(dt, track) {
   PC.pitch = lerp(PC.pitch, clamp(-a * 0.004, -0.04, 0.04), dt * 5);
   PC.bump = PC.offroad && v > 4 ? Math.sin(performance.now() * 0.05) * 0.03 * clamp(v / 30, 0, 1) : 0;
 }
+// the most lateral push the tyres can hold, in m/s²: the arcade's generous grip, a touch more sideways, far less on dirt
+function tyreLimit(sp, drift, offroad) { return (11 + 5 * sp.grip) * (drift ? 1.04 : 1) * (offroad ? 0.4 : 1); }
+// the fastest a bend of curvature k can be taken without sliding wide
+function holdSpeed(sp, k, drift) { return k > 1e-6 ? Math.sqrt(tyreLimit(sp, drift, false) / Math.abs(k)) : 999; }
 function pcCrash(k) {
   if (PC.crash) return;
   const v = PC.v;
   const hard = k > 0.75;
-  PC.crash = { t: 0, dur: hard ? 2.3 : 1.6, vy: hard ? 4 + v * 0.07 : 1.5, spin: (Math.random() < 0.5 ? -1 : 1) * (hard ? 6 + v * 0.06 : 4 + v * 0.03), rollK: (Math.random() < 0.5 ? -1 : 1) * (hard ? 1.2 + v * 0.02 : 0.25) };
+  PC.crash = { t: 0, dur: hard ? 2.3 : 1.6, gear: PC.neutral ? 1 : PC.gear, v0: v, vy: hard ? 4 + v * 0.07 : 1.5, spin: (Math.random() < 0.5 ? -1 : 1) * (hard ? 6 + v * 0.06 : 4 + v * 0.03), rollK: (Math.random() < 0.5 ? -1 : 1) * (hard ? 1.2 + v * 0.02 : 0.25) };
   PC.drift = 0; sfxSkid(false); sfxCrash(clamp(v / 60, 0.3, 1));
   onCrash();
 }
@@ -4783,6 +4910,86 @@ function drawVehicle(v, x, y, k, clip, fog) {
   }
 }
 
+// ===================== 三寶: the ones who cross the road without looking =====================
+// A pedestrian with a phone, an auntie with shopping, a scooter cutting straight across. They step off the kerb
+// ahead of you in towns and cities and amble to the other side. Hit one and the car spins a full turn and loses
+// its speed; the one you hit is knocked flying (and lands on the far pavement, cross, but fine — it is a cartoon).
+const HAZ = { list: [], nextS: 0, spinT: 0, spinDur: 0, spinDir: 1 };
+function hazardsReset() { HAZ.list.length = 0; HAZ.nextS = PC.s + 260; HAZ.spinT = 0; }
+function paintPedSide(seed, kind) {
+  // a walker seen from the side, two stride frames: kind 0 phone-staring, 1 auntie with bags, 2 kid running
+  const rnd = mulberry(seed), frames = [];
+  const skin = rnd.pick([0xf2c8a0, 0xe0b088, 0xc89068]), shirt = rnd.pick([0xd8242a, 0xffffff, 0x1a58b8, 0xf2c21a, 0x18884a, 0xf27aa8, 0x3ac8d8, 0xe8781a]), pants = rnd.pick([0x2a3a6a, 0x3a3a3a, 0xc8b88a, 0x1a1a2a]), hair = rnd.pick([0x1a1410, 0x3a2a1a, 0x8a6a3a]);
+  for (let f = 0; f < 2; f++) {
+    const W = 30, H = 52, px = new Pix(W, H), x = 14, y = 50, st = f ? 5 : -5;
+    px.rect(x - 2 + st * 0.6, y - 16, 4, 16, pants); px.rect(x - 2 - st * 0.6, y - 16, 4, 16, shadeHex(pants, 0.8));   // legs striding
+    px.rect(x - 5, y - 33, 10, 18, shirt); px.rect(x - 5, y - 33, 10, 2, shadeHex(shirt, 1.2));
+    px.ellipse(x + 1, y - 39, 5, 6, skin); px.rect(x - 4, y - 46, 10, 5, hair);
+    if (kind === 0) { px.rect(x + 4, y - 30, 3, 8, skin); px.rect(x + 6, y - 32, 4, 6, 0x1a1a1e); px.rect(x + 7, y - 31, 2, 3, 0x8ad0f0); }       // the phone, head bowed over it
+    else if (kind === 1) { px.rect(x - 9, y - 30, 3, 10, skin); px.rect(x - 13, y - 22, 9, 10, 0xf27aa8); px.rect(x + 6, y - 30, 3, 10, skin); px.rect(x + 5, y - 22, 9, 10, 0x3ac8d8); px.ellipse(x + 1, y - 44, 9, 3, 0xf2c21a); }   // the bags and the sun hat
+    else { px.rect(x + 5, y - 31, 7, 3, skin); px.rect(x - 9, y - 27, 6, 3, skin); }                                                              // arms pumping
+    px.outline(0x1a1418);
+    frames.push(px);
+  }
+  return frames;
+}
+function paintScooterSide(seed) {
+  const rnd = mulberry(seed), W = 60, H = 44, px = new Pix(W, H), col = rnd.pick([0xd8242a, 0x2a5ad0, 0xf2c21a, 0xffffff, 0x3a3a3a]);
+  px.ellipse(12, 36, 7, 7, 0x2a2a2e); px.ellipse(48, 36, 7, 7, 0x2a2a2e); px.ellipse(12, 36, 3, 3, 0xb8bcc2); px.ellipse(48, 36, 3, 3, 0xb8bcc2);
+  px.poly([8, 30, 24, 22, 44, 22, 56, 30, 50, 34, 14, 34], col); px.rect(24, 16, 20, 6, shadeHex(col, 0.7)); px.rect(44, 10, 4, 14, 0x4a4a52); px.rect(40, 8, 12, 3, 0x2a2a2e);
+  px.rect(28, 8, 4, 10, 0xf2c8a0); px.rect(24, 0, 12, 10, 0x2a3a6a); px.rect(22, 10, 14, 8, rnd.pick([0xd8242a, 0xffffff, 0x1a58b8]));   // rider: head, helmet, jacket
+  px.rect(36, 12, 8, 3, 0xf2c8a0);
+  px.outline(0x1a1418);
+  return px;
+}
+function paintHazards() {
+  for (let i = 0; i < 3; i++) paintPedSide(4200 + i * 11, i).forEach((px, f) => addSprite('ped' + i + '_' + f, px, 1.75, { collide: 0, shadow: 0.3 }));
+  for (let i = 0; i < 2; i++) addSprite('scootside#' + i, paintScooterSide(4300 + i * 13), 1.5, { collide: 0, shadow: 0.4 });
+}
+const HAZ_SIDES = { city: 1, town: 1, harbor: 1, plaza: 1, beach: 0.5, bay: 0.6 };
+function hazardsUpdate(dt) {
+  const p = PC.piece; if (!p || RACE.state !== 'run') return;
+  // spawn: in built-up stretches, one every 200-400 m, stepping off one kerb and heading for the other
+  if (PC.s > HAZ.nextS) {
+    const s = PC.s + 150 + Math.random() * 120, sec = p.sec(Math.min(p.L - 1, s)), w = Math.max(HAZ_SIDES[sec.L] || 0, HAZ_SIDES[sec.R] || 0);
+    HAZ.nextS = PC.s + 200 + Math.random() * 220;
+    if (s < p.L - 30 && Math.random() < w) {
+      const sg = Math.random() < 0.5 ? -1 : 1, scoot = Math.random() < 0.35, i = Math.round(s / DS);
+      const from = sg < 0 ? p.outerL(i) - 0.8 : p.outerR(i) + 0.8, to = -from;
+      const kind = Math.floor(Math.random() * 3);
+      HAZ.list.push({ p, s, x: from, to, dir: -sg, v: scoot ? 7 + Math.random() * 3 : (kind === 2 ? 2.6 : 1.1 + Math.random() * 0.5), scoot, kind, t: Math.random() * 10, hit: 0, vy: 0, y: 0, vx: 0 });
+    }
+  }
+  for (let i = HAZ.list.length - 1; i >= 0; i--) {
+    const h = HAZ.list[i];
+    h.t += dt;
+    if (h.hit) { h.hit += dt; h.x += h.vx * dt; h.vy -= 22 * dt; h.y = Math.max(0, h.y + h.vy * dt); if (h.hit > 1.6) HAZ.list.splice(i, 1); continue; }
+    h.x += h.dir * h.v * dt;
+    if (h.p !== p || (h.dir > 0 ? h.x > h.to : h.x < h.to) || h.s < PC.s - 30) { HAZ.list.splice(i, 1); continue; }
+    // the last-second dodge: a quick one hops back if the car is nearly on it and it is still near its own kerb
+    const ds = h.s - PC.s, dx = h.x - PC.x;
+    if (!PC.crash && !HAZ.spinT && ds > 0 && ds < 2.2 + PC.v * 0.05 && Math.abs(dx) < (h.scoot ? 1.9 : 1.5)) {
+      // hit: the car spins once and loses its speed; the one hit is tossed toward the far kerb
+      h.hit = 0.001; h.vx = h.dir * 6 + Math.sign(dx || 1) * 3; h.vy = 7 + PC.v * 0.05; h.y = 0.01;
+      HAZ.spinT = 0.001; HAZ.spinDur = 0.9; HAZ.spinDir = dx > 0 ? -1 : 1;
+      PC.v *= 0.45; PC.drift = 0; sfxThud(0.8); sfxHorn(); shake(0.45); RACE.score = Math.max(0, RACE.score - 500);
+      hudMsg(h.scoot ? '三寶！' : '哎呀！', h.scoot ? '機車突然衝出來' : '有人闖馬路', '#ff4f6d', 1.6, false);
+    }
+  }
+  if (HAZ.spinT) { HAZ.spinT += dt; PC.steerIn *= 0.2; if (HAZ.spinT > HAZ.spinDur) HAZ.spinT = 0; }
+}
+// drawn among the strip's items like the traffic
+function drawHazard(h, x, y, k, clip, fog) {
+  const name = h.scoot ? 'scootside#' + (h.kind % 2) : 'ped' + h.kind + '_' + (Math.floor(h.t * 6) & 1), S = SPR[name]; if (!S) return;
+  const hpx = S.wh * k, yy = y - h.y * k;
+  if (yy - hpx >= clip) return;
+  if (h.y < 0.05) { VG.fillStyle = 'rgba(0,0,0,0.25)'; VG.beginPath(); VG.ellipse(x, y - 0.5, hpx * 0.3, Math.max(1, hpx * 0.06), 0, 0, TAU); VG.fill(); }
+  // a hit one tumbles: drawn upside down for the middle of its flight
+  if (h.hit && h.hit > 0.25 && h.hit < 1.1) { VG.save(); VG.translate(x, yy - hpx / 2); VG.rotate(Math.PI * Math.min(1, (h.hit - 0.25) / 0.6) * 2); VG.translate(-x, -(yy - hpx / 2)); drawSpr(S, x, yy, hpx, 1, h.dir < 0, clip, fog, 0); VG.restore(); }
+  else drawSpr(S, x, yy, hpx, 1, h.dir < 0, clip, fog, 0);
+  if (h.hit && h.hit < 0.8) { const B = pixText('!', { s: 2, fill: 0xffe060, out: 0x140a1a, it: 0 }); blitC(B, x + hpx * 0.4, yy - hpx - 10, 'left'); }
+}
+
 // ===================== HUD: time, speed and revs, gear, route map, pedals, the shift box, messages =====================
 const hudCanvas = $('hud'), hud = hudCanvas.getContext('2d');
 let HDPR = 1;
@@ -5110,7 +5317,7 @@ function raceStart(carIdx, auto, seq) {
   HUD.show = true; HUD.msgs.length = 0;
   layoutPads();
   engineStart(spec.engine);
-  trafficReset(); fxReset();
+  trafficReset(); fxReset(); hazardsReset();
   GHOST.rec = []; GHOST.recT = 0; if (G.mode === 'play') GHOST.load(); else GHOST.on = false;
 }
 function onCrash() { RACE.crashes++; shake(0.6); }
@@ -5134,8 +5341,8 @@ function raceUpdate(dt) {
   while (PC.s > PC.piece.L) {
     const p = PC.piece;
     if (p.children.length) {
-      const left = PC.x < (p.forkDiv || 0), c = p.children[left ? 0 : 1];
-      PC.x -= p.forkOff[left ? 0 : 1]; PC.s -= p.L; PC.piece = c;
+      const left = PC.x < (p.forkDiv || 0), c = p.children[left ? 0 : 1], off = p.forkOff[left ? 0 : 1];
+      PC.x -= off; CAM.lat -= off; PC.s -= p.L; PC.piece = c;     // the camera's lateral is in road coordinates too: carry it across, or it lurches
       RACE.route.push(c.id);
     } else if (p.next) { PC.s -= p.L; PC.piece = p.next; RACE.route.push(p.next.id); }
     else { PC.s = p.L; PC.v = 0; break; }
@@ -5375,24 +5582,42 @@ function avatarSet(file, cb) {
   im.src = url;
 }
 function avatarClear() { AVATAR.me = null; delete SET.avatar; SAVE.save('settings', SET); }
-// the badge over a car on the race screen: a ringed portrait, a pointer, the name above it
+// the badge over a car on the race screen: a thin pole up from the roof, the ringed portrait on top, the name above
 // x: the car's centre on screen, yTop: the top of the car's picture, k: the projection scale at the car
-function drawBadge(x, yTop, k, name, img) {
+// fx: { t, kind } a surprise in progress — a face gasps (stretched tall, eyebrows up, a "!!"), a thing just pops
+function drawBadge(x, yTop, k, name, img, fx) {
   if (k < 2.2) return;
-  const d = Math.round(clamp(k * 0.5, 10, 30)), r = d / 2, cy = Math.round(yTop - r - 7), cx = Math.round(x);
-  if (cy + r < -4) return;
+  const d0 = Math.round(clamp(k * 0.5, 10, 30)), pole = Math.round(clamp(k * 0.9, 12, 44));
+  let sx = 1, sy = 1, lift = 0, bang = 0;
+  if (fx && fx.t < fx.dur) {
+    const u = fx.t / fx.dur, pop = Math.sin(Math.min(1, u * 1.6) * Math.PI);   // up fast, back down
+    if (fx.kind === 'face') { sx = 1 + pop * 0.15; sy = 1 + pop * 0.45; lift = pop * 6; bang = 1 - u; }
+    else { sx = sy = 1 + pop * 0.5; }
+  }
+  const cx = Math.round(x), top = Math.round(yTop - pole), cy = Math.round(top - d0 / 2 - 2 - lift);
+  if (cy + d0 < -8) return;
   const prev = VG.imageSmoothingEnabled; VG.imageSmoothingEnabled = false;
-  // the pointer under the ring
-  VG.fillStyle = '#140a1a'; VG.fillRect(cx - 3, cy + r + 1, 6, 1); VG.fillRect(cx - 2, cy + r + 2, 4, 1); VG.fillRect(cx - 1, cy + r + 3, 2, 2);
-  VG.fillStyle = '#fff6e0'; VG.fillRect(cx - 2, cy + r + 1, 4, 1); VG.fillRect(cx - 1, cy + r + 2, 2, 1);
-  // the ring: dark, then cream, then the picture
-  VG.fillStyle = '#140a1a'; VG.beginPath(); VG.arc(cx, cy, r + 3, 0, TAU); VG.fill();
-  VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy, r + 1.5, 0, TAU); VG.fill();
-  if (img) VG.drawImage(img, cx - r, cy - r, d, d);
-  else { VG.fillStyle = '#5a6a9a'; VG.beginPath(); VG.arc(cx, cy, r, 0, TAU); VG.fill(); VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy - r * 0.2, r * 0.36, 0, TAU); VG.fill(); VG.fillRect(cx - r * 0.55, cy + r * 0.25, r * 1.1, r * 0.6); }
-  if (name && d >= 14) { const L = pixLabel(name, d >= 22 ? 11 : 9, 0xfff6e0, 0x140a1a); blitC(L, cx, cy - r - L.height - 1, 'center'); }
+  // the pole, dark with a light core
+  VG.fillStyle = '#140a1a'; VG.fillRect(cx - 1, top, 3, pole + 2);
+  VG.fillStyle = '#fff6e0'; VG.fillRect(cx, top + 1, 1, pole);
+  // the ring, then the picture, scaled by the surprise
+  const w = Math.round(d0 * sx), h = Math.round(d0 * sy), rx = w / 2, ry = h / 2;
+  VG.fillStyle = '#140a1a'; VG.beginPath(); VG.ellipse(cx, cy, rx + 3, ry + 3, 0, 0, TAU); VG.fill();
+  VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.ellipse(cx, cy, rx + 1.5, ry + 1.5, 0, 0, TAU); VG.fill();
+  if (img) VG.drawImage(img, cx - rx, cy - ry, w, h);
+  else { VG.fillStyle = '#5a6a9a'; VG.beginPath(); VG.ellipse(cx, cy, rx, ry, 0, 0, TAU); VG.fill(); VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy - ry * 0.2, rx * 0.36, 0, TAU); VG.fill(); VG.fillRect(cx - rx * 0.55, cy + ry * 0.25, rx * 1.1, ry * 0.6); }
+  if (bang > 0 && d0 >= 12) {
+    // raised brows and a gasp: two arcs over the eyes' height, the mouth an O, and a "!!" beside the head
+    VG.strokeStyle = '#140a1a'; VG.lineWidth = Math.max(1, d0 / 12); VG.beginPath();
+    VG.arc(cx - rx * 0.36, cy - ry * 0.28, rx * 0.22, Math.PI * 1.15, Math.PI * 1.85); VG.arc(cx + rx * 0.36, cy - ry * 0.28, rx * 0.22, Math.PI * 1.15, Math.PI * 1.85); VG.stroke();
+    VG.fillStyle = '#140a1a'; VG.beginPath(); VG.ellipse(cx, cy + ry * 0.45, rx * 0.16, ry * 0.2, 0, 0, TAU); VG.fill();
+    const B = pixText('!!', { s: d0 >= 20 ? 2 : 1, fill: 0xffe060, out: 0x140a1a, it: 0 }); VG.globalAlpha = bang; blitC(B, cx + rx + 3, cy - ry - 2, 'left'); VG.globalAlpha = 1;
+  }
+  if (name && d0 >= 14) { const L = pixLabel(name, d0 >= 22 ? 11 : 9, 0xfff6e0, 0x140a1a); blitC(L, cx, cy - ry - L.height - 2, 'center'); }
   VG.imageSmoothingEnabled = prev;
 }
+// a surprise for someone's badge: faces gasp, things pop
+function badgeSurprise(who) { who.fx = { t: 0, dur: who.avatarKind === 'thing' ? 0.6 : 1.0, kind: who.avatarKind === 'thing' ? 'thing' : 'face' }; }
 
 // ===================== the renderer: a road raster, then everything else scaled by distance, back to front =====================
 // 1. The camera sits behind the car. The road ahead is cut into slots (2 m apart near, 32 m far); each slot is the
@@ -5804,6 +6029,7 @@ function drawStripItems(a, b, clip) {
     for (const r of p.rails) if (r.s1 > s0 && r.s0 < s1) items.push(item(2, r, Math.max(p.gS + r.s0, gsA), Math.min(p.gS + r.s1, gsB), p));
     const sec = (a.p === p ? a : b).sec;
     for (const v of TRAFFIC.list) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
+    for (const h of HAZ.list) if (h.p === p && h.s >= s0 && h.s < s1) items.push(item(8, h, p.gS + h.s, 0, p));
     if (p.anim.length) for (const an of p.anim) animItems(an, p, s0, s1, items);
     if (GHOST.p === p && GHOST.s >= s0 && GHOST.s < s1) items.push(item(7, GHOST, p.gS + GHOST.s, 0, p));
   }
@@ -5817,6 +6043,7 @@ function drawStripItems(a, b, clip) {
     const xs = X0 + (ip.cx + ip.rx * it.o.x) * ip.k, ys = Y0 - ip.cy * ip.k, fog = fogAt(ip.cz);
     if (it.k === 5) { drawVehicle(it.o, xs, ys, ip.k, clip, fog); continue; }
     if (it.k === 7) { drawGhost(xs, ys, ip.k, clip); continue; }
+    if (it.k === 8) { drawHazard(it.o, xs, ys, ip.k, clip, fog); continue; }
     const o = it.o, S = SPRL[o.id], h = S.wh * o.sc * ip.k;
     const near = h > 26, sway = near && o.sway ? Math.sin(RV.t * 1.4 + o.ph) * 0.035 * o.sway : 0;
     // small far things get their haze from the band laid over the horizon, not one by one
@@ -5915,7 +6142,7 @@ function botDrive(dt) {
   const look = 40 + v * 2.2;
   for (let d = 0; d < look; d += 8) {
     const k = Math.abs(p.curv(Math.min(p.L, s + d)));
-    if (k > 1e-5) { const vm = Math.sqrt((auth * 0.86 * BOT.skill) / (k * cc)); const brakeDist = Math.max(0, d - 10); vSafe = Math.min(vSafe, Math.sqrt(vm * vm + 2 * 18 * brakeDist)); }
+    if (k > 1e-5) { const vm = holdSpeed(sp, k, false) * (0.86 + 0.1 * BOT.skill); const brakeDist = Math.max(0, d - 10); vSafe = Math.min(vSafe, Math.sqrt(vm * vm + 2 * 18 * brakeDist)); }
   }
   // choose a lane: the one with the longest clear run ahead; move only when it is clearly better, and not twice in a second
   const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
@@ -5971,11 +6198,12 @@ function stageTod(p, s) { const d = p.def, t = clamp(s / p.L, 0, 1); return todM
 function backdropFor(p) { return buildBackdrop(p.def.pano, p.def.clouds); }
 function updateBackdrop() {
   const p = CV.p || PC.piece; if (!p) return;
+  // a fork child's backdrop fades in over its first stretch (so nothing flips while you are still choosing);
+  // a plain next stage fades in over the last stretch of the one before it
+  if (p.side && p.parent && CV.s < 700) { BG.set = backdropFor(p.parent); BG.next = backdropFor(p); BG.fade = sstep(clamp(CV.s / 700, 0, 1)); return; }
   BG.set = backdropFor(p);
-  let nx = null;
-  if (p.next) nx = p.next; else if (p.children.length) nx = p.children[PC.x < (p.forkDiv || 0) ? 0 : 1];
   const left = p.L - CV.s;
-  if (nx && left < 600) { BG.next = backdropFor(nx); BG.fade = sstep(clamp((600 - left) / 600, 0, 1)); }
+  if (p.next && left < 600) { BG.next = backdropFor(p.next); BG.fade = sstep(clamp((600 - left) / 600, 0, 1)); }
   else { BG.next = null; BG.fade = 0; }
 }
 // edge motion blur: zoomed copies of the frame, kept only toward the edges, stronger with speed
@@ -6023,6 +6251,7 @@ function tick(dt) {
   G.t += dt;
   if (G.state === 'race') {
     readControls(dt);
+    hazardsUpdate(dt);
     raceUpdate(dt);
     trafficUpdate(dt);
     GHOST.record(dt); GHOST.update();
@@ -6038,7 +6267,7 @@ async function boot() {
   resize();
   await loadFonts();
   if (typeof loadRefCars === 'function') await loadRefCars();
-  paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintBig(); paintCity(); paintRails(); paintTraffic();
+  paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintHazards(); paintBig(); paintCity(); paintRails(); paintTraffic();
   packAtlas();
   buildWorld();
   for (const id in STAGES) buildBackdrop(STAGES[id].pano, STAGES[id].clouds);
@@ -6050,7 +6279,7 @@ async function boot() {
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
   G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, avatarSet, gapLeft, nearIntervals,
-  get SET() { return SET; }, get GHOST() { return GHOST; }, show(n) { show(n); },
+  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, show(n) { show(n); },
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
   speed(k) { G.speed = k; },
@@ -6315,16 +6544,17 @@ function openSettings() {
     <div class="row"><span class="lbl">H 檔提示</span><div class="seg" id="seg-g"><button class="btn" data-gd="1">顯示</button><button class="btn" data-gd="0">隱藏</button></div></div>
     <div class="row"><span class="lbl">我的頭像</span><div class="avrow"><canvas id="av-prev" width="72" height="72"></canvas>
       <div class="seg"><label class="btn file">拍照<input type="file" accept="image/*" capture="user" data-av="cam"></label><label class="btn file">選圖<input type="file" accept="image/*" data-av="pick"></label><button class="btn ghost" data-av="clear">清除</button></div>
-      <input class="txt" id="av-name" maxlength="10" placeholder="你的名字" value="${(SET.name || '').replace(/"/g, '&quot;')}" autocomplete="off"></div>
-      <p class="note">連線對戰時，對手會在你的車上看到這張頭像和名字；幽靈車（你上次的紀錄）也會戴著它。</p></div>
+      <input class="txt" id="av-name" maxlength="10" placeholder="你的名字" value="${(SET.name || '').replace(/"/g, '&quot;')}" autocomplete="off">
+      <div class="seg" id="seg-avk"><button class="btn" data-avk="face">是臉</button><button class="btn" data-avk="thing">是物品</button></div></div>
+      <p class="note">連線對戰時，對手會在你的車上看到這張頭像和名字；幽靈車（你上次的紀錄）也會戴著它。被超車時，臉會嚇一跳、物品會彈一下。</p></div>
     <div class="actions"><button class="btn" data-act="back">完成</button></div>`;
   avatarPreview();
   for (const inp of document.querySelectorAll('#settings input[data-av]')) inp.onchange = () => { avatarSet(inp.files && inp.files[0], () => avatarPreview()); inp.value = ''; };
   $('av-name').oninput = () => { SET.name = $('av-name').value.trim().slice(0, 10); AVATAR.name = SET.name; SAVE.save('settings', SET); };
-  const mark = () => { for (const b of document.querySelectorAll('#seg-q .btn')) b.setAttribute('aria-pressed', b.dataset.q === SET.quality ? 'true' : 'false'); for (const b of document.querySelectorAll('#seg-g .btn')) b.setAttribute('aria-pressed', (b.dataset.gd === '1') === SET.guide ? 'true' : 'false'); };
+  const mark = () => { for (const b of document.querySelectorAll('#seg-q .btn')) b.setAttribute('aria-pressed', b.dataset.q === SET.quality ? 'true' : 'false'); for (const b of document.querySelectorAll('#seg-g .btn')) b.setAttribute('aria-pressed', (b.dataset.gd === '1') === SET.guide ? 'true' : 'false'); for (const b of document.querySelectorAll('#seg-avk .btn')) b.setAttribute('aria-pressed', b.dataset.avk === (SET.avatarKind || 'face') ? 'true' : 'false'); };
   mark();
   $('settings').oninput = (e) => { const k = e.target.dataset.set; if (!k) return; SET[k] = +e.target.value; $('v-' + k).textContent = k === 'sens' ? '傾斜 ' + SET[k] + '° 打滿　（數字小比較靈敏）' : Math.round(SET[k] * 100) + '%'; applySettings(); SAVE.save('settings', SET); };
-  $('settings').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.av === 'clear') { avatarClear(); avatarPreview(); return; } if (b.dataset.q) SET.quality = b.dataset.q; if (b.dataset.gd) SET.guide = b.dataset.gd === '1'; applySettings(); SAVE.save('settings', SET); mark(); };
+  $('settings').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.av === 'clear') { avatarClear(); avatarPreview(); return; } if (b.dataset.avk) SET.avatarKind = b.dataset.avk; if (b.dataset.q) SET.quality = b.dataset.q; if (b.dataset.gd) SET.guide = b.dataset.gd === '1'; applySettings(); SAVE.save('settings', SET); mark(); };
 }
 // the preview in the settings: the pixel portrait blown up, or an empty ring
 function avatarPreview() {
@@ -6340,21 +6570,21 @@ function openOnline() {
 
 // ===================== the ghost: your best run on a route, replayed as a see-through car =====================
 const GHOST = {
-  rec: [], recT: 0, play: null, car: null, spr: null, p: null, s: 0, x: 0, on: false, name: '', avatar: null,
+  rec: [], recT: 0, play: null, car: null, spr: null, p: null, s: 0, x: 0, on: false, name: '', avatar: null, avatarKind: 'face', fx: null, wasAhead: false,
   // a sample every 0.1 s: which piece, how far along it, where across it
   record(dt) {
     if (G.mode !== 'play' || RACE.state !== 'run') return;
     GHOST.recT += dt; if (GHOST.recT < 0.1) return; GHOST.recT -= 0.1;
     GHOST.rec.push([ROUTE.pieces.indexOf(PC.piece), Math.round(PC.s * 10) / 10, Math.round(PC.x * 100) / 100]);
   },
-  save(key) { SAVE.save('ghost:' + key, { car: CARS[RACE.carIdx].id, d: GHOST.rec, name: SET.name || '', avatar: SET.avatar || '' }); SAVE.save('ghost:last', key); },
+  save(key) { SAVE.save('ghost:' + key, { car: CARS[RACE.carIdx].id, d: GHOST.rec, name: SET.name || '', avatar: SET.avatar || '', avatarKind: SET.avatarKind || 'face' }); SAVE.save('ghost:last', key); },
   // the fastest finished run we have, to race against from the start
   load() {
     const rec = SAVE.load('records', { routes: {} }); let best = null, bk = null;
     for (const k in rec.routes) if (!best || rec.routes[k].t < best.t) { best = rec.routes[k]; bk = k; }
     const g = bk && SAVE.load('ghost:' + bk, null);
     GHOST.play = g && g.d && g.d.length > 10 ? g : null; GHOST.on = !!GHOST.play;
-    if (GHOST.on) { const c = CARS.find((q) => q.id === g.car) || CARS[0]; GHOST.spr = carSprites(c); GHOST.car = c; GHOST.name = g.name || SET.name || ''; GHOST.avatar = null; avatarDecode(g.avatar || SET.avatar, (im) => { GHOST.avatar = im; }); }
+    if (GHOST.on) { const c = CARS.find((q) => q.id === g.car) || CARS[0]; GHOST.spr = carSprites(c); GHOST.car = c; GHOST.name = g.name || SET.name || ''; GHOST.avatarKind = g.avatarKind || SET.avatarKind || 'face'; GHOST.avatar = null; GHOST.fx = null; GHOST.wasAhead = false; avatarDecode(g.avatar || SET.avatar, (im) => { GHOST.avatar = im; }); }
   },
   // where the ghost is RACE.elapsed seconds in; it drops out when its route parts from ours
   update() {
@@ -6364,6 +6594,11 @@ const GHOST = {
     const a = d[i], b = d[i + 1], t = f - i, p = ROUTE.pieces[a[0]];
     if (!p) { GHOST.p = null; return; }
     if (a[0] === b[0]) { GHOST.p = p; GHOST.s = lerp(a[1], b[1], t); GHOST.x = lerp(a[2], b[2], t); } else { GHOST.p = p; GHOST.s = a[1]; GHOST.x = a[2]; }
+    // the moment it goes past us, its portrait gasps
+    const ahead = GHOST.p === PC.piece ? GHOST.s > PC.s : (GHOST.p === PC.piece.next || PC.piece.children.includes(GHOST.p));
+    if (ahead && !GHOST.wasAhead && RACE.elapsed > 2) badgeSurprise(GHOST);
+    GHOST.wasAhead = ahead;
+    if (GHOST.fx) { GHOST.fx.t += 1 / 60; if (GHOST.fx.t > GHOST.fx.dur) GHOST.fx = null; }
     // only while it is on a piece we can see from here
     if (GHOST.p !== PC.piece && GHOST.p !== PC.piece.next && !PC.piece.children.includes(GHOST.p) && GHOST.p !== PC.piece.parent) GHOST.p = null;
   },
@@ -6378,7 +6613,7 @@ function drawGhost(x, y, k, clip) {
   VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - (y - S.ay * sc)) / sc)), x - S.ax * sc, y - S.ay * sc, w, Math.min(hh, clip - (y - S.ay * sc)));
   VG.globalAlpha = 1;
   // who it is: the portrait and name over the roof
-  if (y - S.ay * sc < clip + 10) drawBadge(x, y - S.ay * sc + 14 * sc, k, GHOST.name || 'GHOST', GHOST.avatar || AVATAR.me);
+  if (y - S.ay * sc < clip + 10) drawBadge(x, y - S.ay * sc + 26 * sc, k, GHOST.name || 'GHOST', GHOST.avatar || AVATAR.me, GHOST.fx);
 }
 
 // ===================== endings: every car has its own story at each of the two goals =====================
