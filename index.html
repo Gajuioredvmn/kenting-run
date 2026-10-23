@@ -4879,9 +4879,10 @@ function sfxPass(k, pan, type) {
   const s = noiseSrc(false), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain(), p = AU.ctx.createStereoPanner ? AU.ctx.createStereoPanner() : null;
   f.type = 'bandpass'; f.frequency.setValueAtTime(big ? 1800 : 3200, t); f.frequency.exponentialRampToValueAtTime(big ? 160 : 260, t + dur); f.Q.value = 0.9;
   s.connect(f); f.connect(g); if (p) { p.pan.setValueAtTime(clamp(pan, -1, 1) * 0.8, t); p.pan.linearRampToValueAtTime(clamp(pan, -1, 1) * 0.3, t + dur); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((big ? 0.7 : 0.55) * k, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random()); s.stop(t + dur + 0.1);
-  // the slap of the air as the gap closes
-  noiseHit(t, 'highpass', 5000, 0.7, 0.25 * k, 0.08, p || AU.sfx);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((big ? 1.0 : 0.85) * k, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random()); s.stop(t + dur + 0.1);
+  // the slap of the air as the gap closes, and their engine note dropping away behind — the doppler of a car going by
+  noiseHit(t, 'highpass', 5000, 0.7, 0.3 * k, 0.08, p || AU.sfx);
+  tone(t, 'sawtooth', big ? 180 : 320, big ? 70 : 120, 0.14 * k, dur * 0.9, p || AU.sfx);
 }
 // metal on metal: a crunch, a ring, and the clatter after
 function sfxClang(k) {
@@ -6082,6 +6083,7 @@ function drawBadge(x, yTop, k, name, img, fx) {
   if (fx && fx.t < fx.dur) {
     const u = fx.t / fx.dur, pop = Math.sin(Math.min(1, u * 1.6) * Math.PI);   // up fast, back down
     if (fx.kind === 'face') { sx = 1 + pop * 0.15; sy = 1 + pop * 0.45; lift = pop * 6; bang = 1 - u; }
+    else if (fx.kind === 'grin') { sx = 1 + pop * 0.3; sy = 1 + pop * 0.2; lift = pop * 4; bang = -(1 - u); }
     else { sx = sy = 1 + pop * 0.5; }
   }
   const cx = Math.round(x), top = Math.round(yTop - pole), cy = Math.round(top - d0 / 2 - 2 - lift);
@@ -6094,9 +6096,10 @@ function drawBadge(x, yTop, k, name, img, fx) {
   const w = Math.round(d0 * sx), h = Math.round(d0 * sy), rx = w / 2, ry = h / 2;
   VG.fillStyle = '#140a1a'; VG.beginPath(); VG.ellipse(cx, cy, rx + 3, ry + 3, 0, 0, TAU); VG.fill();
   VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.ellipse(cx, cy, rx + 1.5, ry + 1.5, 0, 0, TAU); VG.fill();
-  if (img) BADGE_Q.push({ cx, cy, rx, ry, img, bang: bang > 0 && d0 >= 12 ? bang : 0 });
+  if (img) BADGE_Q.push({ cx, cy, rx, ry, img, bang: bang > 0 && d0 >= 12 ? bang : 0, grin: bang < 0 && d0 >= 12 ? -bang : 0 });
   else { VG.fillStyle = '#5a6a9a'; VG.beginPath(); VG.ellipse(cx, cy, rx, ry, 0, 0, TAU); VG.fill(); VG.fillStyle = '#fff6e0'; VG.beginPath(); VG.arc(cx, cy - ry * 0.2, rx * 0.36, 0, TAU); VG.fill(); VG.fillRect(cx - rx * 0.55, cy + ry * 0.25, rx * 1.1, ry * 0.6); }
   if (bang > 0 && d0 >= 12) { const B = pixText('!!', { s: d0 >= 20 ? 2 : 1, fill: 0xffe060, out: 0x140a1a, it: 0 }); VG.globalAlpha = bang; blitC(B, cx + rx + 3, cy - ry - 2, 'left'); VG.globalAlpha = 1; }
+  if (bang < 0 && d0 >= 12) { const B = pixText('HA!', { s: d0 >= 20 ? 2 : 1, fill: 0x7cf26a, out: 0x140a1a, it: 1 }); VG.globalAlpha = -bang; blitC(B, cx + rx + 3, cy - ry - 2, 'left'); VG.globalAlpha = 1; }
   if (name && d0 >= 14) { const L = pixLabel(name, d0 >= 22 ? 11 : 9, 0xfff6e0, 0x140a1a); blitC(L, cx, cy - ry - L.height - 2, 'center'); }
   VG.imageSmoothingEnabled = prev;
 }
@@ -6121,13 +6124,21 @@ function drawBadgePhotos() {
       hud.fillStyle = '#140a1a'; hud.beginPath(); hud.ellipse(cx, cy + ry * 0.48, rx * 0.17, ry * 0.22, 0, 0, TAU); hud.fill();
       hud.fillStyle = '#ff6a7a'; hud.beginPath(); hud.ellipse(cx, cy + ry * 0.55, rx * 0.09, ry * 0.09, 0, 0, TAU); hud.fill();
     }
+    if (b.grin > 0) {
+      // a wide grin and squeezed happy eyes: it just got past us
+      hud.strokeStyle = '#140a1a'; hud.lineWidth = Math.max(1.5, rx / 7); hud.lineCap = 'round'; hud.beginPath();
+      hud.arc(cx - rx * 0.38, cy - ry * 0.22, rx * 0.2, Math.PI * 1.1, Math.PI * 1.9); hud.stroke(); hud.beginPath();
+      hud.arc(cx + rx * 0.38, cy - ry * 0.22, rx * 0.2, Math.PI * 1.1, Math.PI * 1.9); hud.stroke();
+      hud.fillStyle = '#140a1a'; hud.beginPath(); hud.arc(cx, cy + ry * 0.32, rx * 0.42, 0, Math.PI); hud.closePath(); hud.fill();
+      hud.fillStyle = '#ffffff'; hud.fillRect(cx - rx * 0.36, cy + ry * 0.33, rx * 0.72, Math.max(1, ry * 0.12));
+    }
     hud.restore();
   }
   hud.restore();
   BADGE_Q.length = 0;
 }
-// a surprise for someone's badge: faces gasp, things pop
-function badgeSurprise(who) { who.fx = { t: 0, dur: who.avatarKind === 'thing' ? 0.6 : 1.0, kind: who.avatarKind === 'thing' ? 'thing' : 'face' }; }
+// a surprise for someone's badge: faces gasp (passed) or grin (passing), things just pop
+function badgeSurprise(who, how) { who.fx = { t: 0, dur: who.avatarKind === 'thing' ? 0.6 : 1.1, kind: who.avatarKind === 'thing' ? 'thing' : how === 'grin' ? 'grin' : 'face' }; }
 
 // ===================== the renderer: a road raster, then everything else scaled by distance, back to front =====================
 // 1. The camera sits behind the car. The road ahead is cut into slots (2 m apart near, 32 m far); each slot is the
@@ -7189,9 +7200,10 @@ const GHOST = {
     const a = d[i], b = d[i + 1], t = f - i, p = ROUTE.pieces[a[0]];
     if (!p) { GHOST.p = null; return; }
     if (a[0] === b[0]) { GHOST.p = p; GHOST.s = lerp(a[1], b[1], t); GHOST.x = lerp(a[2], b[2], t); } else { GHOST.p = p; GHOST.s = a[1]; GHOST.x = a[2]; }
-    // the moment it goes past us, its portrait gasps
-    const ahead = GHOST.p === PC.piece ? GHOST.s > PC.s : (GHOST.p === PC.piece.next || PC.piece.children.includes(GHOST.p));
-    if (ahead && !GHOST.wasAhead && RACE.elapsed > 2) badgeSurprise(GHOST);
+    // the moment we go past it, its portrait gasps (while it is still beside us, in the picture); when it goes past us it grins
+    const ahead = GHOST.p === PC.piece ? GHOST.s > PC.s + 10 : (GHOST.p === PC.piece.next || PC.piece.children.includes(GHOST.p));
+    if (!ahead && GHOST.wasAhead && RACE.elapsed > 2 && GHOST.p === PC.piece) { badgeSurprise(GHOST, 'gasp'); sfxPass(clamp((PC.v - 20) / 25, 0.5, 1), clamp((GHOST.x - PC.x) / 4, -1, 1)); }
+    if (ahead && !GHOST.wasAhead && RACE.elapsed > 2 && GHOST.p === PC.piece) { badgeSurprise(GHOST, 'gasp'); sfxPass(0.7, clamp((GHOST.x - PC.x) / 4, -1, 1)); }
     GHOST.wasAhead = ahead;
     if (GHOST.fx) { GHOST.fx.t += 1 / 60; if (GHOST.fx.t > GHOST.fx.dur) GHOST.fx = null; }
     // only while it is on a piece we can see from here
@@ -7533,8 +7545,10 @@ function netUpdate(dt) {
     P.vis = !!p && age < 4;
     if (!P.vis) continue;
     P.dp = p; P.ds = S.s + S.v * WORLD_K * Math.min(age, 1); P.dx = S.x;
-    const ahead = P.dp === PC.piece ? P.ds > PC.s : (P.dp === PC.piece.next || PC.piece.children.includes(P.dp));
-    if (ahead && !P.wasAhead && RACE.elapsed > 3 && P.dp === PC.piece && Math.abs(P.ds - PC.s) < 12 && Math.abs(P.dx - PC.x) < 6) badgeSurprise(P);
+    const ahead = P.dp === PC.piece ? P.ds > PC.s + 10 : (P.dp === PC.piece.next || PC.piece.children.includes(P.dp));
+    const near = P.dp === PC.piece && Math.abs(P.ds - PC.s) < 14 && Math.abs(P.dx - PC.x) < 6;
+    if (!ahead && P.wasAhead && RACE.elapsed > 3 && near) { badgeSurprise(P, 'gasp'); sfxPass(0.8, clamp((P.dx - PC.x) / 4, -1, 1)); }     // we went past: a gasp
+    if (ahead && !P.wasAhead && RACE.elapsed > 3 && near) { badgeSurprise(P, 'gasp'); sfxPass(0.7, clamp((P.dx - PC.x) / 4, -1, 1)); }     // they went past: the same
     P.wasAhead = ahead;
     if (P.fx) { P.fx.t += dt; if (P.fx.t > P.fx.dur) P.fx = null; }
   }
