@@ -2860,61 +2860,61 @@ function keyed(keys) {
 const SKIN = [0xf2c8a0, 0xe0b088, 0xc89068, 0xf6d2b0];
 const KY = keyed;
 const CARS = [
-  { id: 'rosso', name: '赤焰 GT', en: 'ROSSO GT', color: 0xd8141c, interior: 0xd8c8a8, top: 296, acc: 0.72, grip: 0.72, steer: 0.7, mass: 0.6, gears: 6, engine: 'v12',
+  { id: 'rosso', name: 'ROSSO GT', en: 'Italian wedge GT', color: 0xd8141c, interior: 0xd8c8a8, top: 296, acc: 0.72, grip: 0.72, steer: 0.7, mass: 0.6, gears: 6, engine: 'v12',
     desc: '八〇年代楔形 GT，平衡好開，最好上手。', L: 4.5, W: 1.98, clear: 0.17, rs: 0.07, tuck: 0.07, pw: 1.6, wheels: [0.18, 0.79], cockpit: [0.43, 0.68], rim: 'star', rimCol: 0xd8dce0,
     a: KY([[0, 0.8], [0.1, 0.93], [0.3, 0.95], [0.55, 0.94], [0.78, 1.0], [0.95, 0.98], [1, 0.9]]),
     yF: KY([[0, 0.6], [0.18, 0.73], [0.43, 0.9], [0.68, 0.93], [0.8, 0.97], [0.96, 0.96], [1, 0.88]]),
     yC: KY([[0, 0.58], [0.18, 0.69], [0.42, 0.85], [0.445, 0.4], [0.66, 0.4], [0.69, 0.87], [0.96, 0.9], [1, 0.84]]),
     xp: KY([[0, 0.72], [0.4, 0.82], [0.8, 0.86], [1, 0.84]]), pop: true, tails: 'grille', screen: 0.46, sideLine: 0x101014, intakes: true },
-  { id: 'vespa', name: '黃蜂', en: 'HORNET', color: 0xf2c21a, interior: 0x2a2a2a, stripe: 0x111111, stripeW: 0.06, top: 318, acc: 0.88, grip: 0.64, steer: 0.56, mass: 0.5, gears: 6, engine: 'v12',
+  { id: 'vespa', name: 'HORNET', en: 'Mid-engine supercar', color: 0xf2c21a, interior: 0x2a2a2a, stripe: 0x111111, stripeW: 0.06, top: 318, acc: 0.88, grip: 0.64, steer: 0.56, mass: 0.5, gears: 6, engine: 'v12',
     desc: '中置引擎超跑，極速和加速都強，但很難控制。', L: 4.6, W: 2.06, clear: 0.14, rs: 0.05, tuck: 0.09, pw: 2.2, wheels: [0.2, 0.77], cockpit: [0.33, 0.53], rim: 'disc', rimCol: 0x222226,
     a: KY([[0, 0.76], [0.15, 0.88], [0.4, 0.9], [0.62, 0.99], [0.8, 1.0], [1, 0.95]]),
     yF: KY([[0, 0.5], [0.2, 0.68], [0.33, 0.84], [0.53, 0.9], [0.62, 1.0], [0.85, 1.02], [1, 0.94]]),
     yC: KY([[0, 0.48], [0.2, 0.62], [0.32, 0.8], [0.335, 0.38], [0.52, 0.38], [0.54, 0.94], [0.62, 0.9], [0.9, 0.9], [1, 0.86]]),
     xp: KY([[0, 0.7], [0.5, 0.8], [0.8, 0.88], [1, 0.86]]), pop: true, tails: 'quad', screen: 0.36, wing: true, intakes: true, louvres: true },
-  { id: 'argento', name: '銀狐', en: 'SILVER FOX', color: 0xc8ccd2, interior: 0x8a2a1e, top: 258, acc: 0.52, grip: 0.82, steer: 0.82, mass: 0.45, gears: 5, engine: 'i6',
+  { id: 'argento', name: 'SILVER FOX', en: '1960s classic roadster', color: 0xc8ccd2, interior: 0x8a2a1e, top: 258, acc: 0.52, grip: 0.82, steer: 0.82, mass: 0.45, gears: 5, engine: 'i6',
     desc: '六〇年代長車頭古典敞篷，彎道很穩，直線慢一點。', L: 4.45, W: 1.8, clear: 0.18, rs: 0.16, tuck: 0.04, pw: 1.1, wheels: [0.17, 0.81], cockpit: [0.52, 0.76], rim: 'wire', rimCol: 0xe8eaec, chrome: true,
     a: KY([[0, 0.7], [0.12, 0.92], [0.3, 0.9], [0.55, 0.92], [0.8, 0.98], [1, 0.82]]),
     yF: KY([[0, 0.62], [0.17, 0.86], [0.33, 0.8], [0.52, 0.86], [0.76, 0.86], [0.82, 0.9], [0.95, 0.8], [1, 0.7]]),
     yC: KY([[0, 0.6], [0.17, 0.74], [0.5, 0.82], [0.525, 0.4], [0.75, 0.4], [0.77, 0.82], [0.95, 0.76], [1, 0.68]]),
     xp: KY([[0, 0.6], [0.2, 0.74], [0.5, 0.8], [0.82, 0.76], [1, 0.7]]), tails: 'roundsmall', screen: 0.4 },
-  { id: 'ballena', name: '藍鯨', en: 'BLUE WHALE', color: 0x1a46b0, interior: 0xe8e2d0, stripe: 0xffffff, stripeW: 0.11, top: 270, acc: 0.9, grip: 0.56, steer: 0.5, mass: 0.95, gears: 5, engine: 'v8',
+  { id: 'ballena', name: 'BLUEWHALE 427', en: 'American muscle', color: 0x1a46b0, interior: 0xe8e2d0, stripe: 0xffffff, stripeW: 0.11, top: 270, acc: 0.9, grip: 0.56, steer: 0.5, mass: 0.95, gears: 5, engine: 'v8',
     desc: '美式肌肉車，一踩就飛，又重又難轉，撞車不吃虧。', L: 4.9, W: 2.02, clear: 0.2, rs: 0.04, tuck: 0.03, pw: 1.0, wheels: [0.2, 0.78], cockpit: [0.45, 0.71], rim: 'mesh', rimCol: 0xb8bcc0, chrome: true,
     a: KY([[0, 0.92], [0.1, 0.98], [0.9, 0.99], [1, 0.97]]),
     yF: KY([[0, 0.8], [0.12, 0.95], [0.45, 0.98], [0.71, 0.98], [0.97, 0.98], [1, 0.94]]),
     yC: KY([[0, 0.78], [0.12, 0.92], [0.3, 0.98], [0.44, 0.94], [0.455, 0.42], [0.7, 0.42], [0.72, 0.95], [1, 0.93]]),
     xp: KY([[0, 0.88], [1, 0.9]]), tails: 'triple', screen: 0.44, sideLine: 0xffffff, scoop: true, duck: true },
-  { id: 'bamboo', name: '青竹', en: 'BAMBOO', color: 0x1e7a4a, interior: 0xc8a878, top: 236, acc: 0.6, grip: 0.92, steer: 0.95, mass: 0.3, gears: 5, engine: 'i4',
+  { id: 'bamboo', name: 'BAMBOO MK2', en: 'British lightweight', color: 0x1e7a4a, interior: 0xc8a878, top: 236, acc: 0.6, grip: 0.92, steer: 0.95, mass: 0.3, gears: 5, engine: 'i4',
     desc: '英式小跑車，輕巧靈活，過彎幾乎不用煞車。', L: 3.9, W: 1.68, clear: 0.18, rs: 0.18, tuck: 0.04, pw: 1.0, wheels: [0.16, 0.83], cockpit: [0.45, 0.74], rim: 'wire', rimCol: 0xe8eaec, chrome: true,
     a: KY([[0, 0.66], [0.14, 0.95], [0.3, 0.86], [0.55, 0.9], [0.82, 0.97], [1, 0.74]]),
     yF: KY([[0, 0.6], [0.16, 0.84], [0.32, 0.76], [0.45, 0.82], [0.74, 0.82], [0.83, 0.86], [1, 0.66]]),
     yC: KY([[0, 0.58], [0.16, 0.7], [0.44, 0.78], [0.455, 0.4], [0.73, 0.4], [0.75, 0.78], [1, 0.62]]),
     xp: KY([[0, 0.58], [0.16, 0.72], [0.5, 0.8], [0.83, 0.72], [1, 0.6]]), tails: 'round', screen: 0.38, hoop: true },
-  { id: 'blanco', name: '白浪', en: 'WHITE WAVE', color: 0xf2f2ee, interior: 0x2a2a2e, top: 250, acc: 0.64, grip: 0.86, steer: 0.88, mass: 0.35, gears: 5, engine: 'i4',
+  { id: 'blanco', name: 'NAMI RS', en: 'Japanese roadster', color: 0xf2f2ee, interior: 0x2a2a2e, top: 250, acc: 0.64, grip: 0.86, steer: 0.88, mass: 0.35, gears: 5, engine: 'i4',
     desc: '日系輕量敞篷，翻燈很可愛，甩尾的好幫手。', L: 4.0, W: 1.72, clear: 0.17, rs: 0.12, tuck: 0.05, pw: 1.3, wheels: [0.17, 0.82], cockpit: [0.45, 0.72], rim: 'star', rimCol: 0xc8ccd0,
     a: KY([[0, 0.76], [0.12, 0.94], [0.5, 0.92], [0.82, 0.98], [1, 0.86]]),
     yF: KY([[0, 0.62], [0.17, 0.76], [0.45, 0.86], [0.72, 0.88], [0.83, 0.9], [1, 0.82]]),
     yC: KY([[0, 0.6], [0.17, 0.72], [0.44, 0.84], [0.455, 0.4], [0.71, 0.4], [0.73, 0.86], [1, 0.8]]),
     xp: KY([[0, 0.7], [0.5, 0.8], [1, 0.78]]), pop: true, tails: 'oval', screen: 0.42 },
-  { id: 'adler', name: '黑鷹', en: 'BLACK HAWK', color: 0x18181c, interior: 0xb87a4a, top: 300, acc: 0.75, grip: 0.84, steer: 0.7, mass: 0.7, gears: 6, engine: 'flat6', refl: 0.42,
+  { id: 'adler', name: 'ADLER TURBO', en: 'Rear-engine GT', color: 0x18181c, interior: 0xb87a4a, top: 300, acc: 0.75, grip: 0.84, steer: 0.7, mass: 0.7, gears: 6, engine: 'flat6', refl: 0.42,
     desc: '德系後置引擎 GT，抓地力好，高速很穩。', L: 4.35, W: 1.9, clear: 0.17, rs: 0.14, tuck: 0.06, pw: 1.2, wheels: [0.19, 0.8], cockpit: [0.37, 0.61], rim: 'star', rimCol: 0x9a9ea2,
     a: KY([[0, 0.74], [0.18, 0.88], [0.45, 0.86], [0.72, 0.98], [0.86, 1.0], [1, 0.88]]),
     yF: KY([[0, 0.6], [0.19, 0.84], [0.37, 0.84], [0.61, 0.88], [0.8, 0.96], [0.92, 0.88], [1, 0.74]]),
     yC: KY([[0, 0.58], [0.19, 0.72], [0.36, 0.82], [0.375, 0.4], [0.6, 0.4], [0.62, 0.88], [0.8, 0.84], [1, 0.7]]),
     xp: KY([[0, 0.66], [0.2, 0.74], [0.5, 0.78], [0.8, 0.74], [1, 0.72]]), tails: 'strip', screen: 0.42, spoiler: true },
-  { id: 'raiden', name: '紫電', en: 'RAIDEN', color: 0x6a2ab8, interior: 0x1a1a24, stripe: 0x3af0ff, stripeW: 0.05, top: 330, acc: 0.84, grip: 0.68, steer: 0.62, mass: 0.45, gears: 6, engine: 'turbo',
+  { id: 'raiden', name: 'RAIDEN X', en: 'Future racer', color: 0x6a2ab8, interior: 0x1a1a24, stripe: 0x3af0ff, stripeW: 0.05, top: 330, acc: 0.84, grip: 0.68, steer: 0.62, mass: 0.45, gears: 6, engine: 'turbo',
     desc: '沒有擋風玻璃的未來感競速車，極速最高。', L: 4.55, W: 2.02, clear: 0.12, rs: 0.03, tuck: 0.1, pw: 1.0, wheels: [0.17, 0.8], cockpit: [0.4, 0.6], rim: 'disc', rimCol: 0x3af0ff,
     a: KY([[0, 0.7], [0.2, 0.86], [0.6, 0.94], [0.85, 1.0], [1, 0.98]]),
     yF: KY([[0, 0.44], [0.4, 0.84], [0.6, 0.9], [0.95, 0.98], [1, 0.95]]),
     yC: KY([[0, 0.42], [0.39, 0.8], [0.405, 0.36], [0.59, 0.36], [0.61, 0.86], [1, 0.92]]),
     xp: KY([[0, 0.7], [1, 0.84]]), pop: true, tails: 'neon', screen: 0.16, fins: true, neon: true },
-  { id: 'arancia', name: '橘陽', en: 'ARANCIA', color: 0xf2701a, interior: 0x6a3a1e, stripe: 0xffffff, stripeW: 0.09, top: 262, acc: 0.62, grip: 0.88, steer: 0.86, mass: 0.4, gears: 5, engine: 'v8',
+  { id: 'arancia', name: 'ARANCIA 7', en: '1960s racing barchetta', color: 0xf2701a, interior: 0x6a3a1e, stripe: 0xffffff, stripeW: 0.09, top: 262, acc: 0.62, grip: 0.88, steer: 0.86, mass: 0.4, gears: 5, engine: 'v8',
     desc: '六〇年代賽車場上的圓弧小車，車頭編號 7。', L: 4.1, W: 1.76, clear: 0.16, rs: 0.2, tuck: 0.05, pw: 0.9, wheels: [0.17, 0.82], cockpit: [0.46, 0.68], rim: 'wire', rimCol: 0xe8eaec, roundel: true,
     a: KY([[0, 0.66], [0.15, 0.98], [0.32, 0.86], [0.55, 0.88], [0.82, 1.0], [1, 0.76]]),
     yF: KY([[0, 0.56], [0.17, 0.86], [0.33, 0.74], [0.46, 0.8], [0.68, 0.8], [0.82, 0.88], [1, 0.62]]),
     yC: KY([[0, 0.54], [0.17, 0.64], [0.45, 0.74], [0.465, 0.38], [0.67, 0.38], [0.69, 0.76], [1, 0.58]]),
     xp: KY([[0, 0.56], [0.17, 0.7], [0.5, 0.76], [0.82, 0.72], [1, 0.58]]), tails: 'round', screen: 0.2, fairing: true },
-  { id: 'oro', name: '金沙', en: 'GOLDEN SAND', color: 0xd8b874, interior: 0xf0e8d8, top: 290, acc: 0.6, grip: 0.74, steer: 0.6, mass: 0.85, gears: 6, engine: 'v12',
+  { id: 'oro', name: 'ORO IMPERIAL', en: 'Luxury cruiser', color: 0xd8b874, interior: 0xf0e8d8, top: 290, acc: 0.6, grip: 0.74, steer: 0.6, mass: 0.85, gears: 6, engine: 'v12',
     desc: '豪華大型敞篷，又長又重，高速巡航最舒服。', L: 5.15, W: 2.0, clear: 0.2, rs: 0.06, tuck: 0.03, pw: 2.4, wheels: [0.19, 0.8], cockpit: [0.42, 0.7], rim: 'mesh', rimCol: 0xe8d8a8, chrome: true,
     a: KY([[0, 0.88], [0.12, 0.97], [0.9, 0.98], [1, 0.96]]),
     yF: KY([[0, 0.76], [0.14, 0.94], [0.42, 0.96], [0.7, 0.96], [0.86, 1.02], [0.97, 1.06], [1, 1.0]]),
@@ -3317,13 +3317,20 @@ function drawPlayerCar(spr) {
     VG.save(); VG.translate(x, yG - lift - 30); VG.rotate(PC.roll * 0.8 + Math.sin(PC.crash.t * 6) * 0.1); VG.drawImage(img, -spr.ax, -spr.ay + 30); VG.restore();
     return;
   }
+  // the drift pose: rolled up onto the outside wheels, squashed a touch, hopping
+  const roll = FX.roll, dk = FX.driftK, posed = Math.abs(roll) > 0.004 || dk > 0.02 || FX.hopY < -0.5;
+  if (posed) {
+    const pxv = x + FX.pivot * bw * 0.42, pyv = yG - lift;
+    VG.save(); VG.translate(pxv, pyv + FX.hopY); VG.rotate(roll); VG.scale(1 + 0.05 * dk, 1 - 0.06 * dk); VG.translate(-pxv, -pyv);
+  }
   VG.drawImage(img, x - spr.ax, yG - spr.ay - lift);
   // the two of them on top, swaying with the car and their hair in the wind
   if (spr.heads) {
     const si2 = clamp(Math.round(clamp(PC.steerIn * 1.7 + (PC.yaw || 0) * 9 + (PC.drift ? PC.driftDir * 0.9 : 0), -2.4, 2.4)) + 2, 0, 4), sh = spr.shift[si2];
     const ph = PC.v > 4 ? [0, 1, 0, 2][Math.floor(G.t * (5 + PC.v * 0.15)) & 3] : 0;
-    for (const h of spr.heads) VG.drawImage(h.frames[ph], Math.round(x - spr.ax + h.x + sh + FX.hx), Math.round(yG - spr.ay - lift + h.y + FX.hy));
+    for (const h of spr.heads) VG.drawImage(h.frames[ph], Math.round(x - spr.ax + h.x + sh + FX.hx - FX.pivot * 3 * dk), Math.round(yG - spr.ay - lift + h.y + FX.hy));
   }
+  if (posed) VG.restore();
 }
 
 // ===================== the player's car cut from the reference art: ten frames, five steers x brake =====================
@@ -4488,7 +4495,7 @@ function updateCamera(dt) {
 // ===================== tyre effects: wheelspin smoke off the line, smoke in a slide, dust off the road, skid marks =====================
 // Puffs are pixel sprites thrown out from the rear tyres on screen; skid marks are laid on the road itself,
 // in road coordinates, and painted into the road raster so they stay put as the car drives away from them.
-const FX = { puffs: [], marks: [], cur: null, img: {}, spawnAcc: 0, spin: 0, lastGear: 1, burst: 0, hx: 0, hy: 0, hvx: 0, hvy: 0, lastV: 0 };
+const FX = { puffs: [], marks: [], cur: null, img: {}, spawnAcc: 0, spin: 0, lastGear: 1, burst: 0, hx: 0, hy: 0, hvx: 0, hvy: 0, lastV: 0, driftK: 0, roll: 0, rollV: 0, pivot: 1, hopY: 0, hopV: 0, wasDrift: 0 };
 const PUFF_COLS = { smoke: [0xffffff, 0xe6e8ee, 0xc6cad4], sand: [0xfff2cc, 0xe8d8a8, 0xc8b480], grass: [0xd8d0a0, 0xaea678, 0x8a8458], gravel: [0xe0dcd4, 0xb8b4ac, 0x8e8a82], dirt: [0xd8c4a0, 0xb49878, 0x8a7458] };
 function fxInit() {
   for (const k in PUFF_COLS) {
@@ -4519,6 +4526,17 @@ function fxUpdate(dt) {
   const burst = FX.burst > 0;
   FX.spin = lerp(FX.spin, launch ? 1 : 0, clamp(dt * 8, 0, 1));
   const slide = Math.max(PC.slip, PC.drift ? 1 : 0), scrub = v > 28 && Math.abs(PC.steerIn) > 0.75 ? 0.35 : 0;
+  // ---- the drift pose: the car rears up onto its outside wheels with a pop, bounces on them, settles back ----
+  const dTarget = PC.crash ? 0 : PC.drift ? 1 : slide > 0.55 ? 0.6 : 0;
+  FX.driftK = lerp(FX.driftK, dTarget, clamp(dt * (dTarget > FX.driftK ? 14 : 4), 0, 1));
+  const dir = PC.drift ? PC.driftDir : (slide > 0.55 ? Math.sign(PC.steerIn || 1) : 0);
+  if (dir) FX.pivot = -dir;                                                   // the outside wheels stay down
+  const rollT = -dir * (0.26 + 0.18 * clamp(v / 60, 0, 1)) * FX.driftK * (PC.spec && PC.spec.rollK != null ? PC.spec.rollK : 1);
+  FX.rollV += ((rollT - FX.roll) * 150 - FX.rollV * 7) * dt; FX.roll += FX.rollV * dt;   // underdamped: it pops past and swings back
+  if (PC.drift && !FX.wasDrift) { FX.hopV = -70; sfxChirp(); }
+  FX.wasDrift = PC.drift ? 1 : 0;
+  FX.hopV += 420 * dt; FX.hopY += FX.hopV * dt;
+  if (FX.hopY > 0) { FX.hopY = 0; FX.hopV = FX.driftK > 0.3 && v > 10 ? -Math.abs(FX.hopV) * 0.45 - 18 * FX.driftK : 0; }
   const braking = PC.brake > 0.8 && v > 18 && !PC.offroad ? 1 : 0;
   const off = PC.offroad && v > 3;
   const kind = off ? (PC.surface === 'beach' || PC.surface === 'bay' || PC.surface === 'shore' ? 'sand' : PC.surface === 'riverbed' || PC.surface === 'cliff' ? 'gravel' : PC.surface === 'farm' || PC.surface === 'orchard' ? 'dirt' : 'grass') : 'smoke';
@@ -4697,12 +4715,16 @@ let _row = 0, _f = 0;
 function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
 const DKC = new Map();
 function dkHex(h) { let v = DKC.get(h); if (v === undefined) { v = shadeHex(h, 0.94); DKC.set(h, v); } return v; }
-let _y = 0;
-// a span textured with a checker of a colour and its darker twin, the pixel grain of every big surface
+let _y = 0, _gcx = 0, _girk = 0, _gcell = 0;
+const LTC = new Map();
+function ltHex(h) { let v = LTC.get(h); if (v === undefined) { v = shadeHex(h, 1.08); LTC.set(h, v); } return v; }
+// a fast integer hash for the grain, 0..1023
+function gh(a, b) { let h = Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return (h ^ (h >>> 16)) & 1023; }
+// a span of ground with grain: dark, base and light grains on a 0.2 m world grid, so the texture stays put as the road moves
 function fillSpanD(x0, x1, hex) {
   x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 <= x0) return;
-  const a = fogPx(hex, _f), b = fogPx(dkHex(hex), _f), fb = RV.fb, par = _y & 1, base = _row;
-  for (let x = x0; x < x1; x++) fb[base + x] = ((x + par) & 1) ? b : a;
+  const a = fogPx(hex, _f), b = fogPx(dkHex(hex), _f), c = fogPx(ltHex(hex), _f), fb = RV.fb, base = _row, cx = _gcx, irk = _girk, row = _gcell;
+  for (let x = x0; x < x1; x++) { const h = gh(((x - cx) * irk) | 0, row); fb[base + x] = h < 260 ? b : h > 880 ? c : a; }
 }
 // a painted line of width w metres centred at screen x; thinner than a pixel, it is blended into the asphalt
 function lineAt(xc, wpx, col, under) {
@@ -4792,9 +4814,10 @@ function rasterStrip(A, B, nA, nB) {
   for (let y = yBot; y >= yTop; y--) {
     const t = (yN - (y + 0.5)) / (yN - yF), iz = iza + (izb - iza) * t, z = 1 / iz;
     const gs = (ga + (gb - ga) * t) * z, tN = (yN - (y - 0.5)) / (yN - yF), gsN = (ga + (gb - ga) * tN) / (iza + (izb - iza) * tN);
-    _row = y * RW; _y = y; _f = fogAt(z);
+    _row = y * RW; _y = y; _f = fogAt(z); _gcell = (gs * 5) | 0;
     if (nB === 1) {
       const a = A[0], b = B[0], cx = a.sx + (b.sx - a.sx) * t, rk = a.rk + (b.rk - a.rk) * t, R = t < 0.5 ? a : b;
+      _gcx = cx; _girk = 5 / Math.max(0.01, rk);
       const xl = cx + R.oL * rk, xr = cx + R.oR * rk;
       sideRow(sideBands(R.sec.L), xl, rk, -1, gs, gsN, null);
       sideRow(sideBands(R.sec.R), xr, rk, 1, gs, gsN, null);
@@ -4804,6 +4827,7 @@ function rasterStrip(A, B, nA, nB) {
       // two roads side by side: the left one's outer ground, the gap between them, the right one's outer ground
       const a0 = A[0], b0 = B[0], a1 = A[1], b1 = B[1];
       const cx0 = a0.sx + (b0.sx - a0.sx) * t, rk0 = a0.rk + (b0.rk - a0.rk) * t, R0 = t < 0.5 ? a0 : b0;
+      _gcx = cx0; _girk = 5 / Math.max(0.01, rk0);
       const cx1 = a1.sx + (b1.sx - a1.sx) * t, rk1 = a1.rk + (b1.rk - a1.rk) * t, R1 = t < 0.5 ? a1 : b1;
       const x0r = cx0 + R0.oR * rk0, x1l = cx1 + R1.oL * rk1, mid = (x0r + x1l) / 2;
       sideRow(sideBands(R0.sec.L), cx0 + R0.oL * rk0, rk0, -1, gs, gsN, null);
