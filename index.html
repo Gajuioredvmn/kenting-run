@@ -2361,30 +2361,30 @@ function paintSights() {
     ['weiwuying', '衛武營', 'Weiwuying Arts Center'], ['buddha', '佛光山佛陀紀念館', 'Fo Guang Shan'], ['ferris', '義大世界', 'E-DA World'], ['gaoping', '高屏溪斜張橋', 'Gaoping Bridge'], ['wanluan', '萬巒豬腳', 'Wanluan Pork Knuckle'],
     ['fuan', '車城福安宮', 'Fuan Temple'], ['sichongxi', '四重溪溫泉', 'Sichongxi Hot Spring'], ['chuhuo', '出火', 'Chuhuo Fire'], ['nuke', '核三廠', 'Maanshan Plant'], ['kentingpark', '墾丁國家公園', 'Kenting National Park'], ['southpoint', '台灣最南點', 'Southernmost Point'],
   ];
-  for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0.1, shadow: 0.3 });
-  addSprite('kpmc', paintKPMC(), 64, { collide: 0, shadow: 0 });
-  addSprite('harborbridge', paintHarborBridge(), 38, { collide: 0, shadow: 0 });
+  for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0, shadow: 0.3, ax: d < 0 ? 1 : 0 });
+  addSprite('kpmc', paintKPMC(), 64, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('harborbridge', paintHarborBridge(), 38, { collide: 0, shadow: 0, ax: 0 });
   for (let i = 0; i < 2; i++) addSprite('pier2#' + i, paintPier2Wall(9100 + i * 31), 8, { collide: 0, shadow: 0 });
   for (let i = 0; i < 2; i++) addSprite('pier2giant#' + i, paintPier2Giant(i), 6.5, { collide: 0.6, shadow: 0.6 });
-  addSprite('dome', paintDome(), 14, { collide: 0.7, shadow: 0.3 });
-  addSprite('pagodas', paintPagodas(), 38, { collide: 0, shadow: 0 });
+  addSprite('dome', paintDome(), 14, { collide: 0, shadow: 0.3, ax: 1 });
+  addSprite('pagodas', paintPagodas(), 38, { collide: 0, shadow: 0, ax: 1 });
   addSprite('tram', paintTram(), 3.6, { collide: 0, shadow: 0 });
   ['C8 高雄展覽館', 'C10 光榮碼頭', 'C12 駁二大義', 'C14 哈瑪星'].forEach((n, i) => addSprite('lrtstop#' + i, paintLrtStop(n), 5.2, { collide: 0, shadow: 0 }));
   addSprite('deck', paintDeck(), 3.2, { collide: 0, shadow: 0 });
   addSprite('tunnelportal', paintTunnelPortal(), 15, { collide: 0, shadow: 0 });
   addSprite('tunnelring', paintTunnelRing(), 12, { collide: 0, shadow: 0 });
-  addSprite('cijinlight', paintCijinLight(), 28, { collide: 0, shadow: 0 });
+  addSprite('cijinlight', paintCijinLight(), 28, { collide: 0, shadow: 0, ax: 1 });
   addSprite('fortgate', paintFortGate(), 9, { collide: 0.9, shadow: 0.4 });
-  addSprite('rainbowchurch', paintRainbowChurch(), 9, { collide: 0.8, shadow: 0.3 });
+  addSprite('rainbowchurch', paintRainbowChurch(), 9, { collide: 0, shadow: 0.3, ax: 0 });
   for (let i = 0; i < 3; i++) addSprite('windmill#' + i, paintWindmill(0.3 + i * 0.7), 38, { collide: 0.05, shadow: 0.2 });
   addSprite('ferry', paintFerry(), 7, { collide: 0, shadow: 0 });
   addSprite('tuna', paintTuna(), 7, { collide: 0.7, shadow: 0.5 });
-  addSprite('glassbridge', paintGlassBridge(), 52, { collide: 0, shadow: 0 });
+  addSprite('glassbridge', paintGlassBridge(), 52, { collide: 0, shadow: 0, ax: 0 });
   addSprite('dppylon', paintDpPylon(), 46, { collide: 0.4, shadow: 0.3 });
-  addSprite('weiwuying', paintWeiwuying(), 22, { collide: 0, shadow: 0 });
-  addSprite('buddha', paintBuddha(), 68, { collide: 0, shadow: 0 });
-  addSprite('ferris', paintFerris(0.3), 70, { collide: 0, shadow: 0 });
-  addSprite('nuke', paintNuke(), 30, { collide: 0, shadow: 0 });
+  addSprite('weiwuying', paintWeiwuying(), 22, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('buddha', paintBuddha(), 68, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('ferris', paintFerris(0.3), 70, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('nuke', paintNuke(), 30, { collide: 0, shadow: 0, ax: 0 });
   addSprite('kentingarch', paintKentingArch(), 14, { collide: 0, shadow: 0 });
   addSprite('southpoint', paintSouthPoint(), 9, { collide: 0.6, shadow: 0.3 });
 }
@@ -2791,10 +2791,10 @@ function paintPole(seed) {
   return px;
 }
 function paintTown() {
-  for (let i = 0; i < 14; i++) addSprite('townhouse#' + i, paintTownhouse(2000 + i * 17), 1, {});
-  for (let i = 0; i < 4; i++) addSprite('seafood#' + i, paintTownhouse(2400 + i * 17, { name: i % 2 ? '海產' : '活海鮮', sign: [0x1a58b8, 0xffffff], floors: 3 }), 1, {});
-  for (let i = 0; i < 3; i++) addSprite('scooterstore#' + i, paintTownhouse(2500 + i * 17, { name: '機車行', sign: [0xf2c21a, 0xb0141c] }), 1, {});
-  addSprite('store', paintStore(2600), 1, {});
+  for (let i = 0; i < 14; i++) { const px = paintTownhouse(2000 + i * 17); addSprite('townhouse#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); }
+  for (let i = 0; i < 4; i++) { const px = paintTownhouse(2400 + i * 17, { name: i % 2 ? '海產' : '活海鮮', sign: [0x1a58b8, 0xffffff], floors: 3 }); addSprite('seafood#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); }
+  for (let i = 0; i < 3; i++) { const px = paintTownhouse(2500 + i * 17, { name: '機車行', sign: [0xf2c21a, 0xb0141c] }); addSprite('scooterstore#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); }
+  { const px = paintStore(2600); addSprite('store', px, px.h / PPM, { collide: 0, shadow: 0 }); }
   for (let k = 0; k < 3; k++) for (let i = 0; i < 2; i++) addSprite('tower' + k + '#' + i, paintTower(2700 + k * 31 + i * 7, k), 1, {});
   addSprite('lamp2', paintLamp(true), 10.5, { collide: 0.06, shadow: 0.25 });
   addSprite('lamp1', paintLamp(false), 10.5, { collide: 0.1, shadow: 0.25, ax: 0.2 });
@@ -2804,7 +2804,7 @@ function paintTown() {
   for (let i = 0; i < ADS.length; i++) addSprite('billboard#' + i, paintBillboard(ADS[i], 2800 + i), 7.5, { collide: 0.08, shadow: 0.4 });
   for (let i = 0; i < 3; i++) addSprite('betelstand#' + i, paintBetelStand(2900 + i), 4.4, { collide: 0.8, glow: 0.7 });
   addSprite('mangostall', paintFruitStall(2950, 'mango'), 3.2, { collide: 0.7 });
-  ['冰品', '南灣', '衝浪店', '墾丁', '民宿', '海產', '剉冰', '泳裝'].forEach((n, i) => addSprite('beachshop#' + i, paintBeachShop(5200 + i * 7, n), 1, {}));
+  ['冰品', '南灣', '衝浪店', '墾丁', '民宿', '海產', '剉冰', '泳裝'].forEach((n, i) => { const px = paintBeachShop(5200 + i * 7, n); addSprite('beachshop#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); });
   addSprite('waxstall', paintFruitStall(2960, 'wax'), 3.2, { collide: 0.7 });
   const foods = ['烤魷魚', '珍珠奶茶', '炸物', '海產粥', '烤玉米', '冰沙'];
   for (let i = 0; i < foods.length; i++) addSprite('stall#' + i, paintStall(3000 + i, foods[i]), 3.0, { collide: 0.8, glow: 0.6 });
@@ -3011,19 +3011,23 @@ function curveSigns(D) {
 // ===================== tags: the set pieces along the route =====================
 // Every handler gets the decorator D and the section's s range, and places sprites, building fronts, rails and wires.
 function every(s0, s1, step, jitter, r, fn) { for (let s = s0 + step * 0.5; s < s1; s += step) fn(s + (jitter ? r.range(-jitter, jitter) : 0)); }
-// a continuous row of townhouses (透天厝) with alleys, pavement scooters and the odd convenience store
+// a continuous row of townhouses (透天厝), each one a card standing square to the road the way arcade scenery does
+// (a perspective-mapped facade shears its signboards into parallelograms; a card keeps them upright), with alleys,
+// pavement scooters and the odd convenience store; the row is solid to the car, like a wall
 function houseRow(D, s0, s1, sg, off, opts) {
   const r = D.rnd, o = opts || {};
   let s = s0 + r.range(0, 6);
   while (s < s1 - 4) {
     if (r() < 0.06) { s += r.range(3, 6); continue; } // an alley
-    const store = r() < 0.06 && !o.noStore, w = store ? 10 : r.range(4.4, 5.6);
+    const store = r() < 0.06 && !o.noStore;
     const name = store ? 'store' : (o.kind ? pickVar(o.kind, r) : (r() < 0.12 ? pickVar('scooterstore', r) : pickVar('townhouse', r)));
-    const S = SPR[name], h = store ? 5 : (S.h / S.w) * w;
-    D.wall(s, s + w, sg, off + r.range(0, 0.5), r.range(10, 16), h, name, { side: pickVar('sidewall', r), col: r.pick(WALLS) });
-    if (r() < 0.35) D.spr('scooters', s + w / 2, D.lat(s + w / 2, sg, off - 1.6), { collide: false });
+    const S = SPR[name], w = S.ww, step = store ? 10 : r.range(4.4, 5.6);
+    const x = D.lat(s + step / 2, sg, off + w / 2 + r.range(0, 0.4));
+    D.spr(name, s + step / 2, x, { flip: false, collide: false });
+    D.collide(s + step / 2, x, w / 2, step / 2 + 0.3, 'wall');
+    if (r() < 0.35) D.spr('scooters', s + step / 2, D.lat(s + step / 2, sg, off - 1.6), { collide: false });
     if (o.vsigns && r() < 0.4) D.spr(pickVar('vsign', r), s + r.range(0.4, 1.2), D.lat(s, sg, off - 0.2), { y: 3.3, scale: 0.85, flip: sg > 0, collide: false });
-    s += w + r.range(0, 0.3);
+    s += step + r.range(0, 0.3);
   }
 }
 // tall buildings set back behind the street front
@@ -3043,7 +3047,7 @@ function sightSign(D, s, sg, id) {
   const nm = 'sight_' + id + (sg > 0 ? '_r' : '_l'); if (!SPR[nm]) return;
   D.p._signs = D.p._signs || new Set(); if (D.p._signs.has(id)) return; D.p._signs.add(id);
   if (s < 10 || s > D.p.L - 10) return;
-  D.spr(nm, s, D.lat(s, sg, 1.3), { flip: false, collide: false });
+  D.spr(nm, s, D.lat(s, sg, 0.9), { flip: false, collide: false });
 }
 // a wide picture hung over the road, centred on it (a deck, a tunnel ring)
 function overRoad(D, name, s, y, o) { const S = SPR[name]; if (!S) return; const i = Math.round(s / DS), p = D.p, cx = (p.outerL(i) + p.outerR(i)) / 2; D.spr(name, s, cx, Object.assign({ y: y || 0, flip: false, collide: false }, o || {})); }
@@ -3196,7 +3200,7 @@ const TAGS = {
   coffee(D, s0, s1) { const s = (s0 + s1) / 2; D.spr('coffee', s, D.lat(s, 1, 2), { flip: false }); D.spr('stonehouse', s + 12, D.lat(s, 1, 9)); },
   mango(D, s0, s1) { every(s0, s1, 11, 3, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1; D.spr('mango', s, D.lat(s, sg, D.rnd.range(5, 50))); }); },
   // ---------------- 枋山海岸 ----------------
-  station(D, s0) { sightSign(D, s0 + 40, -1, 'fangliao'); const s = s0 + 160; D.wall(s - 17, s + 17, -1, 6, 14, 7, 'station', { col: 0xe8e2d0, sideCol: 0xd0c8b4 }); D.spr('lamp2', s - 22, D.lat(s, -1, 1)); D.spr('lamp2', s + 22, D.lat(s, -1, 1)); },
+  station(D, s0) { sightSign(D, s0 + 40, -1, 'fangliao'); const s = s0 + 160; { const x = D.lat(s, -1, 6 + SPR.station.ww / 2); D.spr('station', s, x, { flip: false, collide: false }); D.collide(s, x, SPR.station.ww / 2, 4, 'wall'); } D.spr('lamp2', s - 22, D.lat(s, -1, 1)); D.spr('lamp2', s + 22, D.lat(s, -1, 1)); },
   railway(D, s0, s1) {
     // 南迴線 runs along the foot of the hills on the left: ballast, two rails and catenary masts
     D.p.grounds = D.p.grounds || [];
@@ -3235,17 +3239,17 @@ const TAGS = {
   pavilion(D, s0) { const s = s0 + 200; D.spr('pavilion', s, D.lat(s, 1, 6), { flip: false }); },
   // ---------------- the sights of Kaohsiung ----------------
   tower85sign(D, s0) { sightSign(D, s0 + 150, -1, 'tower85'); },
-  kpmc(D, s0, s1) { sightSign(D, s0 + 30, 1, 'kpmc'); const s = s0 + 330; D.spr('kpmc', s, D.lat(s, 1, 16), { flip: false, collide: false }); },
-  harborbridge(D, s0, s1) { sightSign(D, s0 + 180, 1, 'harborbridge'); const s = s0 + 150; D.spr('harborbridge', s, D.lat(s, 1, 62), { flip: false, collide: false }); },
+  kpmc(D, s0, s1) { sightSign(D, s0 + 30, 1, 'kpmc'); const s = s0 + 330; D.spr('kpmc', s, D.lat(s, 1, 9), { flip: false, collide: false }); },
+  harborbridge(D, s0, s1) { sightSign(D, s0 + 180, 1, 'harborbridge'); const s = s0 + 150; D.spr('harborbridge', s, D.lat(s, 1, 24), { flip: false, collide: false }); },
   pier2(D, s0, s1) {
     // the warehouses in a row along the quay, murals on their fronts, the big figures between them, people about
     sightSign(D, s0 + 60, 1, 'pier2');
-    for (let s = s0 + 40; s < s1 - 40; s += 52) { if (s > s0 + 240 && s < s0 + 420) continue; D.wall(s, s + 34, 1, 3.6, 16, 8, pickVar('pier2', D.rnd), { side: pickVar('sidewall', D.rnd), col: 0x9c9890 }); if (D.rnd() < 0.8) D.spr(pickVar('pier2giant', D.rnd), s + 42, D.lat(s + 42, 1, 2.2), { flip: D.rnd() < 0.5 }); }
+    for (let s = s0 + 40; s < s1 - 40; s += 40) { if (s > s0 + 240 && s < s0 + 420) continue; const nm = pickVar('pier2', D.rnd), x = D.lat(s + 10, 1, 3.6 + SPR[nm].ww / 2); D.spr(nm, s + 10, x, { flip: false, collide: false }); D.collide(s + 10, x, SPR[nm].ww / 2, 10, 'wall'); if (D.rnd() < 0.8) D.spr(pickVar('pier2giant', D.rnd), s + 30, D.lat(s + 30, 1, 2.2), { flip: D.rnd() < 0.5 }); }
     every(s0, s1, 16, 5, D.rnd, (s) => D.spr(D.rnd() < 0.6 ? 'walkers' : 'planter', s, D.lat(s, 1, D.rnd.range(1.2, 2.6)), { collide: false, flip: D.rnd() < 0.5 }));
   },
-  dome(D, s0, s1) { sightSign(D, s0 + 40, -1, 'dome'); const s = s0 + 240; D.spr('dome', s, D.lat(s, -1, 4.6), { flip: false }); every(s - 40, s + 40, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, -1, D.rnd.range(2, 5)), { collide: false })); },
+  dome(D, s0, s1) { sightSign(D, s0 + 40, -1, 'dome'); const s = s0 + 240; D.spr('dome', s, D.lat(s, -1, 3.2), { flip: false }); every(s - 40, s + 40, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, -1, D.rnd.range(2, 5)), { collide: false })); },
   lrtstop(D, s0, s1) { sightSign(D, s0 + 20, -1, 'lrt'); for (let s = s0 + 130; s < s1 - 60; s += 260) D.spr(pickVar('lrtstop', D.rnd), s, D.lat(s, -1, 6.4), { flip: false, collide: false }); },
-  pagodas(D, s0, s1) { sightSign(D, s0 + 30, -1, 'pagodas'); const s = s0 + 230; D.spr('pagodas', s, D.lat(s, -1, 26), { flip: false, collide: false }); },
+  pagodas(D, s0, s1) { sightSign(D, s0 + 30, -1, 'pagodas'); const s = s0 + 230; D.spr('pagodas', s, D.lat(s, -1, 14), { flip: false, collide: false }); },
   underpasssign(D, s0) { sightSign(D, s0 - 120, 1, 'underpass'); },
   underpass(D, s0, s1) { D.rail(s0, s1, -1, 0.5, 'cutwall'); D.rail(s0, s1, 1, 0.5, 'cutwall'); every(s0, s1, 24, 0, D.rnd, (s) => D.spr('lamp1', s, D.lat(s, 1, 0.3), { flip: true, sway: 0, collide: false })); },
   deck(D, s0, s1) { const s = (s0 + s1) / 2, i = Math.round(s / DS), span = D.p.outerR(i) - D.p.outerL(i) + 14; overRoad(D, 'deck', s, 5.6, { sx: span / SPR.deck.ww }); },
@@ -3255,30 +3259,30 @@ const TAGS = {
   tunnel(D, s0, s1) { D.rail(s0, s1, -1, 0.3, 'cutwall'); D.rail(s0, s1, 1, 0.3, 'cutwall'); for (let s = s0 + 10; s < s1; s += 8) overRoad(D, 'tunnelring', s, 0); },
   cijin(D, s0, s1) {
     sightSign(D, s0 + 40, -1, 'cijinlight');
-    const s = s0 + 150; D.spr('cijinlight', s, D.lat(s, -1, 20), { flip: false, collide: false });
+    const s = s0 + 150; D.spr('cijinlight', s, D.lat(s, -1, 12), { flip: false, collide: false });
     D.spr('fortgate', s0 + 290, D.lat(s0 + 290, -1, 7), { flip: false });
     every(s0, s1, 90, 20, D.rnd, (q) => D.spr('ferry', q, D.lat(q, 1, D.rnd.range(70, 110)), { flip: D.rnd() < 0.5, collide: false }));
   },
-  rainbowchurch(D, s0) { sightSign(D, s0 + 30, 1, 'rainbow'); const s = s0 + 200; D.spr('rainbowchurch', s, D.lat(s, 1, 9), { flip: false }); every(s - 30, s + 30, 10, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, 1, D.rnd.range(4, 9)), { collide: false })); },
+  rainbowchurch(D, s0) { sightSign(D, s0 + 30, 1, 'rainbow'); const s = s0 + 200; D.spr('rainbowchurch', s, D.lat(s, 1, 6), { flip: false }); every(s - 30, s + 30, 10, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, 1, D.rnd.range(4, 9)), { collide: false })); },
   windmills(D, s0, s1) { sightSign(D, s0 + 260, 1, 'windmills'); for (let s = s0 + 330; s < s1 + 60; s += 70) D.spr(pickVar('windmill', D.rnd), s, D.lat(s, 1, D.rnd.range(13, 22)), { flip: false, collide: false }); },
   ferry(D, s0, s1) { sightSign(D, s0 + 90, -1, 'ferry'); every(s0 + 120, s1, 160, 30, D.rnd, (s) => D.spr('ferry', s, D.lat(s, -1, D.rnd.range(50, 90)), { flip: D.rnd() < 0.5, collide: false })); },
   // ---------------- Pingtung ----------------
   tuna(D, s0, s1) { const s = s0 + (s1 - s0) * 0.7; sightSign(D, s - 150, 1, 'tuna'); D.spr('tuna', s, D.lat(s, 1, 4), { flip: false }); },
   dapeng() {},
-  glassbridge(D, s0, s1) { sightSign(D, s0 + 40, 1, 'glassbridge'); const s = s0 + (s1 - s0) * 0.55; D.spr('glassbridge', s, D.lat(s, 1, 40), { flip: false, collide: false }); },
+  glassbridge(D, s0, s1) { sightSign(D, s0 + 40, 1, 'glassbridge'); const s = s0 + (s1 - s0) * 0.55; D.spr('glassbridge', s, D.lat(s, 1, 22), { flip: false, collide: false }); },
   dawu(D, s0) { sightSign(D, s0 + 80, -1, 'dawu'); },
   guanshan(D, s0, s1) { sightSign(D, s0 + 60, 1, 'guanshan'); const s = s0 + 240; D.spr('pavilion', s, D.lat(s, 1, 8), { flip: false }); every(s - 30, s + 30, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, 1, D.rnd.range(3, 6)), { collide: false })); },
   baisha(D, s0) { sightSign(D, s0 + 60, 1, 'baisha'); },
   longpan(D, s0) { sightSign(D, s0 + 60, 1, 'longpan'); },
-  weiwuying(D, s0, s1) { sightSign(D, s0 + 20, -1, 'weiwuying'); const s = s0 + 130; D.spr('weiwuying', s, D.lat(s, -1, 24), { flip: false, collide: false }); },
-  buddha(D, s0, s1) { sightSign(D, s0 + 60, -1, 'buddha'); const s = s0 + 300; D.spr('buddha', s, D.lat(s, -1, 40), { flip: false, collide: false }); },
-  ferris(D, s0, s1) { sightSign(D, s0 + 340, 1, 'ferris'); const s = s0 + 520; D.spr('ferris', s, D.lat(s, 1, 34), { flip: false, collide: false }); },
+  weiwuying(D, s0, s1) { sightSign(D, s0 + 20, -1, 'weiwuying'); const s = s0 + 130; D.spr('weiwuying', s, D.lat(s, -1, 10), { flip: false, collide: false }); },
+  buddha(D, s0, s1) { sightSign(D, s0 + 60, -1, 'buddha'); const s = s0 + 300; D.spr('buddha', s, D.lat(s, -1, 16), { flip: false, collide: false }); },
+  ferris(D, s0, s1) { sightSign(D, s0 + 340, 1, 'ferris'); const s = s0 + 520; D.spr('ferris', s, D.lat(s, 1, 12), { flip: false, collide: false }); },
   gaoping(D, s0) { sightSign(D, s0 + 40, -1, 'gaoping'); },
   wanluan(D, s0) { sightSign(D, s0 + 80, 1, 'wanluan'); },
   fuan(D, s0) { sightSign(D, s0 + 60, -1, 'fuan'); },
   sichongxi(D, s0) { sightSign(D, s0 + 160, -1, 'sichongxi'); },
   chuhuo(D, s0) { sightSign(D, s0 + 200, 1, 'chuhuo'); },
-  nuke(D, s0, s1) { sightSign(D, s0 + 400, 1, 'nuke'); const s = s0 + 600; D.spr('nuke', s, D.lat(s, 1, 46), { flip: false, collide: false }); },
+  nuke(D, s0, s1) { sightSign(D, s0 + 400, 1, 'nuke'); const s = s0 + 600; D.spr('nuke', s, D.lat(s, 1, 30), { flip: false, collide: false }); },
   kentingarch(D, s0) { sightSign(D, s0 + 120, 1, 'kentingpark'); overRoad(D, 'kentingarch', s0 + 300, 0, { sx: (D.p.outerR(Math.round((s0 + 300) / DS)) - D.p.outerL(Math.round((s0 + 300) / DS)) + 8) / SPR.kentingarch.ww }); },
   southpoint(D, s0, s1) { sightSign(D, s0 + 20, 1, 'southpoint'); const s = s0 + 110; D.spr('southpoint', s, D.lat(s, 1, 6), { flip: false }); },
   // ---------------- bridges: parapets both sides; a cable-stayed pylon with its stays, or the towers of an opening span ----------------
@@ -6020,7 +6024,7 @@ function drawStripItems(a, b, clip) {
         const S = SPRL[o.id], h = S.wh * o.sc * kS;
         if (h < 1.6) continue;
         // specks in the distance: keep a share of them, fewer the smaller they are
-        if (S.wh < 25 && ((h < 14 && (i & 1)) || (h < 7 && (i & 3)) || (h < 3.5 && (i & 7)))) continue;
+        if (S.wh < 9 && ((h < 14 && (i & 1)) || (h < 7 && (i & 3)) || (h < 3.5 && (i & 7)))) continue;
         items.push(item(0, o, p.gS + o.s, 0, p));
       }
       const WB = p.wallB[bk];
