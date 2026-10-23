@@ -3771,7 +3771,13 @@ function pcStep(dt, track) {
     const hit = findCollider(p, PC.s, PC.x, 2.1, 0.92);
     if (hit) {
       PC.lastHit = performance.now();
-      if (v > 15) pcCrash(1); else { PC.v = 0; PC.vx = 0; PC.x += (PC.x > (hit.x0 + hit.x1) / 2 ? 1 : -1) * 0.5; sfxThud(0.4); }
+      const mid = (hit.x0 + hit.x1) / 2, side = PC.x > mid ? 1 : -1, glancing = PC.x < hit.x0 - 0.2 || PC.x > hit.x1 + 0.2;
+      if (glancing || v < 12) {
+        // clipped it with a corner: shoved aside, speed scrubbed, keep going
+        PC.x += side * 0.6; PC.vx = side * 5; PC.v *= glancing ? 0.82 : 0.3; sfxThud(0.5); shake(0.25);
+        if (typeof fxScrape === 'function') fxScrape(-side);
+      } else if (v > 22) pcCrash(clamp((v - 22) / 35, 0.3, 1));
+      else { PC.v = 0; PC.vx = 0; PC.x += side * 0.5; sfxThud(0.4); }
     }
   }
   PC.s += PC.v * dt * WORLD_K; PC.dist += PC.v * dt * WORLD_K;
@@ -3785,7 +3791,8 @@ function pcStep(dt, track) {
 function pcCrash(k) {
   if (PC.crash) return;
   const v = PC.v;
-  PC.crash = { t: 0, dur: 2.3, vy: 4 + v * 0.07 * k, spin: (Math.random() < 0.5 ? -1 : 1) * (6 + v * 0.06), rollK: (Math.random() < 0.5 ? -1 : 1) * (1.2 + v * 0.02) };
+  const hard = k > 0.75;
+  PC.crash = { t: 0, dur: hard ? 2.3 : 1.6, vy: hard ? 4 + v * 0.07 : 1.5, spin: (Math.random() < 0.5 ? -1 : 1) * (hard ? 6 + v * 0.06 : 4 + v * 0.03), rollK: (Math.random() < 0.5 ? -1 : 1) * (hard ? 1.2 + v * 0.02 : 0.25) };
   PC.drift = 0; sfxSkid(false); sfxCrash(clamp(v / 60, 0.3, 1));
   onCrash();
 }
@@ -4237,10 +4244,14 @@ function trafficUpdate(dt) {
     if (!PC.crash && v.p === PC.piece) {
       const ds = v.s - PC.s, dx = v.x - PC.x;
       if (Math.abs(ds) < (v.len + 4.4) / 2 && Math.abs(dx) < (v.wid + 1.85) / 2) {
-        const closing = PC.v - v.v;
-        if (closing > 21) { pcCrash(1); v.v = Math.max(v.v, PC.v * 0.5); v.push = Math.sign(dx || 1) * 3; v.hitT = 0.6; }
-        else if (ds > 0) { PC.v = Math.max(0, v.v - 2.5); PC.vx = -Math.sign(dx || 1) * 3.5; v.v += 1.5; v.push = Math.sign(dx || 1) * 1.5; v.hitT = 0.4; sfxThud(0.6); shake(0.3); sfxHorn(); }
-        else { PC.vx = -Math.sign(dx || 1) * 4; v.push = Math.sign(dx || 1) * 2; v.hitT = 0.3; sfxThud(0.4); }
+        const closing = PC.v - v.v, full = (v.wid + 1.85) / 2, overlap = full - Math.abs(dx), frontal = ds > 0 && overlap > full * 0.55;
+        if (frontal && closing > 24 && !v.hitT) { pcCrash(clamp((closing - 24) / 30, 0.3, 1)); v.v = Math.max(v.v, PC.v * 0.5); v.push = Math.sign(dx || 1) * 3; v.hitT = 0.6; }
+        else if (frontal) { PC.v = Math.max(0, Math.min(PC.v, v.v) - 2); PC.vx = -Math.sign(dx || 1) * 3.5; v.v += 1.5; v.push = Math.sign(dx || 1) * 1.5; v.hitT = 0.4; sfxThud(0.6); shake(0.3); sfxHorn(); }
+        else {
+          // a scrape along the side: shoved apart, a little speed scrubbed off, sparks, no drama
+          PC.vx = -Math.sign(dx || 1) * 4; PC.v *= 0.96; v.push = Math.sign(dx || 1) * 2; v.hitT = 0.3; sfxScrape(); shake(0.12);
+          if (typeof fxScrape === 'function') fxScrape(-Math.sign(dx || 1));
+        }
       }
       if (!v.passed && ds < -2 && Math.abs(dx) < 4.5) { v.passed = true; sfxPass(clamp((PC.v - v.v) / 20, 0.3, 1), clamp(dx / 4, -1, 1)); RACE.score += Math.abs(dx) < 2.6 ? 300 : 100; }
     }
@@ -4254,8 +4265,6 @@ function trafficUpdate(dt) {
 // a vehicle on screen: a soft shadow, the picture, its brake lights glowing when it slows
 function drawVehicle(v, x, y, k, clip, fog) {
   const S = v.spr; if (!S) return;
-  // close by, traffic grows toward the player's own oversized sprite
-  k *= 1 + 0.32 * clamp((60 - FOC / k) / 50, 0, 1);
   const hpx = S.wh * k, wpx = hpx * S.w / S.h;
   if (y - hpx >= clip || x + wpx < 0 || x - wpx > RW) return;
   if (y <= clip) { VG.fillStyle = 'rgba(0,0,0,0.28)'; VG.beginPath(); VG.ellipse(x, y - 0.5, wpx * 0.56, Math.max(1, wpx * 0.1), 0, 0, TAU); VG.fill(); }
@@ -4668,6 +4677,12 @@ function fxInit() {
     px.outline(C[1]);
     FX.img[k] = px.toCanvas();
   }
+}
+// sparks thrown from the side of the car in a scrape, on the side it touched
+function fxScrape(side) {
+  if (PC.scrX == null) return;
+  const bx = PC.scrX + side * (PC.scrBW || 120) * 0.5, by = PC.scrY - 10;
+  for (let k = 0; k < 10; k++) puff(bx + Math.random() * 4, by - Math.random() * 14, side * (40 + Math.random() * 120), 40 + Math.random() * 120, 2, 3, 0.15 + Math.random() * 0.2, 'sparks', 1);
 }
 function fxReset() { FX.puffs.length = 0; FX.marks.length = 0; FX.cur = null; }
 // one puff: screen position, velocity (px/s), size (px), life (s), kind
@@ -5449,6 +5464,7 @@ window.__kr = {
   atlas(i) { return ATLAS.pages[i || 0].lv[0].toDataURL('image/png'); },
   // one fixed step with a drawn frame, for recording: returns the game screen as a PNG data URL
   step(dt) { const steps = Math.max(1, Math.ceil(dt / 0.02)), h = dt / steps; for (let i = 0; i < steps; i++) tick(h); if (G.state === 'race') { updateCamera(dt); updateBackdrop(); uiFrame(); } render(); drawHud(dt); return view.toDataURL('image/png'); },
+  spawn(type, ds, x, v) { const p = PC.piece, veh = spawnVehicle(p, PC.s + ds, false); veh.type = type; const set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan; veh.spr = SPR[set.rear[0]]; const T = VTYPES[type] || VTYPES.sedan; veh.len = T.len; veh.wid = T.wid; veh.x = x; veh.v = veh.v0 = v == null ? veh.v : v; TRAFFIC.list.push(veh); return veh.spr.name; },
   cars() { const W = CFW, H = CFH, c = canvas(W * 5, H * 2 + H * 2), x = c.getContext('2d'); CARS.forEach((sp, i) => { const s = carSprites(sp); x.drawImage(s.frames[2][i & 1][0], (i % 5) * W, Math.floor(i / 5) * H); }); const s0 = carSprites(CARS[0]); s0.frames.forEach((row, k) => { x.drawImage(row[0][0], k * W, H * 2); x.drawImage(row[1][1], k * W, H * 3); }); return c.toDataURL('image/png'); },
   sheet(i) { const s = carSprites(CARS[i]), sd = carSide(CARS[i]); const c = canvas(Math.max(s.w * 5, sd.width), s.h * 2 + sd.height + 8); const x = c.getContext('2d'); s.frames.forEach((row, k) => { x.drawImage(row[0][0], k * s.w, 0); x.drawImage(row[1][1], k * s.w, s.h); }); x.drawImage(sd, 0, s.h * 2 + 8); return c.toDataURL('image/png'); },
 };
