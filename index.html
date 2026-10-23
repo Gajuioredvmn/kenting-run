@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>衝向墾丁</title>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>衝向寶島 FORMOSA RUN</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#120c2a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -114,10 +114,13 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
 .vmenu{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:min(280px,80vw);padding:22px}
 .res-banner{font:400 clamp(30px,8vh,64px)/1 var(--font-num);text-align:center;transform:skewX(-10deg);letter-spacing:.08em;margin:0 0 .2em;filter:drop-shadow(0 4px 0 #140c2a)}
+.res-body{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:center;justify-content:center}.res-body>table.sp{flex:1 1 260px;min-width:0}
+.cmap-box{flex:1 1 250px;max-width:400px;margin:0 auto}.cmap{display:block;width:100%;height:auto;font-family:var(--font-ui)}
 .res-sub{text-align:center;font:700 clamp(13px,2.2vh,16px)/1.4 var(--font-ui);color:var(--cream);margin:0 0 .8em}
 table.sp{width:100%;border-collapse:collapse;font:700 clamp(12px,2vh,15px)/1.5 var(--font-ui)}
 table.sp td{padding:3px 6px;border-bottom:1px solid rgba(255,243,220,.12)}
-table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff}
+table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-space:nowrap}
+.via{font-size:.78em;font-weight:400;opacity:.72;line-height:1.3}
 .new{color:var(--lime);font:400 11px var(--font-pix);margin-left:8px;animation:blink .6s steps(2,end) infinite}
 .rng{width:100%;accent-color:var(--sun)}
 @media (max-height:430px){.sel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}.desc{display:none}.thumbs button{width:52px}}
@@ -490,6 +493,87 @@ function drawBackdrop(g, set, camAz, t, alpha) {
   drawLayer(g, set.near, camAz, 1.12, HY - L_NEAR.hz, alpha);
 }
 
+// ===================== the far country of the other stages: plains, cloud seas, the gorge, the north coast, Taipei =====================
+const WHITE_FAR = [0x7a8aa0, 0x94a4b8, 0xb0bccc, 0xc8d2de, 0xdde4ec], SNOW_FAR = [0x6a7a98, 0x8a9ab4, 0xb4bccc, 0xdadfe8, 0xf4f6f8], MARBLE = [0x5a6068, 0x7a8088, 0x9aa0a8, 0xb8bcc4, 0xd4d8dc];
+function panoPut(img) { const W = img.width, d = img.data; return (x, y, c) => { if (y < 0 || y >= img.height) return; x = ((x % W) + W) % W; const i = (y * W + x) * 4; d[i] = (c >> 16) & 255; d[i + 1] = (c >> 8) & 255; d[i + 2] = c & 255; d[i + 3] = 255; }; }
+// 台北101: the stacked pagoda of glass, eight tiers flaring out, the spire; drawn at an azimuth on the near layer
+function paintTower101(img, hz, az) {
+  const put = panoPut(img), xc = Math.floor(azX(az)), K = PXK * 1.3, g = [0x1a3a48, 0x2a5a68, 0x3a7a88, 0x6ab0c0];
+  const blk = (bx, bw, y0, y1, flare) => { for (let y = Math.round(y0 * K); y < Math.round(y1 * K); y++) { const t = (y - y0 * K) / Math.max(1, (y1 - y0) * K), w = Math.round(bw + (flare ? t * 3 : 0)); for (let x = -w; x <= w; x++) { const edge = Math.abs(x) === w; let c = edge ? g[0] : x < -w * 0.3 ? g[3] : x < w * 0.3 ? g[2] : g[1]; if (!edge && y % 2 === 0) c = shadeHex(c, 0.82); put(xc + bx + x, hz - y, c); } } };
+  blk(0, 11, 0, 34, false);
+  for (let k = 0; k < 8; k++) blk(0, 7, 34 + k * 9, 34 + k * 9 + 9, true);
+  blk(0, 4, 106, 114, false);
+  for (let y = Math.round(114 * K); y < Math.round(132 * K); y++) put(xc, hz - y, 0xd8dce0);
+  put(xc, hz - Math.round(132 * K), 0xff3a3a);
+}
+Object.assign(PANO_PAINT, {
+  // 台南平原: flat to the west, the sea a thin line; the foothills of the Alishan range far to the east
+  tainan(F, N) {
+    paintRange(F.img, F.hz, { az0: -112, az1: 20, base: 8, amp: 30, rough: 3.2, seed: 81.3, peaks: [[-40, 8, 14]], pal: BLUE_FAR, haze: 0xdbe6ea, tex: 0.3, mist: 0.6 });
+    paintBelow(F.img, F.hz, [[-180, 60, 0x9ab86a, 0x8aa85a], [60, 180, 0x5aa6c4, 0x4a98bc]]);
+    paintSkyline(N.img, N.hz, -20, 30, { seed: 83, base: 1, amp: 10 });
+  },
+  // 阿里山: peaks stand out of a sea of cloud, the far ones blue, the near ones dark with cypress
+  alishan(F, N) {
+    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 30, amp: 60, rough: 2.6, seed: 91.1, peaks: [[-60, 14, 30], [20, 10, 24], [120, 12, 20]], pal: BLUE_FAR, haze: 0xe4ecf2, tex: 0.3, mist: 0.3 });
+    paintRange(N.img, N.hz, { az0: -120, az1: 60, base: 14, amp: 46, rough: 4, seed: 92.2, peaks: [[-30, 8, 30]], pal: [0x163a24, 0x1e4e2e, 0x2a6238, 0x3a7a46, 0x529458], haze: 0xdfe8ee, tex: 1, mist: 0.25, sunAz: 40 });
+    paintBelow(F.img, F.hz, [[-180, 180, 0xeef2f6, 0xe4eaf0]]);
+  },
+  // 台中: the city low along the horizon, 大肚山 to the west, the Strait beyond with the windmills of 高美 far off
+  taichung(F, N) {
+    paintRange(F.img, F.hz, { az0: -112, az1: 24, base: 10, amp: 36, rough: 3.1, seed: 101.4, peaks: [[-30, 9, 18]], pal: BLUE_FAR, haze: 0xd8e2ea, tex: 0.3, mist: 0.55 });
+    paintRange(F.img, F.hz, { az0: 100, az1: 170, base: 3, amp: 12, rough: 3, seed: 102.2, pal: GREEN_FAR, haze: 0xd4e0e8, tex: 0.5, mist: 0.4 });
+    paintBelow(F.img, F.hz, [[-180, 70, 0x9aa89a, 0x8a988a], [70, 180, 0x5aa6c4, 0x4a98bc]]);
+    paintSkylineCity(N.img, N.hz, -40, 30, { seed: 103, towerAz: 400 });
+  },
+  // 南投: the lake lies in its bowl of mountains, 拉魯島 a dot on it, ridges rising on every side
+  nantou(F, N) {
+    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 22, amp: 52, rough: 2.9, seed: 111.5, peaks: [[-80, 12, 26], [10, 10, 22], [100, 12, 18]], pal: BLUE_FAR, haze: 0xd8e4ec, tex: 0.35, mist: 0.4 });
+    paintRange(N.img, N.hz, { az0: -140, az1: 100, base: 6, amp: 30, rough: 4, seed: 112.1, pal: GREEN_HILL, haze: 0xc8dce0, tex: 1, mist: 0.4, sunAz: 50 });
+    paintBelow(F.img, F.hz, [[-180, 180, 0x3a8aa0, 0x368298]]);
+  },
+  // 清境・合歡山: bare high ridges, grey rock and pale grass, higher than the clouds
+  cingjing(F, N) {
+    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 34, amp: 70, rough: 2.4, seed: 121.7, peaks: [[-40, 16, 40], [40, 12, 34], [140, 10, 24]], pal: SNOW_FAR, haze: 0xe6ecf2, tex: 0.4, mist: 0.2 });
+    paintRange(N.img, N.hz, { az0: -130, az1: 80, base: 10, amp: 40, rough: 3.6, seed: 122.3, pal: [0x6a7050, 0x8a8e60, 0xa8ac70, 0xc4c484, 0xdcd89c], haze: 0xdfe6ec, tex: 1, mist: 0.2, sunAz: 60 });
+    paintBelow(F.img, F.hz, [[-180, 180, 0xe8eef2, 0xdce4ea]]);
+  },
+  // 花東縱谷: the Central Range a wall to the west, the Coastal Range lower to the east, the valley floor between
+  taitung(F, N) {
+    paintRange(F.img, F.hz, { az0: -112, az1: 40, base: 26, amp: 64, rough: 2.8, seed: 131.2, peaks: [[-50, 14, 36], [-10, 10, 28]], pal: BLUE_FAR, haze: 0xdce6ec, tex: 0.35, mist: 0.35 });
+    paintRange(F.img, F.hz, { az0: 90, az1: 180, base: 8, amp: 24, rough: 3.4, seed: 132.6, pal: GREEN_FAR, haze: 0xd8e4ea, tex: 0.5, mist: 0.4 });
+    paintRange(N.img, N.hz, { az0: -100, az1: 20, base: 4, amp: 26, rough: 4.2, seed: 133.3, pal: GREEN_HILL, haze: 0xcadce0, tex: 1, mist: 0.45, sunAz: 120 });
+    paintBelow(F.img, F.hz, [[-180, 180, 0x8ac050, 0x7ab446]]);
+  },
+  // 太魯閣: marble walls close on both sides, the sky a crack above
+  hualien(F, N) {
+    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 40, amp: 70, rough: 2.2, seed: 141.9, peaks: [[-60, 14, 44], [50, 12, 40]], pal: MARBLE, haze: 0xe2e6ea, tex: 0.5, mist: 0.2 });
+    paintRange(N.img, N.hz, { az0: -150, az1: 150, base: 30, amp: 60, rough: 3.8, seed: 142.4, peaks: [[-20, 8, 40], [90, 10, 30]], pal: [0x4a4e56, 0x6a6e76, 0x8a8e96, 0xaaaeb6, 0xc8ccd2], haze: 0xdfe3e8, tex: 1, mist: 0.15, sunAz: 20 });
+    paintBelow(F.img, F.hz, [[-180, 180, 0x9a9ea4, 0x8e9298]]);
+  },
+  // 北海岸: the sea on the right with 基隆嶼 standing off it; the 大屯 volcanoes green behind to the left
+  northcoast(F, N) {
+    paintRange(F.img, F.hz, { az0: -130, az1: 10, base: 10, amp: 40, rough: 3.2, seed: 151.1, peaks: [[-50, 10, 26], [-90, 8, 18]], pal: BLUE_FAR, haze: 0xd8e2ea, tex: 0.3, mist: 0.5 });
+    paintRange(F.img, F.hz, { az0: 70, az1: 86, base: 1, amp: 9, rough: 2, seed: 152.2, peaks: [[78, 3, 9]], pal: [0x4a6a74, 0x5a7a84, 0x6a8a94, 0x7a9aa4], haze: 0xd8e2ea, tex: 0.3, mist: 0.3 });
+    paintRange(N.img, N.hz, { az0: -110, az1: 0, base: 6, amp: 28, rough: 4, seed: 153.3, pal: GREEN_HILL, haze: 0xcadce0, tex: 1, mist: 0.4, sunAz: 30 });
+    paintBelow(F.img, F.hz, [[-180, 20, 0x7a9a6a, 0x6a8a5a], [20, 180, 0x3a90b8, 0x3086ae]]);
+  },
+  // 宜蘭: the plain opening out, the Snow Mountains behind to the west, 龜山島 standing off the coast to the east
+  yilan(F, N) {
+    paintRange(F.img, F.hz, { az0: -130, az1: 20, base: 18, amp: 56, rough: 2.8, seed: 171.3, peaks: [[-70, 12, 30], [-20, 10, 26]], pal: BLUE_FAR, haze: 0xd8e2ea, tex: 0.35, mist: 0.45 });
+    paintRange(F.img, F.hz, { az0: 62, az1: 84, base: 1, amp: 11, rough: 2.2, seed: 172.5, peaks: [[70, 5, 11]], pal: [0x3a5a68, 0x4a6a78, 0x5a7a88, 0x6a8a98], haze: 0xd8e2ea, tex: 0.3, mist: 0.3 });
+    paintRange(N.img, N.hz, { az0: -120, az1: -10, base: 4, amp: 24, rough: 4, seed: 173.1, pal: GREEN_HILL, haze: 0xcadce0, tex: 1, mist: 0.45, sunAz: 30 });
+    paintBelow(F.img, F.hz, [[-180, 30, 0x8ac050, 0x7ab446], [30, 180, 0x3a90b8, 0x3086ae]]);
+  },
+  // 台北: the basin's hills around, the city filling the view, 101 tall over it all
+  taipei(F, N) {
+    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 14, amp: 40, rough: 3, seed: 161.6, peaks: [[-70, 10, 22], [60, 12, 24], [150, 8, 16]], pal: BLUE_FAR, haze: 0xd6dee6, tex: 0.3, mist: 0.5 });
+    paintBelow(F.img, F.hz, [[-180, 180, 0x9aa0a8, 0x8e949c]]);
+    paintSkylineCity(N.img, N.hz, -60, 60, { seed: 163, towerAz: 400 });
+    paintTower101(N.img, N.hz, 6);
+  },
+});
+
 // ===================== road: stage pieces, centreline, forks =====================
 // A stage is a list of sections (length, peak curvature, rise, cross-section, what lies on each side).
 // A Piece is one stage laid into the world from a start point; forks hang two child pieces off the end.
@@ -662,18 +746,52 @@ const SIDE_BANDS = {
 const CROPS = [[0x9ccc48, 0x92c242], [0x78b23e, 0x70a83a], [0xd8c262, 0xcfb85a], [0xb48e5e, 0xaa8456], [0x8cc452, 0x84ba4c], [0xa8d468, 0x9ec962]];
 function sideBands(type) { return SIDE_BANDS[type] || SIDE_BANDS.grass; }
 
-// ===================== the route: 高雄港 → 海線 / 山線 → 枋山海岸 → 墾丁 / 貓鼻頭 =====================
-// section: len (m), k peak curvature (1/m, + turns right), dy rise (m), lanes, L / R side types,
-// tags: what the scenery builder places along it. Forks: children [left, right].
-// one clock for every stage: the first is straight and quiet, so the same seconds get tighter as the road climbs,
+// ===================== more ground beside the road, for the rest of the island =====================
+Object.assign(SIDE_BANDS, {
+  // 稻田: the paddies of the plain and the valley, water glinting between the rows
+  paddy: [VERGE, BAND(3, 0xa89e74, 0xa0966c, 6), BAND(1e9, 0x8cc850, 0x7ab844, 3, 3, [0xd8f0ff, 0xf4ffd8], 1.2)],
+  // 鹽田: salt pans, pale and pink, dark dikes between them
+  salt: [VERGE, BAND(2.6, 0x8a8278, 0x807870, 4), BAND(1e9, 0xf0ecf2, 0xe2dce6, 6, 0, [0xffffff, 0xd8ccd8], 2.5)],
+  // 茶園: tea terraces in close rows across the slope
+  tea: [VERGE, BAND(1e9, 0x62a846, 0x549a3c, 1.4, 0, [0x3f8a36, 0x9ad070], 1.5)],
+  // 鳳梨田: pineapple fields, dusty green with the fruit's yellow crowns
+  pineapple: [VERGE, BAND(1e9, 0x8aa84a, 0x7e9c42, 2.2, 3, [0xd8b040, 0x6a8a2a], 2.2)],
+  // 金針花: daylily fields, orange over the hills of 太麻里
+  daylily: [VERGE, BAND(1e9, 0xe8a020, 0xd89418, 2, 0, [0xffd060, 0x9ab040], 3)],
+  // 高麗菜: cabbage fields on the high slopes
+  cabbage: [VERGE, BAND(1e9, 0x9ad488, 0x8cc87c, 1.6, 0, [0xd8f0c8, 0x5a9a4a], 2.2)],
+  // 高山草原: the alpine meadow, yellow-green and sparse
+  highland: [BAND(1.2, 0xb8b09a, 0xaea68f, 4), BAND(1e9, 0xb8c86a, 0xaabc60, 8, 0, [0x8a9a4a, 0xd8e090], 1)],
+  // 大理石峽谷: pale marble scree and the river far below
+  gorge: [BAND(0.8, 0x9a9690, 0x8e8a84, 4), BAND(14, 0xb8b4b0, 0xaaa6a2, 4, 5, [0x6a6660, 0xe8e4e0], 5), BAND(1e9, 0x3a8ab0, 0x3482a8, 14, 1, [0xe8f8ff, 0x8ad0e0], 0.6)],
+  // 日月潭: a pebble shore and the still green-blue of the lake
+  lake: [VERGE, BAND(4, 0xa8a090, 0x9e9686, 3, 5, [0x7a7268, 0xd8d0c0], 3), BAND(1e9, 0x3a90a8, 0x3688a0, 14, 1, [0xe8f8ff, 0x8ad0e0], 0.5)],
+  // 七星潭: the grey pebble beach, then the Pacific
+  pebble: [BAND(1.4, 0x8cc050, 0x84b64a, 4), BAND(16, 0x9a9a98, 0x8e8e8c, 3, 5, [0x6a6a68, 0xd0d0cc], 5), SURF(19), ...shiftBands(SEA_BANDS, 19)],
+  // 甘蔗: cane fields, tall and tasselled
+  cane: [VERGE, BAND(1e9, 0x7ab040, 0x6ea438, 2.6, 3, [0xd8d090, 0x4a8a2a], 1.6)],
+  // 高美濕地: mudflats to the sea, the tide out
+  mudflat: [BAND(2, 0x8cc050, 0x84b64a, 4), BAND(34, 0x8a8470, 0x7e7864, 6, 5, [0x5a5a50, 0xc8c0a8], 3), SURF(37), ...shiftBands(SEA_BANDS, 37)],
+  // 魚塭 of the west coast: milkfish ponds, flatter and wider than the ones in 屏東
+  milkfish: [VERGE, BAND(3.5, 0xa89e74, 0xa0966c, 6), BAND(60, 0x6a9a90, 0x62928a, 10, 1, [0xd8f0e8, 0x8ac0b0], 0.8), BAND(63, 0xa89e74, 0xa0966c, 6), BAND(1e9, 0x6a9a90, 0x62928a, 10, 1, [0xd8f0e8, 0x8ac0b0], 0.8)],
+  // 河岸: the river beside the road, the far bank green
+  river: [VERGE, BAND(5, 0xb0a88e, 0xa8a086, 6, 5, [0x8a8270, 0xd8d0b8], 2), BAND(120, 0x4a98b0, 0x4490a8, 14, 1, [0xe8f8ff, 0x8ad0e0], 0.6), BAND(1e9, 0x6a9a4a, 0x649246, 8)],
+});
+
+// ===================== the route: 高雄港 out across the island, a fork at the end of every stage =====================
+// section: len (m), k peak curvature (1/m, + turns right), dy rise (m), roll [amp, waves] rollers inside the section,
+// lanes, L / R side types, tags: what the scenery builder places along it. Forks: children [left, right].
+// The tree is OutRunners': 1 → 2 → 4 → 5 → 10, the middle stages of each row reached from two parents.
+// One clock for every stage: the first is straight and quiet, so the same seconds get tighter as the road climbs,
 // twists and fills up — the way the arcade did it
 const STAGE_TIME = 95;
 const STAGES = {
+  // ---------------------------------------------------------------- row 1 ----------------------------------------------------------------
   s1: {
     label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: STAGE_TIME,
     traffic: { per100: 1.3, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1, suv: 1, wagon: 1 } },
-    children: ['s2b', 's2a'],
-    sign: { L: ['山線', '國3・沿山公路', '三地門・大武山'], R: ['海線・旗津', '過港隧道・東港', '大鵬灣'] },
+    children: ['s2n', 's2s'],
+    sign: { L: ['北上・台南', '台1線', '橋頭糖廠・赤崁樓'], R: ['南下・旗津', '過港隧道', '東港・屏東'] },
     sections: [
       { len: 420, k: 0, lanes: 4, sh: 2.6, shl: 2.2, L: 'city', R: 'harbor', tags: ['start', 'qilou', 'kerbtrees', 'promenade', 'cranes', 'ships', 'tower85sign'] },
       { len: 560, k: 0.0028, dy: 5, L: 'city', R: 'harbor', tags: ['qilou', 'kerbtrees', 'pier2', 'kpmc', 'harborbridge', 'cranes'] },
@@ -686,91 +804,367 @@ const STAGES = {
       { len: 380, k: 0.0032, dy: -20, L: 'water', R: 'grass', tags: ['pagodas', 'lamps', 'airport'] },
       { len: 700, k: -0.0035, dy: 8, roll: [5, 2], L: 'town', R: 'grass', tags: ['airport', 'plane', 'betelstand', 'palmgroup'] },
       { len: 620, k: 0.005, dy: -8, L: 'industrial', R: 'industrial', tags: ['refinery', 'chimney', 'lamps'] },
-      { len: 520, k: -0.0028, dy: 4, L: 'grass', R: 'grass', tags: ['palmgroup', 'forksign'] },
+      { len: 520, k: -0.0028, dy: 4, L: 'grass', R: 'grass', tags: ['palmgroup'] },
     ],
   },
-  s2a: {
-    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: STAGE_TIME,
-    traffic: { per100: 1.8, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 1, pickup: 1, suv: 1, rebar: 1 } },
-    next: 's3',
+  // ---------------------------------------------------------------- row 2 ----------------------------------------------------------------
+  // 北上: the sugar line through 橋頭, the plain of 台南, 關廟 pineapples, into the old capital
+  s2n: {
+    label: '台南・台1線北上', name: '台南', en: 'TAINAN', tod: ['day', 'day'], pano: 'tainan', clouds: 17, time: STAGE_TIME,
+    traffic: { per100: 1.7, mix: { scooter: 3, sedan: 3, bluetruck: 3, pickup: 1, bus: 1, gravel: 1, wagon: 1 } },
+    children: ['s3w', 's3m'],
+    sign: { L: ['海線・北門鹽水', '台17', '鹿港'], R: ['山線・嘉義', '台3', '阿里山'] },
+    sections: [
+      { len: 320, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'industrial', tags: ['checkpoint', 'townhouse', 'lamps', 'okgoat'] },
+      { len: 520, k: 0.0026, dy: 4, L: 'cane', R: 'cane', tags: ['sugarfactory', 'sugartrain', 'betelstand'] },
+      { len: 460, k: -0.0034, dy: -4, roll: [4, 2], L: 'farm', R: 'cane', tags: ['farmhouse', 'tomato', 'temple'] },
+      { len: 480, k: 0.0048, dy: 10, L: 'pineapple', R: 'pineapple', tags: ['pineapples', 'farmhouse', 'betel'] },
+      { len: 440, k: -0.0045, dy: -10, L: 'paddy', R: 'farm', tags: ['paddies', 'bigtemple', 'betelstand'] },
+      { len: 420, k: 0.001, dy: 6, L: 'town', R: 'town', tags: ['townhouse', 'parade_xigang', 'lamps'] },
+      { len: 480, k: -0.0052, dy: -6, roll: [5, 2], L: 'farm', R: 'milkfish', tags: ['farmhouse', 'ponds', 'mango'] },
+      { len: 480, k: 0.0042, L: 'city', R: 'city', tags: ['qilou', 'chikan', 'lamps', 'kerbtrees'] },
+      { len: 420, k: -0.003, L: 'city', R: 'grass', tags: ['qilou', 'confucius', 'lamps'] },
+      { len: 300, k: 0, L: 'grass', R: 'farm', tags: ['palmgroup', 'betelstand'] },
+    ],
+  },
+  // 南下: through the harbour tunnel to 旗津, the church and the windmills, the Linyuan stacks, down to 東港
+  s2s: {
+    label: '旗津・台17海線', name: '旗津海線', en: 'CIJIN COAST', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: STAGE_TIME,
+    traffic: { per100: 1.7, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 1, pickup: 1, suv: 1, rebar: 1 } },
+    children: ['s3sm', 's3se'],
+    sign: { L: ['山線・沿山公路', '三地門・大武山', '南迴'], R: ['海線・東港', '大鵬灣', '枋山'] },
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'harbor', tags: ['checkpoint', 'townhouse', 'tunnelsign', 'lamps'] },
-      { len: 300, k: 0.0008, dy: -18, L: 'cut', R: 'cut', tags: ['tunnel', 'portal'] },
-      { len: 300, k: -0.0008, dy: 18, L: 'cut', R: 'cut', tags: ['tunnel'] },
-      { len: 460, k: -0.0025, roll: [6, 2], L: 'grass', R: 'beach', tags: ['cijin', 'bathers', 'lamps'] },
-      { len: 460, k: 0.0045, dy: 9, L: 'harbor', R: 'bay', tags: ['rainbowchurch', 'windmills', 'bathers', 'ferry', 'seafood'] },
-      { len: 420, k: 0.0012, dy: 24, L: 'water', R: 'water', bridge: 'girder', tags: ['bridgelamps', 'sandbars'] },
-      { len: 480, k: -0.0055, dy: -33, L: 'farm', R: 'farm', tags: ['farmhouse', 'betel', 'betelstand', 'banana'] },
-      { len: 460, k: 0.0055, L: 'town', R: 'harbor', tags: ['townhouse', 'templegate', 'fishboats', 'seafood', 'tuna', 'lamps'] },
-      { len: 380, k: -0.003, dy: 15, roll: [10, 2], L: 'water', R: 'beach', tags: ['mangrove', 'sailboat', 'palmgroup', 'circuit'] },
-      { len: 300, k: 0, dy: 21, L: 'water', R: 'water', bridge: 'bascule', tags: ['bridgelamps', 'sailboat', 'dapeng'] },
-      { len: 340, k: -0.006, dy: -36, L: 'water', R: 'beach', tags: ['mangrove', 'palmgroup', 'liuqiu'] },
-      { len: 340, k: 0.0048, dy: 12, L: 'fishpond', R: 'fishpond', tags: ['ponds', 'betel', 'farmhouse'] },
-      { len: 400, k: 0.0065, dy: -12, L: 'orchard', R: 'beach', tags: ['waxapple', 'oysters', 'palmgroup', 'tetrapods'] },
-      { len: 280, k: -0.0025, L: 'town', R: 'town', tags: ['townhouse', 'betelstand'] },
+      { len: 300, k: 0.0008, dy: -12, L: 'cut', R: 'cut', tags: ['tunnel', 'portal'] },
+      { len: 300, k: -0.0008, dy: 12, L: 'cut', R: 'cut', tags: ['tunnel'] },
+      { len: 420, k: -0.0025, roll: [4, 2], L: 'grass', R: 'beach', tags: ['cijin', 'bathers', 'lamps'] },
+      { len: 440, k: 0.0045, dy: 6, L: 'harbor', R: 'bay', tags: ['rainbowchurch', 'windmills', 'bathers', 'ferry', 'seafood'] },
+      { len: 420, k: 0.0012, dy: 16, L: 'water', R: 'water', bridge: 'girder', tags: ['bridgelamps', 'sandbars'] },
+      { len: 420, k: -0.0055, dy: -22, L: 'industrial', R: 'industrial', tags: ['refinery', 'chimney', 'lamps'] },
+      { len: 440, k: 0.0055, L: 'farm', R: 'fishpond', tags: ['farmhouse', 'ponds', 'betelstand'] },
+      { len: 420, k: -0.003, dy: 10, roll: [6, 2], L: 'water', R: 'beach', tags: ['mangrove', 'sailboat', 'palmgroup', 'circuit'] },
+      { len: 480, k: 0.0048, dy: -10, L: 'town', R: 'harbor', tags: ['townhouse', 'templegate', 'fishboats', 'seafood', 'lamps'] },
+      { len: 320, k: -0.002, L: 'grass', R: 'grass', tags: ['palmgroup', 'betelstand'] },
     ],
   },
-  s2b: {
-    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: STAGE_TIME,
+  // ---------------------------------------------------------------- row 3 ----------------------------------------------------------------
+  // 西海岸: salt pans and fish ponds, the crystal church, 布袋 harbour, up into 鹿港's old streets
+  s3w: {
+    label: '北門・鹿港海線', name: '鹿港', en: 'LUKANG COAST', tod: ['day', 'day'], pano: 'tainan', clouds: 29, time: STAGE_TIME,
+    traffic: { per100: 1.8, mix: { scooter: 3, sedan: 3, bluetruck: 3, gravel: 2, bus: 1, pickup: 2, logs: 1 } },
+    children: ['s4a', 's4b'],
+    sign: { L: ['台中・大甲', '台1', '高美濕地'], R: ['南投・集集', '台16', '日月潭'] },
+    sections: [
+      { len: 320, k: 0, lanes: 3, sh: 2.4, L: 'milkfish', R: 'salt', tags: ['checkpoint', 'ponds', 'lamps'] },
+      { len: 560, k: 0.003, dy: 3, L: 'salt', R: 'salt', tags: ['saltmountain', 'saltworks'] },
+      { len: 480, k: -0.0045, dy: -3, roll: [3, 2], L: 'water', R: 'milkfish', tags: ['crystalchurch', 'ponds', 'oysters'] },
+      { len: 420, k: 0.005, L: 'town', R: 'town', tags: ['townhouse', 'beehive', 'wangye', 'lamps'] },
+      { len: 560, k: -0.0052, dy: 8, L: 'harbor', R: 'fishpond', tags: ['budai', 'fishboats', 'oysters', 'seafood'] },
+      { len: 520, k: 0.0036, dy: -8, roll: [5, 3], L: 'paddy', R: 'paddy', tags: ['paddies', 'farmhouse', 'temple'] },
+      { len: 480, k: -0.006, dy: 6, L: 'farm', R: 'milkfish', tags: ['farmhouse', 'ponds', 'betelstand'] },
+      { len: 560, k: 0.0045, dy: -6, L: 'town', R: 'town', tags: ['townhouse', 'lukang', 'lamps'] },
+      { len: 400, k: 0, L: 'grass', R: 'farm', tags: ['palmgroup'] },
+    ],
+  },
+  // 嘉義・阿里山: the fountain and chicken rice, then up through tea, 奮起湖, the railway and the great cypresses in cloud
+  s3m: {
+    label: '嘉義・阿里山公路', name: '阿里山', en: 'ALISHAN', tod: ['day', 'day'], pano: 'alishan', clouds: 31, time: STAGE_TIME,
+    traffic: { per100: 1.6, mix: { scooter: 2, sedan: 3, bus: 3, bluetruck: 2, pickup: 1, suv: 2, logs: 2 } },
+    children: ['s4b', 's4c'],
+    sign: { L: ['南投・日月潭', '台21', '集集'], R: ['花東縱谷', '南迴・台9', '台東'] },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.4, L: 'city', R: 'city', tags: ['checkpoint', 'qilou', 'fountain', 'chickenrice', 'lamps'] },
+      { len: 520, k: 0.0028, dy: 12, L: 'farm', R: 'paddy', tags: ['paddies', 'parade_xingang', 'farmhouse'] },
+      { len: 560, k: -0.0048, dy: 30, roll: [5, 2], L: 'tea', R: 'hills', tags: ['teafarm', 'betel'] },
+      { len: 480, k: 0.0062, dy: 36, lanes: 2, sh: 1.2, shl: 1.2, track: true, train: 'ali', L: 'mountain', R: 'tea', tags: ['ontracks', 'teafarm', 'stonehouse'] },
+      { len: 440, k: -0.0066, dy: 24, lanes: 3, sh: 2.4, shl: 1.6, L: 'town', R: 'mountain', tags: ['fenqihu', 'townhouse', 'lamps'] },
+      { len: 520, k: 0.0055, dy: 42, L: 'mountain', R: 'mountain', tags: ['sakura', 'alitrain', 'coffee'] },
+      { len: 560, k: -0.006, dy: -20, roll: [7, 2], L: 'mountain', R: 'cliff', tags: ['cypress', 'guardR'] },
+      { len: 480, k: 0.0048, dy: -40, L: 'mountain', R: 'hills', tags: ['cypress', 'sakura'] },
+      { len: 400, k: 0, dy: -16, L: 'hills', R: 'grass', tags: ['palmgroup'] },
+    ],
+  },
+  // 屏東山線: the mountain road under 大武山, 佛光山, the cable bridge, the glass bridge, then the pass at 壽卡
+  s3sm: {
+    label: '屏東・沿山公路', name: '沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: STAGE_TIME,
     traffic: { per100: 1.7, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 2, suv: 1 } },
-    next: 's3',
+    children: ['s4c', 's4d'],
+    sign: { L: ['花東縱谷', '南迴・多良', '台東'], R: ['恆春半島', '199縣道', '牡丹・旭海'] },
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel', 'dawu'] },
-      { len: 640, k: 0.0028, dy: 15, roll: [8, 2], L: 'orchard', R: 'grass', tags: ['buddha', 'ferris', 'mangogroup', 'betelstand'] },
-      { len: 560, k: 0.001, dy: 30, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps', 'gaoping'] },
-      { len: 700, k: 0.0038, dy: -39, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand', 'wanluan'] },
-      { len: 480, k: -0.0055, dy: 27, sh: 1.8, L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
+      { len: 560, k: 0.0028, dy: 15, roll: [8, 2], L: 'orchard', R: 'grass', tags: ['buddha', 'ferris', 'mangogroup', 'betelstand'] },
+      { len: 480, k: 0.001, dy: 30, lanes: 3, sh: 3, L: 'riverbed', R: 'riverbed', bridge: 'cable', tags: ['bridgelamps', 'gaoping'] },
+      { len: 560, k: 0.0038, dy: -39, lanes: 3, sh: 2.4, L: 'farm', R: 'farm', tags: ['betelgrove', 'banana', 'farmhouse', 'betelstand', 'wanluan'] },
+      { len: 440, k: -0.0055, dy: 27, sh: 1.8, L: 'hills', R: 'farm', tags: ['betelgrove', 'temple', 'banana'] },
       { len: 460, k: 0.0065, dy: 48, L: 'mountain', R: 'hills', tags: ['tribalgate', 'stonehouse', 'betel', 'coffee'] },
       { len: 440, k: -0.006, dy: -48, L: 'mountain', R: 'orchard', tags: ['totem', 'mangogroup', 'stonehouse'] },
       { len: 320, k: 0, dy: 9, L: 'riverbed', R: 'riverbed', bridge: 'girder', tags: ['bridgelamps', 'glassbridge'] },
-      { len: 560, k: 0.005, dy: 36, roll: [10, 2], L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'tribalgate'] },
-      { len: 420, k: -0.004, dy: -45, L: 'hills', R: 'orchard', tags: ['mangogroup', 'betelstand', 'temple'] },
+      { len: 480, k: 0.005, dy: 36, roll: [10, 2], L: 'mountain', R: 'orchard', tags: ['mangogroup', 'betel', 'coffee', 'shouka'] },
+      { len: 340, k: -0.004, dy: -30, L: 'hills', R: 'orchard', tags: ['mangogroup', 'betelstand', 'temple'] },
     ],
   },
-  s3: {
-    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: STAGE_TIME,
-    traffic: { per100: 2.0, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 2, pickup: 1, rebar: 1, logs: 1, wagon: 1 } },
-    children: ['s4a', 's4b'],
-    sign: { L: ['恆春・墾丁', '台26', '鵝鑾鼻'], R: ['海生館', '濱海公路', '貓鼻頭'] },
+  // 屏東海線: 東港's bluefin and the king boat, the bay bridge, 林邊 wax apples, 佳冬's Hakka house, 枋寮, 枋山 mangoes
+  s3se: {
+    label: '東港・台17海線', name: '東港海線', en: 'DONGGANG COAST', tod: ['day', 'day'], pano: 'coast', clouds: 41, time: STAGE_TIME,
+    traffic: { per100: 1.8, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 2, pickup: 1, suv: 1, rebar: 1 } },
+    children: ['s4d', 's4e'],
+    sign: { L: ['恆春半島', '199縣道', '牡丹・旭海'], R: ['墾丁', '台26', '恆春・墾丁大街'] },
     sections: [
-      { len: 420, k: 0, lanes: 3, sh: 2.0, L: 'town', R: 'harbor', tags: ['checkpoint', 'station', 'townhouse', 'fishboats', 'lamps'] },
-      { len: 600, k: 0.0032, dy: 18, roll: [10, 2], L: 'slope', R: 'shore', tags: ['railway', 'mangostall'] },
-      { len: 480, k: -0.0045, dy: 36, L: 'slope', R: 'cliff', tags: ['coastplants', 'guardR'] },
-      { len: 420, k: 0.006, dy: -42, L: 'slope', R: 'shore', tags: ['mangostall'] },
-      { len: 600, k: -0.0036, dy: 12, roll: [11, 3], L: 'orchard', R: 'shore', tags: ['mangostall', 'mangogroup'] },
-      { len: 380, k: 0, L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand', 'fuan', 'sichongxi'] },
-      { len: 640, k: 0.0045, dy: 48, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
-      { len: 520, k: -0.0065, dy: -54, L: 'farm', R: 'shore', tags: ['onion', 'bigtemple'] },
-      { len: 300, k: 0, L: 'farm', R: 'grass', tags: ['palmgroup', 'forksign'] },
+      { len: 320, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'harbor', tags: ['checkpoint', 'townhouse', 'templegate', 'fishboats', 'tuna', 'lamps'] },
+      { len: 460, k: 0.0032, dy: 4, L: 'town', R: 'harbor', tags: ['parade_donggang', 'seafood', 'townhouse', 'lamps'] },
+      { len: 300, k: 0, dy: 14, L: 'water', R: 'water', bridge: 'bascule', tags: ['bridgelamps', 'sailboat', 'dapeng'] },
+      { len: 340, k: -0.006, dy: -24, L: 'water', R: 'beach', tags: ['mangrove', 'palmgroup', 'liuqiu'] },
+      { len: 460, k: 0.0048, dy: 8, roll: [4, 2], L: 'orchard', R: 'fishpond', tags: ['waxapple', 'linbian', 'ponds'] },
+      { len: 480, k: -0.0052, dy: -8, L: 'town', R: 'farm', tags: ['hakka', 'townhouse', 'farmhouse'] },
+      { len: 520, k: 0.0036, dy: 12, L: 'harbor', R: 'beach', tags: ['station', 'fishboats', 'tetrapods', 'oysters'] },
+      { len: 500, k: -0.0062, dy: -12, L: 'slope', R: 'shore', tags: ['mangostall', 'railway', 'mangogroup'] },
+      { len: 520, k: 0.0045, dy: 6, roll: [6, 2], L: 'orchard', R: 'shore', tags: ['mangostall', 'mangogroup', 'guardR'] },
+      { len: 300, k: 0, L: 'town', R: 'town', tags: ['townhouse', 'junction', 'betelstand', 'fuan', 'sichongxi'] },
     ],
   },
+  // ---------------------------------------------------------------- row 4 ----------------------------------------------------------------
+  // 台中・大甲: the great Buddha of 八卦山, the windmills on the mudflats of 高美, 鎮瀾宮 and the Mazu procession, 三義's carvers
   s4a: {
-    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: STAGE_TIME, goal: '鵝鑾鼻燈塔',
-    traffic: { per100: 2.2, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
+    label: '台中・大甲', name: '台中', en: 'TAICHUNG', tod: ['day', 'golden'], pano: 'taichung', clouds: 43, time: STAGE_TIME,
+    traffic: { per100: 2.1, mix: { scooter: 3, sedan: 4, bus: 2, bluetruck: 2, gravel: 1, suv: 2, wagon: 2, rebar: 1 } },
+    children: ['s5a', 's5b'],
+    sign: { L: ['淡水・台北', '台64', '台北101'], R: ['北海岸・野柳', '台2', '金山・女王頭'] },
     sections: [
-      { len: 560, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
-      { len: 440, k: 0.0036, dy: 9, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps', 'chuhuo', 'kentingarch'] },
-      { len: 900, k: -0.003, dy: -9, roll: [10, 3], L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat', 'nuke'] },
-      { len: 600, k: 0.0045, dy: 6, L: 'town', R: 'town', tags: ['nightmarket', 'neon', 'lamps'] },
-      { len: 780, k: -0.0055, dy: 42, roll: [8, 2], L: 'slope', R: 'beach', tags: ['sailrock', 'palmgroup', 'coastplants'] },
-      { len: 600, k: 0.0068, dy: -45, L: 'grass', R: 'cliff', tags: ['palmgroup', 'guardR', 'lighthouseview', 'longpan'] },
-      { len: 420, k: 0, dy: 9, L: 'plaza', R: 'plaza', tags: ['goal', 'lighthouse', 'palm', 'southpoint'] },
+      { len: 360, k: 0, lanes: 3, sh: 2.4, L: 'hills', R: 'town', tags: ['checkpoint', 'bagua', 'townhouse', 'lamps'] },
+      { len: 520, k: 0.0034, dy: 10, L: 'city', R: 'city', tags: ['qilou', 'kerbtrees', 'lamps', 'overpass'] },
+      { len: 480, k: -0.0048, dy: -10, roll: [4, 2], L: 'industrial', R: 'mudflat', tags: ['gaomei', 'windmills', 'boardwalk'] },
+      { len: 480, k: 0.0058, L: 'farm', R: 'mudflat', tags: ['windmills', 'farmhouse', 'oysters'] },
+      { len: 520, k: -0.0045, dy: 8, L: 'town', R: 'town', tags: ['zhenlan', 'parade_dajia', 'townhouse', 'lamps'] },
+      { len: 560, k: 0.0064, dy: 24, roll: [6, 2], L: 'hills', R: 'orchard', tags: ['sanyi', 'farmhouse', 'tung'] },
+      { len: 520, k: -0.006, dy: -22, L: 'hills', R: 'hills', tags: ['tung', 'hakkavillage', 'guardR'] },
+      { len: 480, k: 0.004, dy: 6, L: 'farm', R: 'paddy', tags: ['paddies', 'farmhouse', 'betelstand'] },
+      { len: 320, k: 0, L: 'grass', R: 'grass', tags: ['palmgroup'] },
     ],
   },
+  // 南投・集集: the branch line's little train and its wooden station, the green tunnel, the snake kiln, bananas and plums
   s4b: {
-    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: STAGE_TIME, goal: '貓鼻頭',
-    traffic: { per100: 2.0, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2, suv: 2, wagon: 1, logs: 1 } },
+    label: '南投・集集線', name: '南投', en: 'NANTOU', tod: ['day', 'golden'], pano: 'nantou', clouds: 47, time: STAGE_TIME,
+    traffic: { per100: 1.9, mix: { scooter: 2, sedan: 3, bus: 3, bluetruck: 2, pickup: 2, suv: 2, logs: 2, gravel: 1 } },
+    children: ['s5c', 's5d'],
+    sign: { L: ['日月潭', '台21', '水社碼頭'], R: ['清境農場', '台14甲', '合歡山・武嶺'] },
     sections: [
-      { len: 380, k: 0, lanes: 3, sh: 1.8, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup'] },
-      { len: 160, k: 0, dy: 6, L: 'water', R: 'water', bridge: 'cable', tags: [] },
-      { len: 520, k: 0.004, dy: -6, L: 'farm', R: 'beach', tags: ['palmgroup', 'tetrapods'] },
-      { len: 160, k: 0, L: 'water', R: 'water', bridge: 'cable', tags: [] },
-      { len: 520, k: -0.0045, dy: 12, roll: [8, 2], L: 'grass', R: 'beach', tags: ['aquarium', 'palmgroup'] },
-      { len: 620, k: 0.0058, dy: 42, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
-      { len: 760, k: -0.0065, dy: -45, L: 'hills', R: 'beach', tags: ['fishvillage', 'coral', 'palmgroup'] },
-      { len: 600, k: 0.0045, dy: 15, roll: [10, 3], L: 'hills', R: 'bay', tags: ['palmgroup', 'bathers', 'baisha'] },
-      { len: 480, k: -0.0058, dy: 45, L: 'grass', R: 'cliff', tags: ['guardR', 'coastplants', 'guanshan'] },
-      { len: 420, k: 0, dy: -9, L: 'plaza', R: 'cliff', tags: ['goal', 'catrock', 'pavilion'] },
+      { len: 360, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'river', tags: ['checkpoint', 'townhouse', 'lamps', 'jiji'] },
+      { len: 560, k: 0.003, dy: 12, lanes: 2, sh: 1.2, shl: 1.2, track: true, train: 'jiji', L: 'farm', R: 'river', tags: ['greentunnel', 'ontracks', 'banana'] },
+      { len: 520, k: -0.005, dy: 20, roll: [5, 2], lanes: 3, sh: 2.4, shl: 1.6, L: 'orchard', R: 'orchard', tags: ['banana', 'plum', 'farmhouse', 'betelstand'] },
+      { len: 480, k: 0.0062, dy: 30, L: 'town', R: 'hills', tags: ['snakekiln', 'townhouse', 'checheng'] },
+      { len: 500, k: -0.0066, dy: -24, L: 'mountain', R: 'river', tags: ['betelgrove', 'guardR', 'temple'] },
+      { len: 520, k: 0.0055, dy: 36, roll: [7, 2], L: 'tea', R: 'mountain', tags: ['teafarm', 'stonehouse', 'coffee'] },
+      { len: 500, k: -0.006, dy: -30, L: 'mountain', R: 'hills', tags: ['betelgrove', 'bigtemple'] },
+      { len: 480, k: 0.0045, dy: 18, L: 'hills', R: 'lake', tags: ['sailboat', 'palmgroup'] },
+      { len: 340, k: 0, L: 'grass', R: 'grass', tags: ['palmgroup'] },
+    ],
+  },
+  // 花東縱谷: over the 南迴 to 多良's red station on the sea, 金崙, 太麻里's daylilies, 台東, the balloons of 鹿野, 池上's avenue
+  s4c: {
+    label: '台東・花東縱谷', name: '台東', en: 'TAITUNG VALLEY', tod: ['day', 'golden'], pano: 'taitung', clouds: 53, time: STAGE_TIME,
+    traffic: { per100: 1.9, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 1, suv: 1 } },
+    children: ['s5e', 's5f'],
+    sign: { L: ['花蓮・太魯閣', '台9', '長春祠'], R: ['蘇花・宜蘭', '台9', '清水斷崖・龜山島'] },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.4, L: 'mountain', R: 'cliff', tags: ['checkpoint', 'guardR', 'coastplants'] },
+      { len: 520, k: 0.0048, dy: -30, L: 'slope', R: 'shore', tags: ['duoliang', 'railway', 'guardR'] },
+      { len: 480, k: -0.0062, dy: 12, roll: [5, 2], L: 'town', R: 'river', tags: ['jinlun', 'townhouse', 'totem'] },
+      { len: 500, k: 0.0055, dy: 36, L: 'daylily', R: 'daylily', tags: ['daylilies', 'stonehouse'] },
+      { len: 520, k: -0.005, dy: -30, L: 'orchard', R: 'orchard', tags: ['sugarapple', 'farmhouse', 'betelstand'] },
+      { len: 480, k: 0.0036, L: 'city', R: 'city', tags: ['qilou', 'tiehua', 'lamps', 'kerbtrees'] },
+      { len: 500, k: -0.0045, dy: 20, roll: [6, 2], L: 'paddy', R: 'hills', tags: ['balloons', 'paddies', 'farmhouse'] },
+      { len: 520, k: 0.0048, dy: -14, L: 'paddy', R: 'paddy', tags: ['brownave', 'paddies', 'chishang'] },
+      { len: 340, k: 0, L: 'paddy', R: 'grass', tags: ['paddies'] },
+    ],
+  },
+  // 恆春半島東: the 199 over the dam at 牡丹, the old battlefield, 旭海's grassland, the dunes at 港仔, down to 滿州
+  s4d: {
+    label: '牡丹・旭海', name: '旭海', en: 'MUDAN · XUHAI', tod: ['day', 'golden'], pano: 'southcoast', clouds: 59, time: STAGE_TIME,
+    traffic: { per100: 1.8, mix: { scooter: 3, sedan: 3, bus: 1, bluetruck: 2, pickup: 2, suv: 2, gravel: 1, logs: 1 } },
+    children: ['s5g', 's5h'],
+    sign: { L: ['佳樂水・龍磐', '台26', '港口吊橋'], R: ['鵝鑾鼻', '台26', '社頂・燈塔'] },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.2, L: 'hills', R: 'farm', tags: ['checkpoint', 'betelstand', 'onion'] },
+      { len: 480, k: 0.005, dy: 32, roll: [6, 2], L: 'mountain', R: 'river', tags: ['mudan', 'stonehouse', 'totem'] },
+      { len: 480, k: -0.0062, dy: 18, L: 'hills', R: 'hills', tags: ['shimen', 'tribalgate', 'guardR'] },
+      { len: 520, k: 0.0058, dy: -36, L: 'mountain', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 560, k: -0.0045, dy: -14, roll: [5, 2], L: 'highland', R: 'cliff', tags: ['xuhai', 'guardR'] },
+      { len: 520, k: 0.0042, L: 'grass', R: 'beach', tags: ['gangzai', 'fishvillage', 'tetrapods'] },
+      { len: 560, k: -0.0064, dy: 26, L: 'tea', R: 'hills', tags: ['manzhou', 'teafarm', 'totem'] },
+      { len: 480, k: 0.0036, dy: -20, L: 'farm', R: 'farm', tags: ['onion', 'farmhouse', 'betelstand'] },
+      { len: 320, k: 0, L: 'grass', R: 'grass', tags: ['palmgroup'] },
+    ],
+  },
+  // 墾丁・恆春: 車城's temple and the hot spring, the dunes at 海口, the old town's gates, the fire at 出火, the night market
+  s4e: {
+    label: '恆春・墾丁大街', name: '恆春', en: 'HENGCHUN', tod: ['day', 'golden'], pano: 'hengchun', clouds: 61, time: STAGE_TIME,
+    traffic: { per100: 2.2, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
+    children: ['s5i', 's5j'],
+    sign: { L: ['貓鼻頭・關山', '台26・西岸', '白沙灣'], R: ['南灣・船帆石', '台26', '墾丁'] },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.2, L: 'farm', R: 'beach', tags: ['checkpoint', 'onion', 'palmgroup'] },
+      { len: 520, k: 0.0036, dy: 8, L: 'grass', R: 'beach', tags: ['haikou', 'tetrapods', 'coastplants'] },
+      { len: 480, k: -0.0052, dy: -8, roll: [4, 2], L: 'farm', R: 'water', tags: ['aquarium', 'onion', 'farmhouse'] },
+      { len: 560, k: 0.0048, dy: 6, L: 'hills', R: 'farm', tags: ['oldgate', 'palmgroup', 'betelstand'] },
+      { len: 440, k: -0.006, dy: 20, L: 'town', R: 'town', tags: ['townhouse', 'lamps', 'chuhuo', 'hengchunstreet'] },
+      { len: 560, k: 0.0056, dy: -20, roll: [6, 3], L: 'farm', R: 'water', tags: ['longluan', 'onion', 'egrets'] },
+      { len: 520, k: -0.0045, L: 'town', R: 'town', tags: ['nightmarket', 'neon', 'lamps', 'kentingarch'] },
+      { len: 480, k: 0.004, dy: 10, L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers'] },
+      { len: 320, k: 0, L: 'grass', R: 'grass', tags: ['palmgroup'] },
+    ],
+  },
+  // ---------------------------------------------------------------- row 5: the goals ----------------------------------------------------------------
+  // 淡水・台北: the river mouth under 觀音山, the red fort and the old street, the lovers' bridge, 關渡's red arch, into the city to 101
+  s5a: {
+    label: '淡水・台北101', name: '台北101', en: 'TAIPEI 101', tod: ['golden', 'sunset'], pano: 'taipei', clouds: 67, time: STAGE_TIME, goal: '台北101',
+    traffic: { per100: 2.4, mix: { scooter: 5, sedan: 4, taxi: 3, bus: 3, suv: 2, wagon: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.2, L: 'town', R: 'river', tags: ['checkpoint', 'danshui', 'townhouse', 'lamps'] },
+      { len: 520, k: 0.0045, dy: 6, L: 'town', R: 'river', tags: ['fortsandomingo', 'townhouse', 'lamps'] },
+      { len: 480, k: -0.0058, dy: -6, L: 'harbor', R: 'river', tags: ['loversbridge', 'sailboat', 'lamps'] },
+      { len: 300, k: 0, dy: 16, L: 'water', R: 'water', bridge: 'arch', tags: ['guandu', 'bridgelamps'] },
+      { len: 520, k: 0.0062, dy: -16, roll: [4, 2], L: 'city', R: 'city', tags: ['qilou', 'kerbtrees', 'lamps', 'overpass'] },
+      { len: 560, k: -0.006, dy: 8, L: 'city', R: 'city', tags: ['citytower', 'qilou', 'lamps', 'taipeimrt'] },
+      { len: 520, k: 0.005, dy: -8, L: 'city', R: 'city', tags: ['qilou', 'kerbtrees', 'lamps', 'ximending'] },
+      { len: 440, k: 0, L: 'plaza', R: 'plaza', tags: ['goal', 'taipei101', 'royalpalm'] },
+    ],
+  },
+  // 北海岸: 淡金公路 along the cliffs, kites at 石門, the black-and-white lighthouse, 金山's old street, the queen's head at 野柳
+  s5b: {
+    label: '北海岸・野柳', name: '野柳', en: 'YEHLIU', tod: ['golden', 'sunset'], pano: 'northcoast', clouds: 71, time: STAGE_TIME, goal: '野柳女王頭',
+    traffic: { per100: 2.0, mix: { scooter: 3, sedan: 4, bus: 3, bluetruck: 1, suv: 2, wagon: 1, gravel: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'cliff', tags: ['checkpoint', 'guardR', 'coastplants'] },
+      { len: 520, k: 0.0052, dy: 20, roll: [5, 2], L: 'slope', R: 'cliff', tags: ['kites', 'guardR'] },
+      { len: 480, k: -0.006, dy: -16, L: 'hills', R: 'shore', tags: ['fuguijiao', 'tetrapods', 'fishboats'] },
+      { len: 560, k: 0.0048, dy: 10, L: 'town', R: 'harbor', tags: ['jinshan', 'townhouse', 'seafood', 'fishboats', 'lamps'] },
+      { len: 520, k: -0.0064, dy: 24, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 560, k: 0.0058, dy: -30, roll: [6, 2], L: 'hills', R: 'shore', tags: ['yehliurocks', 'tetrapods'] },
+      { len: 480, k: -0.004, dy: 6, L: 'town', R: 'harbor', tags: ['townhouse', 'fishboats', 'seafood', 'lamps'] },
+      { len: 420, k: 0, L: 'plaza', R: 'cliff', tags: ['goal', 'queenhead', 'pavilion'] },
+    ],
+  },
+  // 日月潭: round the lake under its hills — the gondolas overhead, 文武廟's red walls, the pier at 水社, boats on the water
+  s5c: {
+    label: '日月潭・環湖公路', name: '日月潭', en: 'SUN MOON LAKE', tod: ['golden', 'sunset'], pano: 'nantou', clouds: 73, time: STAGE_TIME, goal: '日月潭水社碼頭',
+    traffic: { per100: 1.8, mix: { scooter: 2, sedan: 3, bus: 4, suv: 2, wagon: 2, pickup: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'lake', tags: ['checkpoint', 'sailboat', 'lakeboats'] },
+      { len: 520, k: 0.0055, dy: 18, roll: [5, 2], L: 'mountain', R: 'lake', tags: ['ropeway', 'guardR'] },
+      { len: 480, k: -0.0064, dy: -12, L: 'hills', R: 'lake', tags: ['wenwu', 'lakeboats'] },
+      { len: 560, k: 0.006, dy: 22, L: 'tea', R: 'lake', tags: ['teafarm', 'guardR', 'lakeboats'] },
+      { len: 520, k: -0.0058, dy: -20, roll: [6, 2], L: 'mountain', R: 'lake', tags: ['sailboat', 'coffee'] },
+      { len: 560, k: 0.0048, dy: 10, L: 'town', R: 'lake', tags: ['townhouse', 'lamps', 'lakeboats', 'itashao'] },
+      { len: 480, k: -0.005, dy: -10, L: 'hills', R: 'lake', tags: ['xiangshan', 'guardR'] },
+      { len: 420, k: 0, L: 'plaza', R: 'lake', tags: ['goal', 'shuishe', 'lakeboats'] },
+    ],
+  },
+  // 清境・合歡山: hairpins up through cabbage fields and chalets, sheep on the meadows, bare rock and the marker at 武嶺
+  s5d: {
+    label: '清境・合歡山', name: '合歡山', en: 'HEHUANSHAN', tod: ['golden', 'sunset'], pano: 'cingjing', clouds: 79, time: STAGE_TIME, goal: '武嶺',
+    traffic: { per100: 1.6, mix: { scooter: 1, sedan: 3, bus: 3, suv: 3, wagon: 2, pickup: 2, bluetruck: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'cabbage', R: 'hills', tags: ['checkpoint', 'cabbages', 'farmhouse'] },
+      { len: 480, k: 0.0068, dy: 40, L: 'cabbage', R: 'cliff', tags: ['cabbages', 'guardR'] },
+      { len: 460, k: -0.0072, dy: 38, L: 'hills', R: 'cliff', tags: ['chalet', 'guardR'] },
+      { len: 520, k: 0.0064, dy: 42, roll: [6, 2], L: 'highland', R: 'highland', tags: ['sheep', 'chalet'] },
+      { len: 480, k: -0.007, dy: 36, L: 'highland', R: 'cliff', tags: ['sheep', 'guardR'] },
+      { len: 520, k: 0.0066, dy: 44, L: 'mountain', R: 'cliff', tags: ['guardR', 'hemlock'] },
+      { len: 480, k: -0.0068, dy: 30, roll: [5, 2], L: 'highland', R: 'highland', tags: ['hemlock', 'guardR'] },
+      { len: 420, k: 0, dy: 10, L: 'highland', R: 'highland', tags: ['goal', 'wuling', 'pavilion'] },
+    ],
+  },
+  // 花蓮・太魯閣: the pebbles of 七星潭, the red gate, the gorge's marble walls, the tunnel at 燕子口, the shrine with its waterfall
+  s5e: {
+    label: '花蓮・太魯閣', name: '太魯閣', en: 'TAROKO', tod: ['golden', 'sunset'], pano: 'hualien', clouds: 83, time: STAGE_TIME, goal: '太魯閣長春祠',
+    traffic: { per100: 1.9, mix: { scooter: 2, sedan: 3, bus: 4, gravel: 3, bluetruck: 2, suv: 1, logs: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.2, L: 'town', R: 'pebble', tags: ['checkpoint', 'qixingtan', 'townhouse', 'bathers'] },
+      { len: 520, k: 0.0048, dy: 10, roll: [4, 2], L: 'farm', R: 'river', tags: ['farmhouse', 'betelstand', 'truku'] },
+      { len: 460, k: -0.0058, dy: 12, L: 'town', R: 'river', tags: ['tarokogate', 'townhouse', 'lamps'] },
+      { len: 520, k: 0.0066, dy: 30, L: 'gorge', R: 'gorge', tags: ['marble', 'guardR'] },
+      { len: 300, k: 0.001, dy: 12, L: 'cut', R: 'cut', tags: ['tunnel', 'portal'] },
+      { len: 520, k: -0.0068, dy: 24, roll: [4, 2], L: 'gorge', R: 'gorge', tags: ['marble', 'swallowgrotto', 'guardR'] },
+      { len: 480, k: 0.0062, dy: 28, L: 'gorge', R: 'gorge', tags: ['marble', 'guardR'] },
+      { len: 520, k: -0.0064, dy: 18, roll: [5, 2], L: 'gorge', R: 'gorge', tags: ['marble', 'guardR'] },
+      { len: 440, k: 0, dy: 6, L: 'river', R: 'gorge', tags: ['goal', 'changchun', 'marble'] },
+    ],
+  },
+  // 蘇花・宜蘭: 清水斷崖 hanging over the Pacific, 南方澳's harbour and its bridge, the cold spring, onions of 三星 on the plain, 龜山島 off the coast
+  s5f: {
+    label: '蘇花・宜蘭', name: '宜蘭', en: 'YILAN', tod: ['golden', 'sunset'], pano: 'yilan', clouds: 89, time: STAGE_TIME, goal: '蘭陽博物館',
+    traffic: { per100: 2.0, mix: { scooter: 2, sedan: 3, bus: 3, gravel: 3, bluetruck: 2, suv: 2, rebar: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'mountain', R: 'cliff', tags: ['checkpoint', 'guardR', 'coastplants'] },
+      { len: 480, k: 0.0058, dy: 40, L: 'slope', R: 'cliff', tags: ['qingshui', 'guardR'] },
+      { len: 440, k: -0.0068, dy: 30, roll: [5, 2], L: 'mountain', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 300, k: 0.001, dy: -10, L: 'cut', R: 'cut', tags: ['tunnel', 'portal'] },
+      { len: 440, k: 0.0064, dy: -46, L: 'slope', R: 'shore', tags: ['guardR', 'tetrapods'] },
+      { len: 480, k: -0.0058, dy: -14, L: 'town', R: 'harbor', tags: ['nanfangao', 'fishboats', 'seafood', 'townhouse', 'lamps'] },
+      { len: 440, k: 0.0048, dy: 6, roll: [4, 2], L: 'town', R: 'farm', tags: ['coldspring', 'townhouse', 'farmhouse'] },
+      { len: 480, k: -0.005, dy: -6, L: 'paddy', R: 'paddy', tags: ['paddies', 'scallions', 'farmhouse'] },
+      { len: 460, k: 0.0045, L: 'farm', R: 'beach', tags: ['jiaoxi', 'palmgroup', 'turtleisland'] },
+      { len: 400, k: 0, L: 'plaza', R: 'beach', tags: ['goal', 'lanyang', 'palm'] },
+    ],
+  },
+  // 佳樂水・龍磐: 滿州 down to the river mouth and its footbridge, the wave-cut rocks, the sand blown up the cliff, the grassland on the edge
+  s5g: {
+    label: '佳樂水・龍磐', name: '龍磐公園', en: 'LONGPAN', tod: ['golden', 'sunset'], pano: 'hengchun', clouds: 91, time: STAGE_TIME, goal: '龍磐公園',
+    traffic: { per100: 1.6, mix: { scooter: 3, sedan: 3, bus: 2, suv: 2, wagon: 1, pickup: 2 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'tea', R: 'river', tags: ['checkpoint', 'teafarm', 'totem'] },
+      { len: 300, k: 0, dy: 10, L: 'water', R: 'water', bridge: 'girder', tags: ['ropebridge', 'bridgelamps'] },
+      { len: 520, k: 0.0058, dy: -12, L: 'hills', R: 'shore', tags: ['jialeshui', 'tetrapods', 'coastplants'] },
+      { len: 480, k: -0.0064, dy: 26, roll: [5, 2], L: 'slope', R: 'cliff', tags: ['guardR', 'coral'] },
+      { len: 560, k: 0.006, dy: 20, L: 'hills', R: 'cliff', tags: ['fengchuisha', 'guardR'] },
+      { len: 520, k: -0.0066, dy: -16, L: 'grass', R: 'cliff', tags: ['guardR', 'coastplants', 'hawks'] },
+      { len: 560, k: 0.0048, dy: 24, roll: [6, 2], L: 'grass', R: 'cliff', tags: ['grassland', 'guardR'] },
+      { len: 440, k: 0, dy: 6, L: 'grass', R: 'cliff', tags: ['goal', 'longpan', 'pavilion'] },
+    ],
+  },
+  // 鵝鑾鼻: the monkeys of 社頂, the shell sand at 砂島, the lighthouse on its lawn, the southern tip of the island
+  s5h: {
+    label: '社頂・鵝鑾鼻', name: '鵝鑾鼻', en: 'ELUANBI', tod: ['golden', 'sunset'], pano: 'hengchun', clouds: 97, time: STAGE_TIME, goal: '鵝鑾鼻燈塔',
+    traffic: { per100: 2.0, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'palmgroup', 'onion'] },
+      { len: 520, k: 0.0055, dy: 28, roll: [5, 2], L: 'mountain', R: 'hills', tags: ['sheding', 'monkeys', 'guardR'] },
+      { len: 480, k: -0.0066, dy: -24, L: 'hills', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 560, k: 0.006, dy: -10, L: 'town', R: 'beach', tags: ['shadao', 'beachshops', 'bathers'] },
+      { len: 520, k: -0.0058, dy: 16, L: 'grass', R: 'cliff', tags: ['guardR', 'coral', 'kentingpark'] },
+      { len: 560, k: 0.0064, dy: -12, roll: [6, 2], L: 'town', R: 'bay', tags: ['beachshops', 'palmgroup', 'bathers', 'sailboat'] },
+      { len: 520, k: -0.0045, dy: 8, L: 'grass', R: 'cliff', tags: ['palmgroup', 'guardR', 'southpoint'] },
+      { len: 420, k: 0, dy: -2, L: 'plaza', R: 'plaza', tags: ['goal', 'lighthouse', 'palm'] },
+    ],
+  },
+  // 貓鼻頭・關山: 後灣's fishermen, the divers of 萬里桐, 白沙灣, the cat rock, the boulder on the headland at sunset
+  s5i: {
+    label: '白沙・貓鼻頭', name: '關山夕照', en: 'GUANSHAN SUNSET', tod: ['golden', 'sunset'], pano: 'westcape', clouds: 101, time: STAGE_TIME, goal: '關山夕照',
+    traffic: { per100: 1.7, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2, suv: 2, wagon: 1, logs: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 1.8, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup', 'tetrapods'] },
+      { len: 520, k: 0.0048, dy: 10, L: 'hills', R: 'beach', tags: ['fishvillage', 'coral', 'palmgroup'] },
+      { len: 480, k: -0.006, dy: -8, roll: [4, 2], L: 'town', R: 'shore', tags: ['wanlitong', 'beachshops', 'bathers'] },
+      { len: 560, k: 0.0062, dy: 30, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 520, k: -0.0066, dy: -26, L: 'hills', R: 'bay', tags: ['palmgroup', 'bathers', 'baisha'] },
+      { len: 560, k: 0.0058, dy: 18, roll: [6, 2], L: 'grass', R: 'cliff', tags: ['catrock', 'guardR', 'coral'] },
+      { len: 520, k: -0.0045, dy: 24, L: 'hills', R: 'cliff', tags: ['guardR', 'coastplants', 'hongchaikeng'] },
+      { len: 420, k: 0, dy: 6, L: 'plaza', R: 'cliff', tags: ['goal', 'guanshan', 'flyrock'] },
+    ],
+  },
+  // 南灣・船帆石: the plant's domes, the bay full of swimmers, 小灣, the sail rock standing off the beach
+  s5j: {
+    label: '南灣・船帆石', name: '船帆石', en: 'SAIL ROCK', tod: ['golden', 'sunset'], pano: 'hengchun', clouds: 103, time: STAGE_TIME, goal: '船帆石',
+    traffic: { per100: 2.2, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 2, suv: 2, wagon: 1 } },
+    sections: [
+      { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'town', R: 'bay', tags: ['checkpoint', 'beachshops', 'bathers', 'palmgroup'] },
+      { len: 560, k: 0.0045, dy: 6, L: 'hills', R: 'bay', tags: ['nuke', 'bathers', 'surf', 'jetski'] },
+      { len: 480, k: -0.0058, dy: -6, roll: [4, 2], L: 'town', R: 'bay', tags: ['surf', 'beachshops', 'bathers', 'nanwan'] },
+      { len: 520, k: 0.0064, dy: 24, L: 'slope', R: 'cliff', tags: ['guardR', 'coastplants'] },
+      { len: 560, k: -0.0062, dy: -22, L: 'town', R: 'beach', tags: ['xiaowan', 'beachshops', 'bathers', 'palmgroup'] },
+      { len: 520, k: 0.0055, dy: 14, roll: [6, 2], L: 'hills', R: 'cliff', tags: ['guardR', 'coral', 'frogrock'] },
+      { len: 480, k: -0.005, dy: -10, L: 'grass', R: 'beach', tags: ['palmgroup', 'bathers', 'bananabay'] },
+      { len: 420, k: 0, dy: 2, L: 'plaza', R: 'beach', tags: ['goal', 'sailrock', 'palm'] },
     ],
   },
 };
@@ -2365,6 +2759,96 @@ function paintXingLight() {
   px.outline(0x1a1418);
   return px;
 }
+
+// 壽卡鐵馬驛站: the little white rest house at the top of the 南迴 pass, red roof, a row of bicycles leaning on its rail
+function paintShouka() {
+  const W = 150, H = 76, px = new Pix(W, H);
+  px.rect(6, 34, 120, 42, 0xf4f0e6); for (let j = 36; j < H; j += 4) px.rect(6, j, 120, 1, 0xe0dccc);
+  px.poly([0, 36, 132, 36, 120, 14, 12, 14], 0xc8352a); for (let j = 16; j < 36; j += 3) px.rect(10, j, 112, 1, 0xa82a22);
+  px.rect(54, 46, 22, 30, 0x3a2a20); px.rect(58, 50, 14, 14, 0x9ad0ea);
+  for (const x of [16, 96]) { px.rect(x, 44, 22, 14, 0x2a3a4a); px.rect(x, 50, 22, 1, 0xd8e8f0); }
+  px.rect(10, 20, 112, 10, 0xffffff); px.text('壽卡鐵馬驛站', 14, 21, 8, 0xc8352a);
+  // bicycles along the rail: wheels, a frame, a saddle
+  for (let k = 0; k < 4; k++) { const x = 102 + k * 12; px.rect(x - 1, 58, 2, 18, 0x9aa0a6); px.ellipse(x - 4, 72, 4, 4, 0x1a1a1e); px.ellipse(x + 4, 72, 4, 4, 0x1a1a1e); px.line(x - 4, 72, x, 62, 0xd8242a, 1); px.line(x + 4, 72, x, 62, 0xd8242a, 1); px.rect(x - 2, 60, 5, 2, 0x1a1a1e); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 牡丹水庫: the dam wall across the valley, a bare concrete face with the spillway gates in its middle and water behind
+function paintDam() {
+  const W = 420, H = 150, px = new Pix(W, H);
+  // the valley sides in green, the wall between them
+  px.poly([0, H, 40, 60, 110, 30, 310, 30, 380, 60, W, H], 0x2f7e30);
+  for (let y = 30; y < H; y++) for (let x = 0; x < W; x++) if (px.on(x, y) && hash2(x >> 2, y >> 2) < 0.3) px.set(x, y, 0x3c9a48);
+  px.poly([80, H, 100, 40, 320, 40, 340, H], 0xb8b4a8);
+  for (let y = 40; y < H; y++) { const l = 1 - (y - 40) / (H - 40) * 0.45; for (let x = 100 - (y - 40) * 0.17; x < 320 + (y - 40) * 0.17; x++) if (hash2(x >> 3, y) < 0.08) px.set(x, y, shadeHex(0xb8b4a8, l * 0.9)); else if (((x | 0) % 24) === 0) px.set(x, y, shadeHex(0xb8b4a8, l * 0.8)); }
+  px.rect(96, 36, 228, 8, 0xd8d4c8); px.rect(96, 36, 228, 2, 0xffffff);
+  for (let k = 0; k < 3; k++) { const x = 160 + k * 40; px.rect(x, 48, 24, 36, 0x4a5a6a); px.rect(x + 3, 51, 18, 30, 0x2a8ad8); px.rect(x + 3, 51, 18, 2, 0x9ad0ea); for (let y = 84; y < H; y += 2) px.rect(x + 4 + Math.sin(y * 0.4 + k) * 2, y, 16, 1, 0xd8f0ff); }
+  // the water behind, a slice of it showing over the crest
+  px.rect(110, 26, 200, 10, 0x2a7ac0); px.rect(110, 26, 200, 2, 0x8ad0ea);
+  px.outline(0x1a1410);
+  return px;
+}
+// 佳冬蕭家古厝: a Hakka courtyard house in red brick, grey tiled roofs with swallow-tail ridges, the gate in the middle
+function paintHakkaHouse() {
+  const W = 230, H = 90, px = new Pix(W, H);
+  const wing = (x, w, h) => { px.rect(x, H - h, w, h, 0xb0503a); for (let j = H - h + 2; j < H; j += 3) px.rect(x, j, w, 1, 0x8e3e2c); px.poly([x - 6, H - h + 2, x + w + 6, H - h + 2, x + w - 2, H - h - 14, x + 2, H - h - 14], 0x5a5e66); for (let j = H - h - 12; j < H - h + 2; j += 2) px.rect(x + 2, j, w - 4, 1, 0x4a4e56); px.curve(x + 2, H - h - 13, x - 2, H - h - 14, x - 6, H - h - 22, 0x5a5e66, 3, 2); px.curve(x + w - 2, H - h - 13, x + w + 2, H - h - 14, x + w + 6, H - h - 22, 0x5a5e66, 3, 2); };
+  wing(6, 70, 44); wing(154, 70, 44); wing(70, 90, 54);
+  px.rect(104, 56, 22, 34, 0x3a2a20); px.rect(100, 52, 30, 4, 0x8e3e2c); px.text('蕭', 110, 60, 9, 0xf2c21a);
+  for (const x of [18, 44, 166, 192]) { px.rect(x, 62, 14, 12, 0x2a3a4a); px.rect(x + 2, 64, 10, 8, 0x8a2a20); px.rect(x + 5, 64, 1, 8, 0x2a3a4a); px.rect(x + 2, 68, 10, 1, 0x2a3a4a); }
+  for (const x of [78, 136]) { px.rect(x, 60, 16, 12, 0x2a3a4a); px.rect(x + 7, 60, 2, 12, 0xd8c8a8); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 海口沙漠: a dune, pale sand rippled by the wind, a few tufts of grass on its back
+function paintDune(seed) {
+  const rnd = mulberry(seed), W = 260, H = 70, px = new Pix(W, H);
+  const pts = [0, H]; const n = 9; for (let i = 0; i <= n; i++) pts.push((i / n) * W, H - 6 - Math.sin((i / n) * Math.PI) * rnd.range(34, 58) - rnd.range(0, 6)); pts.push(W, H);
+  px.poly(pts, 0xe8d8a8);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (px.on(x, y)) { const l = clamp(0.75 + x / W * 0.4 - y / H * 0.25 + (((x + y * 0.5) * 0.18 | 0) % 2) * 0.08, 0, 1.2); px.dset(x, y, 0xc8b480, 0xf4ead0, clamp(l, 0, 1)); }
+  for (let i = 0; i < 8; i++) { const x = rnd.range(30, W - 30), y = H - 10 - Math.sin((x / W) * Math.PI) * 30; for (let k = -3; k <= 3; k++) px.line(x, y + 6, x + k * 2, y - 8 + Math.abs(k), 0x8a9a4a, 1); }
+  px.outline(0x8a7a52);
+  return px;
+}
+// 港口吊橋: a suspension footbridge over the river mouth, two red towers, a sagging cable, the plank deck hanging under it
+function paintRopeBridge() {
+  const W = 320, H = 120, px = new Pix(W, H);
+  for (const x of [40, 280]) { px.rect(x - 5, 20, 10, 100, 0xc8352a); px.rect(x - 7, 18, 14, 6, 0xa82a22); px.rect(x - 2, 20, 2, 100, 0xe85a4a); }
+  for (let x = 40; x <= 280; x++) { const t = (x - 40) / 240, y = 22 + Math.sin(t * Math.PI) * 44; px.set(x, Math.round(y), 0x1a1a20); px.set(x, Math.round(y) + 1, 0x4a4a52); if ((x - 40) % 12 === 0) px.line(x, y, x, 76, 0x3a3a44, 1); }
+  px.rect(34, 74, 252, 6, 0x8a6a3a); for (let x = 36; x < 286; x += 4) px.rect(x, 74, 2, 6, 0xa8884a);
+  px.rect(34, 70, 252, 1, 0x4a4a52); px.rect(34, 66, 252, 1, 0x4a4a52);
+  // the river below
+  px.rect(0, 100, W, 20, 0x2a7ac0); for (let x = 0; x < W; x += 7) px.rect(x + ((x / 7) % 2) * 3, 104 + (x % 3), 4, 1, 0x9ad0ea);
+  px.outline(0x1a1410);
+  return px;
+}
+// 佳樂水: the wave-cut rock shelf, honeycomb and mushroom rocks along the shore, the Pacific breaking white behind
+function paintJialeshui() {
+  const W = 300, H = 100, px = new Pix(W, H), rnd = mulberry(331);
+  px.rect(0, 60, W, 40, 0x6a6052); for (let y = 60; y < H; y++) for (let x = 0; x < W; x++) if (hash2(x >> 2, y >> 1) < 0.25) px.set(x, y, 0x8a8070);
+  for (let i = 0; i < 7; i++) { const x = 20 + i * 42, h = rnd.range(16, 34), w = rnd.range(14, 26); px.ellipse(x, 60 - h + 8, w / 2 + 4, 8, 0x8a8070); px.rect(x - w / 4, 60 - h + 8, w / 2, h - 8, 0x6a6052); for (let k = 0; k < 6; k++) px.ellipse(x + rnd.range(-w / 2, w / 2), 60 - h + 8 + rnd.range(-4, 4), 2, 1.5, 0x4a4238); }
+  for (let y = 48; y < 60; y++) for (let x = 0; x < W; x++) if (hash2(x >> 1, y) < 0.5 + (y - 48) * 0.04) px.set(x, y, y < 52 ? 0xffffff : 0xd8f0ff);
+  px.rect(0, 40, W, 8, 0x2a7ac0);
+  px.outline(0x1a1610);
+  return px;
+}
+// 關山飛來石: the big boulder perched on the headland above the sunset sea
+function paintFlyRock() {
+  const W = 110, H = 96, px = new Pix(W, H), rnd = mulberry(91);
+  px.poly([30, 95, 14, 70, 20, 40, 40, 16, 70, 10, 96, 30, 100, 62, 86, 95], 0x8a7a62);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (px.on(x, y)) { const l = clamp(1.15 - x / W * 0.8 - y / H * 0.3 + (hash2(x >> 3, y >> 2) - 0.5) * 0.3, 0, 1); const cols = [0x4a4232, 0x6a5e48, 0x8a7a62, 0xb4a484]; const t = l * 3, k = Math.min(2, Math.floor(t)); px.dset(x, y, cols[k], cols[k + 1], t - k); }
+  px.rect(0, 90, W, 6, 0x6aac44); px.rect(26, 88, 64, 3, 0x4a4232);
+  for (let i = 0; i < 6; i++) px.ball(20 + rnd() * 70, 20 + rnd() * 40, rnd.range(2, 5), rnd.range(2, 4), [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1);
+  px.outline(0x1a1610);
+  return px;
+}
+// 龍鑾潭: egrets standing in the shallows
+function paintEgrets(seed) {
+  const rnd = mulberry(seed), W = 60, H = 30, px = new Pix(W, H);
+  for (let k = 0; k < 3; k++) { const x = 8 + k * 20 + rnd.range(-3, 3), y = 22 + rnd.range(-2, 2); px.rect(x, y, 1, 8, 0x2a2a2a); px.ellipse(x + 2, y - 3, 6, 4, 0xffffff); px.line(x + 6, y - 5, x + 9, y - 13, 0xffffff, 2); px.ellipse(x + 10, y - 14, 3, 2.5, 0xffffff); px.line(x + 12, y - 14, x + 17, y - 13, 0xf2c21a, 1); }
+  px.outline(0x1a1a24);
+  return px;
+}
+
 // the sights, registered
 function paintSights() {
   addSprite('xinglight', paintXingLight(), 3.6, { collide: 0.2, shadow: 0.3 });
@@ -2378,9 +2862,20 @@ function paintSights() {
     ['aquarium', '國立海洋生物博物館', 'Aquarium'], ['guanshan', '關山夕照', 'Guanshan Sunset'], ['baisha', '白沙灣', 'Baisha Bay'], ['houbihu', '後壁湖', 'Houbihu Harbour'], ['maobitou', '貓鼻頭', 'Maobitou'],
     ['hengchun', '恆春古城', 'Hengchun Old Town'], ['kenting', '墾丁大街', 'Kenting Street'], ['nanwan', '南灣', 'Nanwan Beach'], ['sailrock', '船帆石', 'Sail Rock'], ['eluanbi', '鵝鑾鼻燈塔', 'Eluanbi Lighthouse'], ['longpan', '龍磐公園', 'Longpan Park'],
     ['weiwuying', '衛武營', 'Weiwuying Arts Center'], ['buddha', '佛光山佛陀紀念館', 'Fo Guang Shan'], ['ferris', '義大世界', 'E-DA World'], ['gaoping', '高屏溪斜張橋', 'Gaoping Bridge'], ['wanluan', '萬巒豬腳', 'Wanluan Pork Knuckle'],
+    ['shouka', '壽卡鐵馬驛站', 'Shouka Station'], ['mudan', '牡丹水庫', 'Mudan Reservoir'], ['xuhai', '旭海草原', 'Xuhai Grassland'], ['dongyuan', '東源水上草原', 'Dongyuan Wetland'],
+    ['hakka', '佳冬蕭家古厝', 'Xiao Family House'], ['haikou', '海口沙漠', 'Haikou Dunes'], ['jialeshui', '佳樂水', 'Jialeshui'], ['ropebridge', '港口吊橋', 'Gangkou Bridge'], ['manzhou', '滿州', 'Manzhou'], ['gangzai', '港仔大沙漠', 'Gangzai Dunes'],
+    ['longluan', '龍鑾潭', 'Longluan Lake'], ['wanlitong', '萬里桐', 'Wanlitong'], ['linbian', '林邊', 'Linbian'], ['fengchuisha', '風吹砂', 'Fengchuisha'],
     ['lrtxing', '輕軌平交道', 'LRT Crossing'], ['fuan', '車城福安宮', 'Fuan Temple'], ['sichongxi', '四重溪溫泉', 'Sichongxi Hot Spring'], ['chuhuo', '出火', 'Chuhuo Fire'], ['nuke', '核三廠', 'Maanshan Plant'], ['kentingpark', '墾丁國家公園', 'Kenting National Park'], ['southpoint', '台灣最南點', 'Southernmost Point'],
   ];
   for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0, shadow: 0.3, ax: d < 0 ? 1 : 0 });
+  addSprite('shouka', paintShouka(), 7.5, { collide: 0, ax: 0 });
+  addSprite('dam', paintDam(), 42, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('hakkahouse', paintHakkaHouse(), 9, { collide: 0, ax: 1 });
+  for (let i = 0; i < 3; i++) addSprite('dune#' + i, paintDune(2100 + i * 17), 7, { collide: 0, shadow: 0 });
+  addSprite('ropebridge', paintRopeBridge(), 24, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('jialeshui', paintJialeshui(), 15, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('flyrock', paintFlyRock(), 12, { collide: 0.6 });
+  for (let i = 0; i < 2; i++) addSprite('egrets#' + i, paintEgrets(2200 + i * 7), 1.5, { collide: 0, shadow: 0 });
   addSprite('kpmc', paintKPMC(), 64, { collide: 0, shadow: 0, ax: 0 });
   addSprite('harborbridge', paintHarborBridge(), 38, { collide: 0, shadow: 0, ax: 0 });
   for (let i = 0; i < 2; i++) addSprite('pier2#' + i, paintPier2Wall(9100 + i * 31), 8, { collide: 0, shadow: 0 });
@@ -2485,8 +2980,8 @@ function paintSigns() {
   addSprite('ban_start', paintBanner('START', '高雄港出發', 0x1a2a6a, 0xffffff, 0xf2c21a), 1.8, { collide: 0 });
   addSprite('ban_check', paintBanner('CHECKPOINT', '檢查點', 0xf2581c, 0xffffff, 0xffe060), 1.8, { collide: 0 });
   addSprite('ban_goal', paintBanner('GOAL', '終點', 0xd8242a, 0xffffff, 0xffe060), 1.8, { collide: 0 });
-  for (const id of ['s1', 's3']) {
-    const sg = STAGES[id].sign;
+  for (const id in STAGES) {
+    const sg = STAGES[id].sign; if (!sg) continue;
     addSprite('fork_' + id + '_L', paintForkSign(sg.L, -1), 4.6, { collide: 0.15, shadow: 0.2 });
     addSprite('fork_' + id + '_R', paintForkSign(sg.R, 1), 4.6, { collide: 0.15, shadow: 0.2 });
     addSprite('fork_' + id + '_C', paintGoreSign(), 3.6, { collide: 0.5, shadow: 0.3 });
@@ -2499,6 +2994,675 @@ function paintSigns() {
   addSprite('arrow', paintArrow(), 1);
   addSprite('checker', paintChecker(), 1);
   addSprite('zebra', paintZebra(), 1);
+}
+
+// ===================== sprites for the rest of the island: the famous places of every stage, and what stands along its roads =====================
+// Painted the same way as everything else: a Pix, flat colours, an outline. Big landmarks anchor at the road-side edge (ax).
+// ---------------- row 2: 橋頭 · 台南 ----------------
+// 橋頭糖廠: the brick sugar factory with its tall chimney and the sawtooth roofs of the sheds
+function paintSugarFactory() {
+  const W = 260, H = 150, px = new Pix(W, H);
+  px.rect(20, 80, 200, 70, 0xb0503a); for (let j = 82; j < H; j += 3) px.rect(20, j, 200, 1, 0x9a4030);
+  for (let k = 0; k < 4; k++) { const x = 20 + k * 50; px.poly([x, 80, x + 50, 80, x + 50, 56, x + 14, 56], 0x8a8a90); px.poly([x + 14, 56, x + 50, 56, x + 50, 60, x + 18, 60], 0x6a7ab0); }
+  for (const x of [40, 90, 140, 190]) { px.rect(x, 100, 16, 22, 0x2a3a4a); px.rect(x, 108, 16, 1, 0xd8c8a8); }
+  px.rect(102, 118, 22, 32, 0x3a2a20);
+  px.rect(226, 10, 18, 140, 0x8e3e2c); for (let j = 12; j < H; j += 4) px.rect(226, j, 18, 1, 0x7a3024); px.rect(224, 6, 22, 6, 0x6a2a1e);
+  for (let i = 0; i < 5; i++) px.ellipse(236 + i * 5, 2 - i * 1.2, 5 + i * 2, 3 + i, 0xe8e8ec);
+  px.rect(60, 64, 120, 12, 0xf4f1ea); px.text('臺糖橋頭糖廠', 120, 65, 10, 0x8a1a14, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 五分車: the little narrow-gauge sugar train, an orange loco and two open cars, seen from the side
+function paintSugarTrain() {
+  const W = 220, H = 50, px = new Pix(W, H);
+  px.rect(4, 14, 60, 28, 0xe8781a); px.rect(4, 14, 60, 4, 0xf8a040); px.rect(44, 6, 18, 36, 0xe8781a); px.rect(48, 10, 10, 10, 0x9ad0ea); px.rect(10, 18, 30, 14, 0x3a2a20); px.rect(12, 4, 8, 12, 0x2a2a30);
+  for (const x of [72, 148]) { px.rect(x, 20, 68, 22, 0x6a4a2a); px.rect(x, 20, 68, 3, 0x8a6a3a); for (let i = 4; i < 66; i += 10) px.rect(x + i, 24, 2, 16, 0x4a3018); for (let i = 0; i < 6; i++) px.rect(x + 4 + i * 10, 14, 10, 8, i % 2 ? 0xd8b060 : 0xc8a050); }
+  for (const x of [14, 34, 54, 82, 102, 122, 158, 178, 198]) { px.ellipse(x, 44, 5, 5, 0x1a1a1e); px.ellipse(x, 44, 2, 2, 0x8a8a90); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 赤崁樓: the two-storey Chinese pavilion on its old Dutch brick base, red columns, swallowtail roofs
+function paintChikan() {
+  const W = 220, H = 170, px = new Pix(W, H);
+  px.rect(10, 120, 200, 50, 0xb86a4a); for (let j = 122; j < H; j += 3) px.rect(10, j, 200, 1, 0x9a5638);
+  px.rect(40, 70, 140, 50, 0xd8402a); for (const x of [50, 86, 130, 166]) px.rect(x - 3, 74, 6, 46, 0x8a1a14);
+  for (const x of [60, 100, 140]) { px.rect(x, 84, 24, 30, 0x3a2a20); px.rect(x + 2, 86, 20, 26, 0x6a1a10); }
+  templeRoof(px, 30, 52, 160, 22, 0x8a3a2a, 0xf2c21a);
+  px.rect(62, 22, 96, 32, 0xd8402a); for (const x of [70, 110, 146]) px.rect(x - 3, 26, 6, 28, 0x8a1a14); px.rect(96, 32, 28, 22, 0x3a2a20);
+  templeRoof(px, 52, 4, 116, 22, 0x8a3a2a, 0xf2c21a);
+  px.rect(80, 126, 60, 16, 0x1a3a6a); px.text('赤崁樓', 110, 127, 12, 0xf2c21a, { align: 'center' });
+  for (let k = 0; k < 4; k++) px.rect(20 + k * 48, 142, 6, 28, 0xa85a3a);
+  px.outline(0x1a1410);
+  return px;
+}
+// 孔廟 全臺首學: the red gate and wall of the Confucius temple, the plaque over the door
+function paintConfucius() {
+  const W = 200, H = 110, px = new Pix(W, H);
+  px.rect(0, 60, W, 50, 0xc8352a); for (let j = 62; j < H; j += 3) px.rect(0, j, W, 1, 0xb02a22);
+  px.rect(0, 52, W, 10, 0x4a5a6a); for (let i = 0; i < W; i += 6) px.rect(i, 52, 3, 10, 0x5a6a7a);
+  px.rect(70, 30, 60, 80, 0xd8402a); px.rect(84, 60, 32, 50, 0x3a2a20); px.rect(86, 62, 28, 46, 0x6a1a10);
+  templeRoof(px, 62, 12, 76, 20, 0x8a3a2a, 0xf2c21a);
+  px.rect(76, 38, 48, 14, 0x1a3a6a); px.text('全臺首學', 100, 39, 10, 0xf2c21a, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// ---------------- row 3: the west coast, 阿里山 ----------------
+// 七股鹽山: the white salt mountain, a slope of stairs cut up one side, people on top
+function paintSaltMountain() {
+  const W = 300, H = 160, px = new Pix(W, H);
+  px.poly([0, H, 110, 20, 150, 8, 190, 20, W, H], 0xf6f6f2);
+  for (let y = 8; y < H; y++) for (let x = 0; x < W; x++) if (px.on(x, y)) { const l = clamp(1.1 - x / W * 0.5 - (hash2(x >> 2, y >> 2) - 0.5) * 0.25, 0, 1); px.dset(x, y, 0xd8d8e0, 0xffffff, l); }
+  for (let k = 0; k < 14; k++) px.rect(150 + k * 9, 12 + k * 10, 10, 2, 0x9a9aa8);
+  px.rect(140, 2, 3, 10, 0x8a1a14); px.poly([143, 2, 158, 5, 143, 8], 0xd8242a);
+  for (let i = 0; i < 4; i++) { const x = 130 + i * 10; px.rect(x, 4, 3, 6, [0xd8242a, 0x2a5ad0, 0xf2c21a, 0x18884a][i]); px.ellipse(x + 1, 2, 2, 2, 0xf2c8a0); }
+  px.outline(0x8a8a98);
+  return px;
+}
+// 北門水晶教堂: the white lattice church standing in its pool, all glass and white steel
+function paintCrystalChurch() {
+  const W = 180, H = 130, px = new Pix(W, H);
+  px.rect(0, 112, W, 18, 0x6ab8d8); for (let x = 0; x < W; x += 9) px.rect(x + ((x / 9) % 2) * 4, 116 + (x % 3), 5, 1, 0xe8f8ff);
+  px.poly([30, 112, 90, 14, 150, 112], 0xe8f0f4);
+  for (let y = 16; y < 112; y += 6) px.rect(90 - (y - 14) * 0.6, y, (y - 14) * 1.2, 1, 0xffffff);
+  for (let k = -5; k <= 5; k++) px.line(90 + k * 10, 112, 90, 14, k % 2 ? 0xffffff : 0xc8dce8, 1);
+  px.rect(88, 2, 4, 14, 0xffffff); px.rect(84, 6, 12, 3, 0xffffff);
+  px.rect(78, 86, 24, 26, 0x9ad0ea);
+  px.outline(0x7a9ab0);
+  return px;
+}
+// 鹽水蜂炮: a beehive rack of rockets on a wheeled frame, the god's face painted on the front
+function paintBeehive() {
+  const W = 90, H = 80, px = new Pix(W, H);
+  px.rect(6, 20, 78, 50, 0x6a4a2a); for (let y = 24; y < 68; y += 6) for (let x = 10; x < 80; x += 6) { px.rect(x, y, 4, 4, 0xd8242a); px.rect(x + 1, y + 1, 2, 2, 0xf2c21a); }
+  px.rect(30, 2, 30, 20, 0xf2c21a); px.rect(34, 6, 22, 12, 0xd8242a); px.text('武廟', 45, 7, 8, 0xf2c21a, { align: 'center' });
+  px.ellipse(16, 74, 6, 6, 0x1a1a1e); px.ellipse(74, 74, 6, 6, 0x1a1a1e);
+  px.outline(0x1a1410);
+  return px;
+}
+// 鹿港天后宮: the Mazu temple's double roof and the lantern-hung forecourt, the old street beside it
+function paintLukangTemple() {
+  const W = 260, H = 160, px = new Pix(W, H);
+  px.rect(20, 86, 220, 74, 0xc85a3a); for (let j = 88; j < H; j += 3) px.rect(20, j, 220, 1, 0xa84a30);
+  for (const x of [40, 90, 170, 220]) px.rect(x - 4, 90, 8, 70, 0x8a1a14);
+  px.rect(110, 104, 40, 56, 0x2a1410); px.rect(112, 106, 36, 52, 0x6a1a10); px.rect(129, 106, 2, 52, 0xf2c21a);
+  px.rect(56, 112, 28, 48, 0x6a1a10); px.rect(176, 112, 28, 48, 0x6a1a10);
+  templeRoof(px, 80, 20, 100, 36, 0xe8961e, 0xf2c21a);
+  templeRoof(px, 10, 58, 110, 30, 0xe8961e, 0xf2c21a); templeRoof(px, 140, 58, 110, 30, 0xe8961e, 0xf2c21a);
+  px.rect(98, 62, 64, 16, 0x1a3a6a); px.text('天后宮', 130, 63, 12, 0xf2c21a, { align: 'center' });
+  for (let k = 0; k < 7; k++) { const x = 30 + k * 34; px.rect(x, 84, 2, 10, 0x6a4a2a); px.ellipse(x + 1, 98, 6, 7, 0xd8242a); px.rect(x - 2, 97, 6, 2, 0xf2c21a); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 嘉義噴水圓環: the fountain pool with its tiers and the baseball statue, water coming up white
+function paintFountain() {
+  const W = 160, H = 100, px = new Pix(W, H);
+  px.ellipse(80, 90, 76, 10, 0x9aa0a6); px.ellipse(80, 88, 70, 8, 0x3a9ad8);
+  px.ellipse(80, 72, 40, 6, 0xb8b8c0); px.rect(60, 60, 40, 12, 0xb8b8c0); px.ellipse(80, 60, 22, 4, 0xd8d8e0);
+  px.rect(74, 24, 12, 36, 0xb8b8c0); px.rect(70, 14, 20, 12, 0x8a8a90); px.rect(76, 4, 8, 10, 0x8a8a90); px.line(84, 10, 96, 2, 0x8a8a90, 3);
+  for (let i = -5; i <= 5; i++) { const x = 80 + i * 12; px.line(x, 72, x + i * 2, 36 + Math.abs(i) * 4, 0xd8f0ff, 2); for (let k = 0; k < 4; k++) px.set(x + i * 2 + k - 2, 34 + Math.abs(i) * 4 - k * 3, 0xffffff); }
+  px.outline(0x2a3040);
+  return px;
+}
+// 奮起湖老街: a wooden shop front of the mountain street, lanterns and a lunchbox sign
+function paintFenqihu() {
+  const W = 170, H = 96, px = new Pix(W, H);
+  px.rect(6, 30, W - 12, 66, 0x8a6a3a); for (let i = 8; i < W - 8; i += 6) px.rect(i, 30, 1, 66, 0x6a4a2a);
+  px.poly([0, 32, W, 32, W - 10, 14, 10, 14], 0x4a4a52); for (let j = 16; j < 32; j += 3) px.rect(10, j, W - 20, 1, 0x3a3a42);
+  px.rect(60, 56, 36, 40, 0x3a2a20); px.rect(20, 50, 30, 20, 0xf2c21a); px.text('便當', 35, 52, 10, 0xd8242a, { align: 'center' });
+  px.rect(110, 46, 44, 26, 0xf4f1ea); px.text('奮起湖', 132, 47, 10, 0x1a1a1e, { align: 'center' }); px.text('老街', 132, 58, 9, 0x1a1a1e, { align: 'center' });
+  for (const x of [14, 40, 128, 156]) { px.rect(x, 32, 2, 6, 0x6a4a2a); px.ellipse(x + 1, 42, 5, 6, 0xd8242a); }
+  for (let i = 0; i < 3; i++) { px.rect(100 + i * 14, 76, 12, 10, 0xd8c8a8); px.rect(102 + i * 14, 78, 8, 6, 0xf2f2ee); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 阿里山小火車: the red forest-railway diesel and two carriages, from the side
+function paintAliTrain() {
+  const W = 300, H = 56, px = new Pix(W, H);
+  px.rect(4, 10, 70, 36, 0xd8242a); px.rect(4, 10, 70, 5, 0xf2f2ee); px.rect(4, 36, 70, 4, 0x1a1a1e); px.rect(10, 16, 16, 12, 0x9ad0ea); px.rect(48, 16, 20, 12, 0x9ad0ea); px.rect(2, 20, 6, 10, 0xf2c21a);
+  for (const x of [84, 194]) { px.rect(x, 12, 102, 34, 0xd8242a); px.rect(x, 12, 102, 5, 0xf2f2ee); px.rect(x, 36, 102, 4, 0x1a1a1e); for (let i = 6; i < 98; i += 16) px.rect(x + i, 18, 11, 12, 0x9ad0ea); }
+  for (let x = 14; x < W - 8; x += 22) { px.ellipse(x, 48, 5, 5, 0x1a1a1e); px.ellipse(x, 48, 2, 2, 0x8a8a90); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 阿里山神木: a giant red cypress, the trunk wide as a house, moss and ferns on it, its crown out of the frame
+function paintCypress(seed) {
+  const rnd = mulberry(seed), W = 140, H = 300, px = new Pix(W, H);
+  px.poly([30, H, 44, 120, 50, 40, 60, 0, 80, 0, 92, 40, 98, 120, 112, H], 0x6a4a34);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (px.on(x, y)) { const l = clamp(0.9 - x / W * 0.7 + (hash2(x >> 1, y >> 3) - 0.5) * 0.3, 0, 1); px.dset(x, y, 0x3a2a1e, 0x8a6a4a, l); }
+  for (let i = 0; i < 24; i++) { const x = 34 + rnd() * 70, y = 80 + rnd() * 200; px.ball(x, y, rnd.range(4, 10), rnd.range(3, 6), [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1); }
+  for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) { const y = 30 + k * 40; px.line(70 + sx * 18, y, 70 + sx * (50 + k * 8), y - 30, 0x5a3e2a, 6); px.ball(70 + sx * (52 + k * 8), y - 34, 22, 14, [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 櫻花: a cherry tree in bloom, pink puffs on dark branches
+function paintSakura(seed) {
+  const rnd = mulberry(seed), W = 90, H = 100, px = new Pix(W, H);
+  px.rect(42, 60, 6, 40, 0x4a3a2e); for (const [a, b] of [[-26, 40], [26, 44], [-10, 28], [14, 26]]) px.line(45, 64, 45 + a, b, 0x4a3a2e, 3);
+  for (let i = 0; i < 26; i++) { const x = 12 + rnd() * 66, y = 14 + rnd() * 46; px.ball(x, y, rnd.range(7, 13), rnd.range(6, 10), [0xd86a9a, 0xf2a0c0, 0xffd0e4], -1, -1); }
+  px.outline(0x4a2a3a);
+  return px;
+}
+// ---------------- the processions: a Mazu palanquin, marchers, banners, a drum cart, the king boat ----------------
+// 神轎: the palanquin from behind — a gilded shrine on poles, four bearers in yellow
+function paintPalanquin() {
+  const W = 80, H = 90, px = new Pix(W, H);
+  for (const x of [10, 60]) { px.rect(x, 54, 10, 30, 0xf2c21a); px.rect(x, 50, 10, 6, 0xf2c8a0); px.rect(x - 1, 80, 5, 10, 0x1a1a1e); px.rect(x + 6, 80, 5, 10, 0x1a1a1e); px.ellipse(x + 5, 44, 5, 5, 0xf2c8a0); px.rect(x + 1, 38, 8, 4, 0xd8242a); }
+  px.rect(4, 62, 72, 4, 0xd8242a);
+  px.rect(20, 28, 40, 36, 0xd8242a); px.rect(22, 30, 36, 32, 0xf2c21a); px.rect(28, 36, 24, 22, 0x8a1a14); px.rect(32, 40, 16, 14, 0xd8b040);
+  templeRoof(px, 18, 10, 44, 16, 0xe8961e, 0xf2c21a);
+  for (let k = 0; k < 4; k++) px.rect(24 + k * 10, 20, 4, 8, [0xd8242a, 0x2a5ad0, 0x18884a, 0xf2c21a][k]);
+  px.outline(0x1a1410);
+  return px;
+}
+// 陣頭: three marchers from behind — an 八家將 with painted face half-turned, a banner bearer, a drummer
+function paintMarchers(seed) {
+  const rnd = mulberry(seed), W = 60, H = 70, px = new Pix(W, H);
+  for (let i = 0; i < 3; i++) {
+    const x = 8 + i * 20 + rnd.range(-2, 2), y = H - 1 - rnd.range(0, 6), col = rnd.pick([0xd8242a, 0xf2c21a, 0x2a5ad0, 0xf2f2ee, 0x18884a]);
+    px.rect(x - 3, y - 18, 3, 18, 0x2a2a30); px.rect(x + 1, y - 18, 3, 18, 0x2a2a30);
+    px.rect(x - 6, y - 38, 13, 22, col); px.rect(x - 6, y - 38, 13, 2, shadeHex(col, 1.3));
+    px.ellipse(x + 1, y - 43, 5, 6, 0xf2c8a0); px.rect(x - 4, y - 50, 10, 5, 0x1a1410);
+    if (i === 0) { px.rect(x - 8, y - 34, 3, 12, 0xf2c8a0); px.rect(x - 10, y - 64, 2, 32, 0x8a6a3a); px.rect(x - 20, y - 66, 12, 20, rnd.pick([0xd8242a, 0xf2c21a])); }
+    if (i === 2) { px.rect(x + 6, y - 32, 10, 8, 0xd8242a); px.rect(x + 7, y - 31, 8, 6, 0xf2c21a); }
+  }
+  px.outline(0x1a1410);
+  return px;
+}
+// 鼓車: a drum cart pushed along, the big drum under its red canopy
+function paintDrumCart() {
+  const W = 70, H = 70, px = new Pix(W, H);
+  px.rect(6, 40, 58, 20, 0x8a6a3a); px.ellipse(14, 64, 6, 6, 0x1a1a1e); px.ellipse(56, 64, 6, 6, 0x1a1a1e);
+  px.ellipse(35, 38, 20, 14, 0xd8242a); px.ellipse(35, 38, 15, 10, 0xf2c8a0); for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU; px.set(35 + Math.cos(a) * 17, 38 + Math.sin(a) * 12, 0xf2c21a); }
+  for (const x of [8, 60]) px.rect(x, 6, 3, 36, 0xd8242a); px.rect(4, 2, 62, 8, 0xd8242a); px.rect(4, 2, 62, 2, 0xf2c21a);
+  px.outline(0x1a1410);
+  return px;
+}
+// 東港王船: the king boat on its cart, hull painted with dragons, three masts with banners
+function paintKingBoat() {
+  const W = 160, H = 120, px = new Pix(W, H);
+  px.rect(10, 100, 140, 14, 0x8a6a3a); px.ellipse(26, 116, 6, 4, 0x1a1a1e); px.ellipse(134, 116, 6, 4, 0x1a1a1e);
+  px.poly([6, 70, 154, 64, 146, 100, 14, 100], 0xd8242a); px.poly([6, 70, 154, 64, 154, 72, 6, 78], 0xf2c21a);
+  px.rect(20, 82, 120, 10, 0x2a5ad0); for (let i = 0; i < 6; i++) px.ellipse(32 + i * 20, 87, 6, 3, 0xf2c21a);
+  for (const x of [40, 80, 120]) { px.rect(x - 1, 10, 3, 60, 0x6a4a2a); px.rect(x + 2, 14, 18, 28, 0xf2c21a); px.rect(x + 2, 14, 18, 3, 0xd8242a); }
+  px.rect(60, 50, 40, 20, 0xf2c21a); px.rect(64, 54, 32, 14, 0x8a1a14); px.text('代天巡狩', 80, 56, 8, 0xf2c21a, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 鞭炮煙: a drift of grey-white smoke with red paper in it
+function paintCrackerSmoke(seed) {
+  const rnd = mulberry(seed), W = 48, H = 40, px = new Pix(W, H);
+  for (let i = 0; i < 10; i++) px.ball(8 + rnd() * 32, 8 + rnd() * 24, rnd.range(6, 12), rnd.range(5, 9), [0x9a9aa0, 0xc8c8cc, 0xf0f0f2], -1, -1);
+  for (let i = 0; i < 12; i++) px.rect(rnd() * W, rnd() * H, 2, 1, 0xd8242a);
+  return px;
+}
+// ---------------- row 4: 台中 · 南投 · 台東 · 恆春半島 ----------------
+// 八卦山大佛: the great black seated Buddha on his lotus, up on the hill
+function paintBaguaBuddha() {
+  const W = 160, H = 220, px = new Pix(W, H);
+  px.ellipse(80, 200, 76, 18, 0x9a9aa0); px.ellipse(80, 196, 70, 12, 0xb8b8c0);
+  px.poly([24, 196, 136, 196, 128, 150, 32, 150], 0x2a2a30);
+  px.poly([34, 150, 126, 150, 112, 90, 48, 90], 0x2a2a30);
+  px.rect(60, 120, 40, 30, 0x3a3a42); px.ellipse(80, 118, 16, 8, 0x3a3a42);
+  px.ellipse(80, 70, 24, 28, 0x2a2a30); px.ellipse(80, 50, 26, 12, 0x1a1a1e); for (let i = 0; i < 20; i++) px.set(56 + (i * 7) % 48, 42 + (i * 3) % 10, 0x3a3a42);
+  px.rect(72, 86, 16, 3, 0x1a1a1e); px.rect(68, 74, 8, 3, 0x1a1a1e); px.rect(84, 74, 8, 3, 0x1a1a1e);
+  px.rect(62, 128, 36, 20, 0x3a3a42); for (let k = 0; k < 4; k++) px.rect(66 + k * 8, 132, 6, 14, 0x2a2a30);
+  px.outline(0x101014);
+  return px;
+}
+// 高美濕地木棧道: the long wooden boardwalk out over the mudflats, railings both sides, people on it
+function paintBoardwalk() {
+  const W = 320, H = 40, px = new Pix(W, H);
+  px.rect(0, 22, W, 8, 0x8a6a3a); for (let x = 0; x < W; x += 4) px.rect(x, 22, 2, 8, 0xa8884a);
+  for (let x = 6; x < W; x += 16) { px.rect(x, 10, 2, 14, 0x6a4a2a); px.rect(x, 30, 2, 8, 0x6a4a2a); }
+  px.rect(0, 12, W, 1, 0x8a6a3a); px.rect(0, 17, W, 1, 0x8a6a3a);
+  for (let i = 0; i < 9; i++) { const x = 20 + i * 34; px.rect(x, 8, 5, 14, [0xd8242a, 0x2a5ad0, 0xf2c21a, 0xf2f2ee, 0x18884a][i % 5]); px.ellipse(x + 2, 5, 3, 3, 0xf2c8a0); }
+  px.outline(0x3a2a1a);
+  return px;
+}
+// 大甲鎮瀾宮: the Mazu temple, lanterns across its front, the name over the door
+function paintZhenlan() {
+  const px = paintBigTemple();
+  px.rect(94, 52, 52, 16, 0x1a3a6a); px.text('鎮瀾宮', 120, 53, 12, 0xf2c21a, { align: 'center' });
+  for (let k = 0; k < 6; k++) { const x = 30 + k * 36; px.ellipse(x, 84, 6, 7, 0xd8242a); px.rect(x - 3, 83, 6, 2, 0xf2c21a); }
+  return px;
+}
+// 三義木雕: a carvers' shop, carved figures and a huge wooden Guanyin out front
+function paintSanyi() {
+  const W = 150, H = 90, px = new Pix(W, H);
+  px.rect(6, 34, 100, 56, 0xe4e0d4); px.poly([0, 36, 112, 36, 102, 18, 10, 18], 0x6a4a2a);
+  px.rect(40, 56, 24, 34, 0x3a2a20); px.rect(12, 40, 40, 12, 0xf2c21a); px.text('三義木雕', 32, 41, 8, 0x1a1a1e, { align: 'center' });
+  px.rect(118, 20, 22, 70, 0xb08050); px.ellipse(129, 18, 9, 10, 0xc89060); px.rect(122, 30, 14, 40, 0xa07040); px.ellipse(129, 44, 5, 3, 0x8a5a30);
+  for (let i = 0; i < 3; i++) { px.rect(10 + i * 10, 76, 6, 14, 0xa07040); px.ellipse(13 + i * 10, 74, 3, 3, 0xb08050); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 油桐花: the tung tree, white blossom in early summer
+function paintTung(seed) {
+  const rnd = mulberry(seed), W = 100, H = 110, px = new Pix(W, H);
+  px.rect(46, 64, 8, 46, 0x5a4a3a); for (const [a, b] of [[-30, 44], [30, 48], [-12, 30], [16, 28]]) px.line(50, 68, 50 + a, b, 0x5a4a3a, 3);
+  for (let i = 0; i < 24; i++) { const x = 10 + rnd() * 80, y = 12 + rnd() * 50; px.ball(x, y, rnd.range(8, 14), rnd.range(6, 10), [0x2f7e30, 0x52a83c, 0x8acc5c], -1, -1); }
+  for (let i = 0; i < 40; i++) px.ellipse(10 + rnd() * 80, 10 + rnd() * 52, 2, 2, 0xffffff);
+  px.outline(0x1a2a1a);
+  return px;
+}
+// 集集車站: the little wooden station of the branch line, cypress boards, a clock over the door
+function paintJijiStation() {
+  const W = 200, H = 90, px = new Pix(W, H);
+  px.rect(10, 36, 180, 54, 0xb08a5a); for (let i = 12; i < 190; i += 5) px.rect(i, 36, 1, 54, 0x8a6a3a);
+  px.poly([0, 40, W, 40, W - 14, 14, 14, 14], 0x4a4a52); for (let j = 16; j < 40; j += 3) px.rect(14, j, W - 28, 1, 0x3a3a42);
+  px.rect(84, 50, 32, 40, 0x3a2a20); for (const x of [30, 150]) { px.rect(x, 50, 22, 18, 0x2a3a4a); px.rect(x, 58, 22, 1, 0xd8c8a8); }
+  px.ellipse(100, 30, 8, 8, 0xf4f1ea); px.line(100, 30, 100, 25, 0x1a1a1e, 1); px.line(100, 30, 104, 30, 0x1a1a1e, 1);
+  px.rect(60, 42, 80, 10, 0xf4f1ea); px.text('集集', 100, 43, 9, 0x1a1a1e, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 集集小火車: the branch line's blue-and-white railcar
+function paintJijiTrain() {
+  const W = 200, H = 54, px = new Pix(W, H);
+  for (const x of [4, 104]) { px.rect(x, 10, 92, 36, 0xf2f2ee); px.rect(x, 28, 92, 10, 0x2a5ad0); px.rect(x, 42, 92, 4, 0x1a1a1e); for (let i = 6; i < 88; i += 14) px.rect(x + i, 14, 10, 12, 0x9ad0ea); }
+  for (let x = 16; x < W - 8; x += 24) { px.ellipse(x, 48, 5, 5, 0x1a1a1e); px.ellipse(x, 48, 2, 2, 0x8a8a90); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 綠色隧道: a huge camphor tree whose crown reaches right over the road
+function paintCamphor(seed) {
+  const rnd = mulberry(seed), W = 240, H = 200, px = new Pix(W, H);
+  px.rect(110, 120, 20, 80, 0x5a4a3a); for (const [a, b] of [[-80, 90], [80, 92], [-40, 60], [50, 56], [0, 50]]) px.line(120, 124, 120 + a, b, 0x5a4a3a, 6);
+  for (let i = 0; i < 40; i++) { const x = 16 + rnd() * 208, y = 20 + rnd() * 90; px.ball(x, y, rnd.range(16, 28), rnd.range(12, 20), [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1); }
+  px.outline(0x1a2a1a);
+  return px;
+}
+// 水里蛇窯: the long brick kiln lying up the slope, its chimney at the top
+function paintSnakeKiln() {
+  const W = 240, H = 100, px = new Pix(W, H);
+  px.poly([10, 96, 210, 60, 210, 40, 10, 76], 0xb0503a); for (let x = 12; x < 210; x += 6) px.line(x, 96 - (x - 10) * 0.18, x, 76 - (x - 10) * 0.18, 0x9a4030, 1);
+  px.poly([10, 76, 210, 40, 200, 30, 16, 66], 0x8a8a90);
+  px.rect(210, 10, 14, 54, 0x8e3e2c); px.rect(208, 6, 18, 6, 0x6a2a1e);
+  px.rect(20, 82, 16, 14, 0x3a2a20);
+  for (let i = 0; i < 4; i++) { px.ellipse(40 + i * 20, 94, 5, 6, 0xa07040); px.ellipse(40 + i * 20, 90, 3, 2, 0x8a5a30); }
+  px.rect(60, 44, 60, 12, 0xf4f1ea); px.text('水里蛇窯', 90, 45, 9, 0x8a1a14, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 多良車站: the red-railed platform on the hill above the Pacific, a train passing
+function paintDuoliang() {
+  const W = 300, H = 110, px = new Pix(W, H);
+  px.rect(0, 70, W, 40, 0x8a8a90); for (let x = 0; x < W; x += 12) px.rect(x, 70, 6, 40, 0x7a7a80);
+  px.rect(0, 62, W, 10, 0xd8d8e0); for (let x = 6; x < W; x += 14) { px.rect(x, 40, 3, 24, 0xd8242a); } px.rect(0, 40, W, 3, 0xd8242a); px.rect(0, 52, W, 2, 0xd8242a);
+  px.rect(20, 10, 260, 32, 0x8a8a90); px.rect(20, 10, 260, 4, 0xa8a8b0);
+  for (const x of [40, 150]) { px.rect(x, 16, 100, 26, 0xf2f2ee); px.rect(x, 30, 100, 8, 0xe8781a); for (let i = 6; i < 96; i += 14) px.rect(x + i, 19, 10, 10, 0x9ad0ea); }
+  px.rect(110, 80, 80, 12, 0xf4f1ea); px.text('多良', 150, 81, 10, 0x1a1a1e, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 熱氣球: a hot-air balloon in the sky over 鹿野
+function paintBalloon(seed) {
+  const rnd = mulberry(seed), W = 60, H = 90, px = new Pix(W, H);
+  const cols = rnd.pick([[0xd8242a, 0xf2c21a], [0x2a5ad0, 0xf2f2ee], [0x18884a, 0xf2c21a], [0xf27aa8, 0x7a3ad8], [0xe8781a, 0x2a5ad0]]);
+  px.ellipse(30, 30, 28, 30, cols[0]); for (let k = -3; k <= 3; k += 2) px.poly([30 + k * 8 - 3, 2, 30 + k * 8 + 3, 2, 30 + k * 6 + 4, 58, 30 + k * 6 - 4, 58], cols[1]);
+  px.poly([18, 56, 42, 56, 34, 72, 26, 72], shadeHex(cols[0], 0.7));
+  px.line(24, 72, 22, 82, 0x6a4a2a, 1); px.line(36, 72, 38, 82, 0x6a4a2a, 1); px.rect(20, 80, 20, 10, 0x8a6a3a);
+  px.outline(0x1a1410);
+  return px;
+}
+// 伯朗大道: the one tree in the middle of the paddies, and the road sign
+function paintBrownAveTree() {
+  const W = 120, H = 120, px = new Pix(W, H), rnd = mulberry(55);
+  px.rect(54, 70, 12, 50, 0x5a4a3a); for (const [a, b] of [[-36, 50], [36, 52], [-14, 34], [18, 32]]) px.line(60, 74, 60 + a, b, 0x5a4a3a, 4);
+  for (let i = 0; i < 26; i++) { const x = 8 + rnd() * 104, y = 14 + rnd() * 52; px.ball(x, y, rnd.range(10, 18), rnd.range(8, 13), [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1); }
+  px.outline(0x1a2a1a);
+  return px;
+}
+// 鐵花村: a string of painted paper lanterns in the ironwood trees
+function paintTiehua(seed) {
+  const rnd = mulberry(seed), W = 160, H = 60, px = new Pix(W, H);
+  px.line(0, 10, W, 14, 0x3a3a42, 1);
+  for (let i = 0; i < 9; i++) { const x = 8 + i * 18, y = 12 + Math.sin(i * 1.3) * 3; px.rect(x - 1, y, 2, 6, 0x3a3a42); px.ball(x, y + 14, 7, 8, [rnd.pick([0xd8242a, 0xe8781a, 0xf2c21a, 0x18884a, 0x2a5ad0, 0xf27aa8]), 0xfff6d0, 0xffffff], 0, -1); px.rect(x - 2, y + 22, 4, 2, 0xf2c21a); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 石門古戰場: the stone obelisk of the old battlefield on its stepped base
+function paintObelisk() {
+  const W = 50, H = 120, px = new Pix(W, H);
+  px.rect(8, 104, 34, 16, 0x9a9aa0); px.rect(14, 96, 22, 10, 0xb8b8c0);
+  px.poly([18, 96, 32, 96, 29, 16, 21, 16], 0xd8d8e0); px.poly([25, 96, 32, 96, 29, 16, 25, 16], 0xb8b8c0);
+  px.poly([21, 16, 29, 16, 25, 6], 0xd8d8e0);
+  px.rect(20, 60, 10, 20, 0x8a8a90); px.text('石', 25, 62, 7, 0xd8242a, { align: 'center' });
+  px.outline(0x2a3040);
+  return px;
+}
+// ---------------- row 5: the goals and the roads to them ----------------
+// 淡水紅毛城: the square red fort with its battlements and flagpole
+function paintFort() {
+  const W = 160, H = 110, px = new Pix(W, H);
+  px.rect(20, 40, 120, 70, 0xb8503a); for (let j = 42; j < H; j += 3) px.rect(20, j, 120, 1, 0x9e4030);
+  for (let x = 20; x < 140; x += 16) px.rect(x, 32, 8, 10, 0xb8503a);
+  px.rect(44, 70, 24, 40, 0x3a2a20); for (const x of [28, 100, 120]) { px.rect(x, 54, 12, 14, 0x2a3a4a); px.rect(x, 60, 12, 1, 0xd8c8a8); }
+  px.rect(78, 4, 3, 36, 0x8a8a90); px.rect(81, 6, 16, 10, 0xd8242a); px.rect(81, 6, 6, 5, 0x2a5ad0); px.ellipse(84, 8, 2, 2, 0xffffff);
+  px.rect(60, 46, 40, 12, 0xf4f1ea); px.text('紅毛城', 80, 47, 9, 0x8a1a14, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 淡水漁人碼頭情人橋: the white single-pylon bridge leaning over the harbour
+function paintLoversBridge() {
+  const W = 300, H = 130, px = new Pix(W, H);
+  px.rect(0, 100, W, 8, 0xf4f1ea); px.rect(0, 108, W, 4, 0xd8dce0);
+  px.poly([200, 110, 214, 110, 236, 10, 226, 8], 0xf4f1ea);
+  for (let k = 0; k < 9; k++) px.line(232 - k * 2, 14 + k * 8, 30 + k * 18, 100, 0xd8dce0, 1);
+  for (let x = 8; x < W; x += 20) px.rect(x, 92, 2, 8, 0xb8bcc2); px.rect(0, 92, W, 1, 0xb8bcc2);
+  px.outline(0x4a5a6a);
+  return px;
+}
+// 台北101: the tower, eight tiers of green glass flaring out, the spire — the goal, tall as the sky
+function paintTaipei101() {
+  const W = 160, H = 420, px = new Pix(W, H);
+  const g = [0x1a3a48, 0x2a5a68, 0x3a7a88, 0x6ab0c0];
+  const blk = (y0, y1, w0, w1) => { for (let y = y0; y < y1; y++) { const t = (y - y0) / Math.max(1, y1 - y0), w = Math.round(lerp(w0, w1, t)); for (let x = -w; x <= w; x++) { const edge = Math.abs(x) === w; let c = edge ? g[0] : x < -w * 0.3 ? g[3] : x < w * 0.3 ? g[2] : g[1]; if (!edge && (y % 3 === 1) && (x % 3 === 0)) c = shadeHex(c, 0.75); px.set(80 + x, y, c); } } };
+  blk(300, H, 44, 50);
+  for (let k = 0; k < 8; k++) { const y0 = 60 + k * 30; blk(y0, y0 + 30, 26, 36); px.rect(80 - 36, y0 + 29, 72, 2, 0x8ad0d8); }
+  blk(34, 60, 12, 16);
+  px.rect(78, 0, 4, 34, 0xd8dce0); px.set(80, 0, 0xff3a3a);
+  for (let k = 0; k < 8; k++) { const y0 = 60 + k * 30; px.ellipse(80 - 36, y0 + 18, 4, 4, 0xd8b040); px.ellipse(80 + 36, y0 + 18, 4, 4, 0xd8b040); }
+  px.outline(0x0a1a24);
+  return px;
+}
+// 石門風箏: a kite high over the coast
+function paintKite(seed) {
+  const rnd = mulberry(seed), W = 40, H = 120, px = new Pix(W, H), c = rnd.pick([0xd8242a, 0x2a5ad0, 0xf2c21a, 0x18884a, 0xf27aa8]);
+  px.poly([20, 2, 36, 18, 20, 34, 4, 18], c); px.line(20, 2, 20, 34, 0xffffff, 1); px.line(4, 18, 36, 18, 0xffffff, 1);
+  for (let k = 0; k < 6; k++) px.rect(18 + Math.sin(k * 1.4) * 4, 36 + k * 7, 3, 5, k % 2 ? c : 0xffffff);
+  px.line(20, 34, 10, 118, 0x8a8a90, 1);
+  px.outline(0x1a1410);
+  return px;
+}
+// 富貴角燈塔: the octagonal lighthouse in black and white bands
+function paintFuguijiao() {
+  const W = 60, H = 150, px = new Pix(W, H);
+  for (let k = 0; k < 7; k++) px.rect(16, 22 + k * 16, 28, 16, k % 2 ? 0xf4f4f0 : 0x1a1a1e);
+  px.rect(12, 20, 36, 4, 0x1a1a1e); px.rect(18, 8, 24, 14, 0x9ad0ea); px.rect(16, 6, 28, 3, 0x1a1a1e); px.poly([16, 6, 44, 6, 30, 0], 0xd8242a);
+  px.rect(10, 134, 40, 16, 0xf4f4f0); px.rect(26, 138, 8, 12, 0x3a2a20);
+  px.outline(0x1a1a24);
+  return px;
+}
+// 野柳: the mushroom rocks of the cape, honeycombed, standing in a row
+function paintYehliuRocks(seed) {
+  const rnd = mulberry(seed), W = 220, H = 90, px = new Pix(W, H);
+  px.rect(0, 70, W, 20, 0x9a8a72);
+  for (let i = 0; i < 5; i++) { const x = 20 + i * 44 + rnd.range(-6, 6), h = rnd.range(30, 54), w = rnd.range(10, 16); px.rect(x - w / 2, 70 - h + 14, w, h - 14, 0xb8a888); px.ellipse(x, 70 - h + 12, w + 8, 10, 0x9a8a72); for (let k = 0; k < 8; k++) px.ellipse(x + rnd.range(-w, w), 70 - h + 12 + rnd.range(-4, 4), 2, 1.5, 0x6a5a48); }
+  px.outline(0x3a3028);
+  return px;
+}
+// 女王頭: the queen's head, the slender neck and the tilted face looking out to sea
+function paintQueenHead() {
+  const W = 100, H = 150, px = new Pix(W, H);
+  px.rect(0, 130, W, 20, 0x9a8a72);
+  px.poly([40, 130, 60, 130, 56, 70, 44, 72], 0xb8a888);
+  px.poly([30, 72, 72, 66, 84, 40, 72, 12, 50, 4, 28, 14, 20, 40], 0xb8a888);
+  for (let y = 4; y < 130; y++) for (let x = 0; x < W; x++) if (px.on(x, y) && y < 130) { const l = clamp(1.1 - x / W * 0.8 + (hash2(x >> 2, y >> 2) - 0.5) * 0.3, 0, 1); px.dset(x, y, 0x7a6a52, 0xd8c8a8, l); }
+  px.ellipse(78, 34, 3, 2, 0x6a5a48); px.line(70, 56, 80, 50, 0x6a5a48, 2);
+  px.outline(0x3a3028);
+  return px;
+}
+// 日月潭遊艇: a lake tour boat, white with a blue band, awning over the deck
+function paintLakeBoat(seed) {
+  const rnd = mulberry(seed), W = 110, H = 44, px = new Pix(W, H);
+  px.poly([4, 30, 106, 30, 100, 42, 10, 42], 0xf2f2ee); px.rect(10, 34, 90, 4, rnd.pick([0x2a5ad0, 0xd8242a, 0x18884a]));
+  px.rect(20, 14, 70, 16, 0xf2f2ee); for (let i = 24; i < 86; i += 12) px.rect(i, 18, 8, 8, 0x9ad0ea);
+  px.rect(16, 8, 78, 6, 0x2a5ad0); for (const x of [20, 56, 90]) px.rect(x, 14, 2, 16, 0xd8dce0);
+  px.outline(0x1a2a3a);
+  return px;
+}
+// 纜車: a gondola of the lake ropeway hanging from its cable
+function paintGondola(seed) {
+  const rnd = mulberry(seed), W = 40, H = 60, px = new Pix(W, H), c = rnd.pick([0xd8242a, 0xf2c21a, 0x2a5ad0]);
+  px.rect(0, 2, W, 2, 0x3a3a42); px.rect(18, 4, 4, 14, 0x5a5a62); px.rect(14, 16, 12, 6, 0x5a5a62);
+  px.rect(6, 22, 28, 32, c); px.rect(6, 22, 28, 3, shadeHex(c, 1.3)); px.rect(10, 28, 20, 14, 0x9ad0ea); px.rect(10, 48, 20, 2, 0x1a1a1e);
+  px.outline(0x1a1410);
+  return px;
+}
+// 文武廟: the great red temple over the lake, a pair of red lions, three tiers of roof
+function paintWenwu() {
+  const W = 280, H = 190, px = new Pix(W, H);
+  px.rect(10, 120, 260, 70, 0xc83a2a); for (let j = 122; j < H; j += 3) px.rect(10, j, 260, 1, 0xa82a22);
+  for (const x of [40, 100, 180, 240]) px.rect(x - 4, 124, 8, 66, 0x8a1a14);
+  px.rect(118, 140, 44, 50, 0x2a1410); px.rect(120, 142, 40, 46, 0x6a1a10);
+  templeRoof(px, 90, 30, 100, 34, 0xe8961e, 0xf2c21a); templeRoof(px, 60, 66, 160, 30, 0xe8961e, 0xf2c21a); templeRoof(px, 10, 98, 260, 26, 0xe8961e, 0xf2c21a);
+  px.rect(112, 72, 56, 16, 0x1a3a6a); px.text('文武廟', 140, 73, 12, 0xf2c21a, { align: 'center' });
+  for (const x of [24, 232]) { px.rect(x, 160, 24, 30, 0xd8242a); px.ellipse(x + 12, 156, 10, 8, 0xd8242a); px.rect(x + 6, 152, 12, 6, 0xf2c21a); }
+  px.outline(0x1a1410);
+  return px;
+}
+// 水社碼頭: the pontoon pier with its boats tied up, the goal on the lake
+function paintShuishePier() {
+  const W = 320, H = 80, px = new Pix(W, H);
+  px.rect(0, 40, W, 10, 0x8a6a3a); for (let x = 0; x < W; x += 5) px.rect(x, 40, 3, 10, 0xa8884a); for (let x = 10; x < W; x += 24) px.rect(x, 50, 3, 30, 0x6a4a2a);
+  for (let i = 0; i < 4; i++) { const x = 30 + i * 76; px.poly([x, 56, x + 60, 56, x + 54, 68, x + 6, 68], 0xf2f2ee); px.rect(x + 8, 46, 44, 10, 0xf2f2ee); px.rect(x + 12, 48, 36, 6, 0x9ad0ea); px.rect(x + 4, 60, 52, 3, [0x2a5ad0, 0xd8242a, 0x18884a, 0xe8781a][i]); }
+  px.rect(120, 10, 80, 30, 0xf4f1ea); px.poly([114, 12, 206, 12, 198, 0, 122, 0], 0xd8242a); px.text('水社碼頭', 160, 16, 11, 0x1a1a1e, { align: 'center' });
+  px.outline(0x1a2a3a);
+  return px;
+}
+// 清境: a Swiss-looking chalet guesthouse with a steep roof and balconies
+function paintChalet(seed) {
+  const rnd = mulberry(seed), W = 130, H = 110, px = new Pix(W, H), c = rnd.pick([0xf4f1ea, 0xe8d8b8, 0xf2e6d0]);
+  px.rect(14, 56, 102, 54, c); for (let j = 58; j < H; j += 4) px.rect(14, j, 102, 1, shadeHex(c, 0.92));
+  px.poly([0, 60, W, 60, 65, 6], 0x8a3a2a); for (let j = 10; j < 60; j += 4) px.rect(65 - (j - 6) * 1.1, j, (j - 6) * 2.2, 1, 0x7a2e22);
+  px.rect(20, 70, 90, 3, 0x6a4a2a); for (let x = 20; x < 110; x += 8) px.rect(x, 64, 2, 8, 0x6a4a2a);
+  for (const x of [24, 56, 88]) { px.rect(x, 76, 18, 14, 0x2a3a4a); px.rect(x, 82, 18, 1, 0xd8c8a8); px.rect(x - 2, 90, 22, 3, 0xd8242a); }
+  px.rect(56, 92, 18, 18, 0x3a2a20);
+  px.outline(0x1a1410);
+  return px;
+}
+// 綿羊: a few sheep grazing on the meadow
+function paintSheep(seed) {
+  const rnd = mulberry(seed), W = 70, H = 30, px = new Pix(W, H);
+  for (let i = 0; i < 3; i++) { const x = 8 + i * 22 + rnd.range(-3, 3), y = 22 + rnd.range(-3, 3); px.rect(x, y, 2, 6, 0x1a1a1e); px.rect(x + 9, y, 2, 6, 0x1a1a1e); px.ball(x + 6, y - 4, 9, 7, [0xc8c8c0, 0xe8e8e0, 0xffffff], -1, -1); px.rect(x + 12, y - 6, 6, 5, 0x1a1a1e); px.rect(x + 14, y - 8, 2, 2, 0x1a1a1e); }
+  px.outline(0x2a2a30);
+  return px;
+}
+// 鐵杉: a mountain hemlock, dark and layered
+function paintHemlock(seed) {
+  const rnd = mulberry(seed), W = 60, H = 130, px = new Pix(W, H);
+  px.rect(27, 90, 6, 40, 0x4a3a2e);
+  for (let k = 0; k < 7; k++) { const y = 20 + k * 12, w = 8 + k * 4; px.poly([30 - w, y + 14, 30 + w, y + 14, 30, y], [0x1e4a24, 0x2f7e30, 0x1e4a24][k % 3]); }
+  px.poly([24, 22, 36, 22, 30, 6], 0x2f7e30);
+  px.outline(0x1a2a1a);
+  return px;
+}
+// 武嶺: the stone marker at the highest point of the island's roads, 3275 m
+function paintWuling() {
+  const W = 90, H = 100, px = new Pix(W, H);
+  px.rect(10, 84, 70, 16, 0x9a9aa0); px.rect(20, 30, 50, 56, 0xb8b8c0); px.rect(24, 34, 42, 48, 0xd8d8e0);
+  px.text('武嶺', 45, 38, 14, 0xd8242a, { align: 'center' }); px.text('3275m', 45, 62, 8, 0x1a1a1e, { align: 'center' });
+  px.poly([16, 30, 74, 30, 45, 12], 0x8a8a90);
+  px.outline(0x2a3040);
+  return px;
+}
+// 台東國際地標: the bamboo-and-rope sail on the seafront park
+function paintTaitungLandmark() {
+  const W = 140, H = 130, px = new Pix(W, H);
+  for (let k = 0; k < 10; k++) { const t = k / 9, x0 = 20 + t * 100, y0 = 120 - Math.sin(t * Math.PI) * 100; px.line(x0, 120, x0, y0, 0xb08a4a, 3); }
+  for (let k = 0; k < 6; k++) { const y = 30 + k * 16; px.line(20, 120 - (120 - y) * 0.3, 120, y, 0x8a6a3a, 1); }
+  px.ellipse(70, 124, 60, 5, 0x9a9aa0);
+  px.outline(0x3a2a1a);
+  return px;
+}
+// 三仙台八拱橋: the eight-arched footbridge out to the island, the island's three peaks behind
+function paintSanxiantai() {
+  const W = 420, H = 150, px = new Pix(W, H);
+  px.poly([250, 110, 290, 40, 330, 60, 360, 20, 400, 70, 420, 110], 0x3f8a36);
+  for (let y = 20; y < 110; y++) for (let x = 250; x < W; x++) if (px.on(x, y) && hash2(x >> 2, y >> 2) < 0.3) px.set(x, y, 0x52a446);
+  px.rect(0, 112, W, 38, 0x2a7ac0); for (let x = 0; x < W; x += 9) px.rect(x + ((x / 9) % 2) * 4, 116 + (x % 4), 5, 1, 0x9ad0ea);
+  for (let k = 0; k < 8; k++) { const x0 = 4 + k * 32; for (let x = 0; x <= 32; x++) { const t = x / 32, y = 110 - Math.sin(t * Math.PI) * 42; px.rect(x0 + x, y, 1, 4, 0xf4f1ea); px.rect(x0 + x, y + 4, 1, 1, 0xb8bcc2); } }
+  for (let x = 4; x < 264; x += 6) px.rect(x, 64, 1, 4, 0xd8dce0); px.rect(4, 62, 260, 1, 0xf4f1ea);
+  px.outline(0x1a2a3a);
+  return px;
+}
+// 太魯閣牌樓: the red Chinese gate at the mouth of the gorge, 東西橫貫公路
+function paintTarokoGate() {
+  const W = 300, H = 160, px = new Pix(W, H);
+  for (const x of [30, 250]) { px.rect(x, 70, 20, 90, 0xd8242a); px.rect(x, 70, 6, 90, 0xf25a4a); px.rect(x - 4, 150, 28, 10, 0x9a9aa0); }
+  px.rect(30, 50, 240, 24, 0xd8242a); px.rect(30, 50, 240, 4, 0xf25a4a);
+  templeRoof(px, 20, 14, 260, 34, 0x2a6a3a, 0xf2c21a);
+  px.rect(90, 54, 120, 16, 0x1a3a6a); px.text('東西橫貫公路', 150, 55, 11, 0xf2c21a, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 長春祠: the shrine on the cliff with the spring falling under it — the goal in the gorge
+function paintChangchun() {
+  const W = 260, H = 220, px = new Pix(W, H);
+  px.poly([0, H, 0, 60, 40, 30, 120, 50, 200, 20, 260, 40, 260, H], 0x8a8e96);
+  for (let y = 20; y < H; y++) for (let x = 0; x < W; x++) if (px.on(x, y)) { const l = clamp(0.8 - y / H * 0.3 + (hash2(x >> 2, y >> 1) - 0.5) * 0.35, 0, 1); px.dset(x, y, 0x5a5e66, 0xd4d8dc, l); }
+  for (let i = 0; i < 20; i++) px.ball(20 + (i * 53) % 220, 60 + (i * 37) % 140, 6, 4, [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1);
+  px.rect(90, 90, 80, 50, 0xd8402a); for (const x of [96, 130, 160]) px.rect(x - 3, 94, 6, 46, 0x8a1a14); px.rect(118, 110, 24, 30, 0x3a2a20);
+  templeRoof(px, 80, 70, 100, 24, 0xe8961e, 0xf2c21a);
+  px.rect(100, 140, 60, 6, 0xb8b8c0);
+  for (let y = 146; y < H; y++) { const w = 10 + (y - 146) * 0.3; px.rect(130 - w / 2, y, w, 1, (y % 3) ? 0xe8f4ff : 0xffffff); }
+  px.ellipse(130, H - 4, 30, 6, 0xd8f0ff);
+  px.rect(104, 100, 52, 10, 0x1a3a6a); px.text('長春祠', 130, 101, 9, 0xf2c21a, { align: 'center' });
+  px.outline(0x2a2e36);
+  return px;
+}
+// 大理石岩壁: the marble wall of the gorge beside the road, as a rail texture
+function paintMarbleWall(seed) {
+  const rnd = mulberry(seed), W = 160, H = 220, px = new Pix(W, H);
+  px.rect(0, 0, W, H, 0x9a9ea6);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = 0.5 + 0.5 * Math.sin((x * 0.05 + y * 0.11) + Math.sin(y * 0.03) * 3) + (hash2(x >> 1, y >> 1) - 0.5) * 0.4; px.dset(x, y, 0x6a6e76, 0xd8dce0, clamp(v, 0, 1)); }
+  for (let i = 0; i < 8; i++) { const y = rnd() * H; px.line(0, y, W, y + rnd.range(-20, 20), 0x4a4e56, 1); }
+  for (let i = 0; i < 14; i++) px.ball(rnd() * W, rnd() * H, rnd.range(4, 9), rnd.range(3, 6), [0x1e4a24, 0x2f7e30, 0x52a83c], -1, -1);
+  return px;
+}
+// 猴子: a pair of macaques by the road at 社頂
+function paintMonkeys(seed) {
+  const rnd = mulberry(seed), W = 44, H = 30, px = new Pix(W, H);
+  for (let i = 0; i < 2; i++) { const x = 8 + i * 22 + rnd.range(-2, 2); px.ball(x + 6, 18, 8, 7, [0x6a5a48, 0x9a8a6a, 0xb8a888], -1, -1); px.ellipse(x + 10, 10, 5, 5, 0x9a8a6a); px.ellipse(x + 11, 11, 3, 2.5, 0xe8c8a8); px.line(x - 2, 20, x - 8, 8, 0x6a5a48, 2); px.rect(x + 2, 24, 2, 6, 0x6a5a48); px.rect(x + 9, 24, 2, 6, 0x6a5a48); }
+  px.outline(0x2a2018);
+  return px;
+}
+// 砂島: the shell-sand beach's little exhibition hut and the white sand
+function paintShadao() {
+  const W = 120, H = 70, px = new Pix(W, H);
+  px.rect(0, 56, W, 14, 0xfff6e0); for (let x = 0; x < W; x += 5) px.set(x, 60 + (x % 3), 0xe8d8b8);
+  px.rect(20, 28, 60, 30, 0xf4f1ea); px.poly([14, 30, 86, 30, 78, 12, 22, 12], 0x8a3a2a); px.rect(44, 40, 14, 18, 0x3a2a20);
+  px.rect(24, 32, 52, 8, 0x1a3a6a); px.text('砂島貝殼砂', 50, 33, 7, 0xf2c21a, { align: 'center' });
+  px.outline(0x1a1410);
+  return px;
+}
+// 水上摩托車: a jet ski skipping across the bay
+function paintJetski(seed) {
+  const rnd = mulberry(seed), W = 50, H = 30, px = new Pix(W, H), c = rnd.pick([0xd8242a, 0xf2c21a, 0x2a5ad0]);
+  px.poly([4, 22, 46, 20, 42, 28, 8, 28], c); px.rect(16, 12, 18, 10, shadeHex(c, 0.8)); px.rect(26, 6, 4, 8, 0x1a1a1e);
+  px.rect(20, 4, 6, 10, 0xf2c8a0); px.rect(19, 0, 8, 5, 0x1a1a1e);
+  for (let i = 0; i < 6; i++) px.ellipse(2 + i * 3, 26 + (i % 2), 3, 1.5, 0xffffff);
+  px.outline(0x1a2a3a);
+  return px;
+}
+// 青蛙石: the frog-shaped rock by the shore at 小灣
+function paintFrogRock() {
+  const px = paintRock(1337, 0x7a8a6a);
+  px.ellipse(40, 30, 5, 4, 0x4a5a3a); px.ellipse(80, 30, 5, 4, 0x4a5a3a); px.ellipse(40, 30, 2, 2, 0x1a1a1e); px.ellipse(80, 30, 2, 2, 0x1a1a1e);
+  return px;
+}
+// 老鷹: a hawk hanging on the wind over the cliffs
+function paintHawk() {
+  const W = 40, H = 16, px = new Pix(W, H);
+  px.line(2, 10, 18, 4, 0x3a2a1e, 3); px.line(22, 4, 38, 10, 0x3a2a1e, 3); px.ellipse(20, 6, 4, 3, 0x5a4a3a); px.rect(18, 8, 4, 6, 0x3a2a1e);
+  return px;
+}
+// 蘭陽博物館: the museum's wedge of stone tilting out of the wetland, its glass face catching the light
+function paintLanyang() {
+  const W = 260, H = 130, px = new Pix(W, H);
+  px.rect(0, 112, W, 18, 0x6ab8d8); for (let x = 0; x < W; x += 9) px.rect(x + ((x / 9) % 2) * 4, 116 + (x % 3), 5, 1, 0xe8f8ff);
+  px.poly([20, 112, 240, 112, 236, 70, 60, 10], 0x6a6e76);
+  for (let y = 10; y < 112; y++) for (let x = 0; x < W; x++) if (px.on(x, y) && y < 112) { const band = Math.floor((x * 0.3 + y) / 9) % 3; px.set(x, y, [0x5a5e66, 0x8a8e96, 0x6a6e76][band]); }
+  px.poly([130, 112, 236, 112, 234, 76, 150, 50], 0x8ad0e8); for (let k = 0; k < 7; k++) px.line(150 + k * 12, 50 + k * 4, 134 + k * 14, 112, 0xc8e8f4, 1);
+  px.outline(0x2a2e36);
+  return px;
+}
+// ---------------- registration ----------------
+function paintTaiwan() {
+  const S = [
+    ['okgoat', '岡山羊肉', 'Gangshan Mutton'], ['sugarfactory', '橋頭糖廠', 'Qiaotou Sugar Factory'], ['tomato', '路竹番茄', 'Luzhu Tomatoes'], ['pineapples', '關廟鳳梨', 'Guanmiao Pineapples'],
+    ['xigang', '西港刈香', 'Xigang Pilgrimage'], ['chikan', '赤崁樓', 'Chihkan Tower'], ['confucius', '台南孔廟', 'Confucius Temple'], ['anping', '安平古堡', 'Anping Fort'],
+    ['saltmountain', '七股鹽山', 'Qigu Salt Mountain'], ['crystalchurch', '北門水晶教堂', 'Crystal Church'], ['beehive', '鹽水蜂炮', 'Yanshui Beehive Fireworks'], ['budai', '布袋漁港', 'Budai Harbour'],
+    ['lukang', '鹿港老街・天后宮', 'Lukang Old Street'], ['fountain', '嘉義噴水池', 'Chiayi Fountain'], ['chickenrice', '嘉義火雞肉飯', 'Chiayi Turkey Rice'], ['xingang', '新港奉天宮', 'Xingang Mazu Temple'],
+    ['teafarm', '高山茶園', 'Mountain Tea'], ['fenqihu', '奮起湖', 'Fenqihu'], ['alitrain', '阿里山森林鐵路', 'Alishan Forest Railway'], ['sakura', '阿里山櫻花', 'Alishan Cherry Blossom'], ['cypress', '阿里山神木', 'Alishan Sacred Trees'],
+    ['donggang', '東港迎王', 'Donggang King Boat'], 
+    ['bagua', '八卦山大佛', 'Bagua Mountain Buddha'], ['gaomei', '高美濕地', 'Gaomei Wetlands'], ['zhenlan', '大甲鎮瀾宮', 'Dajia Jenn Lann Temple'], ['dajia', '大甲媽祖遶境', 'Dajia Mazu Pilgrimage'], ['sanyi', '三義木雕', 'Sanyi Wood Carving'], ['tung', '客家桐花', 'Tung Blossom'],
+    ['jiji', '集集車站', 'Jiji Station'], ['greentunnel', '集集綠色隧道', 'Jiji Green Tunnel'], ['snakekiln', '水里蛇窯', 'Shuili Snake Kiln'], ['checheng', '車埕', 'Checheng'], ['plum', '信義梅子', 'Xinyi Plums'],
+    ['duoliang', '多良車站', 'Duoliang Station'], ['jinlun', '金崙溫泉', 'Jinlun Hot Spring'], ['daylilies', '太麻里金針花', 'Taimali Daylilies'], ['sugarapple', '台東釋迦', 'Taitung Sugar Apple'], ['tiehua', '鐵花村', 'Tiehua Village'], ['balloons', '鹿野高台熱氣球', 'Luye Balloons'], ['brownave', '池上伯朗大道', 'Mr. Brown Avenue'], ['chishang', '池上便當', 'Chishang Lunchbox'],
+    ['shimen', '石門古戰場', 'Shimen Battlefield'], 
+    ['hengchunstreet', '恆春老街', 'Hengchun Old Street'], 
+    ['danshui', '淡水老街', 'Tamsui Old Street'], ['fortsandomingo', '淡水紅毛城', 'Fort San Domingo'], ['loversbridge', '漁人碼頭情人橋', 'Lovers Bridge'], ['guandu', '關渡大橋', 'Guandu Bridge'], ['taipeimrt', '台北捷運', 'Taipei Metro'], ['ximending', '西門町', 'Ximending'], ['taipei101', '台北101', 'Taipei 101'],
+    ['kites', '石門風箏', 'Shimen Kites'], ['fuguijiao', '富貴角燈塔', 'Fuguijiao Lighthouse'], ['jinshan', '金山老街', 'Jinshan Old Street'], ['yehliu', '野柳地質公園', 'Yehliu Geopark'], ['queenhead', '女王頭', "Queen's Head"],
+    ['ropeway', '日月潭纜車', 'Sun Moon Lake Ropeway'], ['wenwu', '文武廟', 'Wenwu Temple'], ['itashao', '伊達邵', 'Ita Thao'], ['xiangshan', '向山遊客中心', 'Xiangshan Centre'], ['shuishe', '水社碼頭', 'Shuishe Pier'],
+    ['cabbages', '高山高麗菜', 'Highland Cabbage'], ['cingjing', '清境農場', 'Cingjing Farm'], ['sheep', '青青草原綿羊', 'Cingjing Sheep'], ['hehuan', '合歡山', 'Hehuanshan'], ['wuling', '武嶺 3275m', 'Wuling'],
+    ['taitunglandmark', '台東海濱公園', 'Taitung Seaside Park'], ['xiaoyeliu', '小野柳', 'Xiaoyeliu'], ['dulan', '都蘭', 'Dulan'], ['amis', '阿美族部落', 'Amis Village'], ['jinzun', '金樽', 'Jinzun'], ['chenggong', '成功漁港・旗魚', 'Chenggong Harbour'], ['sanxiantai', '三仙台', 'Sanxiantai'],
+    ['qixingtan', '七星潭', 'Qixingtan'], ['qingshui', '清水斷崖', 'Qingshui Cliff'], ['tarokogate', '太魯閣', 'Taroko'], ['truku', '太魯閣族', 'Truku Village'], ['swallowgrotto', '燕子口', 'Swallow Grotto'], ['changchun', '長春祠', 'Eternal Spring Shrine'],
+    ['grassland', '龍磐大草原', 'Longpan Grassland'],
+    ['nanfangao', '南方澳漁港・跨港大橋', 'Nanfangao Harbour'], ['coldspring', '蘇澳冷泉', 'Suao Cold Spring'], ['scallions', '三星蔥', 'Sanxing Scallions'], ['jiaoxi', '礁溪溫泉', 'Jiaoxi Hot Spring'], ['turtleisland', '龜山島', 'Turtle Island'], ['lanyang', '蘭陽博物館', 'Lanyang Museum'],
+    ['ontracks', '前方上鐵軌・小心火車', 'RAILWAY AHEAD'],
+    ['sheding', '社頂自然公園', 'Sheding Park'], ['shadao', '砂島', 'Shadao'], ['hongchaikeng', '紅柴坑', 'Hongchaikeng'], ['nanwan', '南灣', 'Nanwan'], ['xiaowan', '小灣', 'Xiaowan'], ['bananabay', '香蕉灣', 'Banana Bay'],
+  ];
+  for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0, shadow: 0.3, ax: d < 0 ? 1 : 0 });
+  addSprite('sugarfactory', paintSugarFactory(), 30, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('sugartrain', paintSugarTrain(), 2.6, { collide: 0, shadow: 0.3 });
+  addSprite('chikan', paintChikan(), 22, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('confucius', paintConfucius(), 9, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('saltmountain', paintSaltMountain(), 20, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('crystalchurch', paintCrystalChurch(), 16, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('beehive', paintBeehive(), 3.2, { collide: 0.6 });
+  addSprite('lukangtemple', paintLukangTemple(), 18, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('fountain', paintFountain(), 7, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('fenqihu', paintFenqihu(), 7.5, { collide: 0, ax: 1 });
+  addSprite('alitrain', paintAliTrain(), 3.4, { collide: 0, shadow: 0.3 });
+  for (let i = 0; i < 2; i++) addSprite('cypress#' + i, paintCypress(3300 + i * 7), 34, { collide: 0.3, shadow: 0.3 });
+  for (let i = 0; i < 3; i++) addSprite('sakura#' + i, paintSakura(3400 + i * 7), 7, { collide: 0.2, sway: 0.2 });
+  addSprite('palanquin', paintPalanquin(), 3.4, { collide: 0, shadow: 0.4 });
+  for (let i = 0; i < 4; i++) addSprite('marchers#' + i, paintMarchers(3500 + i * 11), 2.3, { collide: 0, shadow: 0.3 });
+  addSprite('drumcart', paintDrumCart(), 2.6, { collide: 0, shadow: 0.4 });
+  addSprite('kingboat', paintKingBoat(), 7, { collide: 0, shadow: 0.4 });
+  for (let i = 0; i < 2; i++) addSprite('crackersmoke#' + i, paintCrackerSmoke(3600 + i * 7), 2.4, { collide: 0, shadow: 0 });
+  addSprite('bagua', paintBaguaBuddha(), 26, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('boardwalk', paintBoardwalk(), 4.4, { collide: 0, shadow: 0 });
+  addSprite('zhenlan', paintZhenlan(), 15, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('sanyi', paintSanyi(), 7, { collide: 0, ax: 1 });
+  for (let i = 0; i < 2; i++) addSprite('tung#' + i, paintTung(3700 + i * 7), 9, { collide: 0.2, sway: 0.2 });
+  addSprite('jijistation', paintJijiStation(), 7.5, { collide: 0, ax: 1 });
+  addSprite('jijitrain', paintJijiTrain(), 3.4, { collide: 0, shadow: 0.3 });
+  for (let i = 0; i < 2; i++) addSprite('camphor#' + i, paintCamphor(3800 + i * 7), 20, { collide: 0.3, sway: 0.1, shadow: 0.2 });
+  addSprite('snakekiln', paintSnakeKiln(), 9, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('duoliang', paintDuoliang(), 16, { collide: 0, shadow: 0, ax: 0 });
+  for (let i = 0; i < 4; i++) addSprite('balloon#' + i, paintBalloon(3900 + i * 7), 12, { collide: 0, shadow: 0 });
+  addSprite('brownavetree', paintBrownAveTree(), 13, { collide: 0.4, sway: 0.1 });
+  for (let i = 0; i < 2; i++) addSprite('tiehua#' + i, paintTiehua(4000 + i * 7), 3.2, { collide: 0, shadow: 0 });
+  addSprite('obelisk', paintObelisk(), 8, { collide: 0.6 });
+  addSprite('fort', paintFort(), 12, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('loversbridge', paintLoversBridge(), 24, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('taipei101', paintTaipei101(), 160, { collide: 0, shadow: 0, ax: 0 });
+  for (let i = 0; i < 3; i++) addSprite('kite#' + i, paintKite(4100 + i * 7), 16, { collide: 0, shadow: 0, sway: 0.4 });
+  addSprite('fuguijiao', paintFuguijiao(), 14, { collide: 0.6 });
+  for (let i = 0; i < 2; i++) addSprite('yehliurocks#' + i, paintYehliuRocks(4200 + i * 7), 7, { collide: 0, shadow: 0 });
+  addSprite('queenhead', paintQueenHead(), 10, { collide: 0.6, shadow: 0.3 });
+  for (let i = 0; i < 3; i++) addSprite('lakeboat#' + i, paintLakeBoat(4300 + i * 7), 4.4, { collide: 0, shadow: 0 });
+  for (let i = 0; i < 3; i++) addSprite('gondola#' + i, paintGondola(4400 + i * 7), 6, { collide: 0, shadow: 0, sway: 0.1 });
+  addSprite('wenwu', paintWenwu(), 24, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('shuishe', paintShuishePier(), 9, { collide: 0, shadow: 0, ax: 0 });
+  for (let i = 0; i < 3; i++) addSprite('chalet#' + i, paintChalet(4500 + i * 7), 10, { collide: 0, ax: 1 });
+  for (let i = 0; i < 3; i++) addSprite('sheep#' + i, paintSheep(4600 + i * 7), 1.1, { collide: 0, shadow: 0.3 });
+  for (let i = 0; i < 2; i++) addSprite('hemlock#' + i, paintHemlock(4700 + i * 7), 16, { collide: 0.2, sway: 0.1 });
+  addSprite('wuling', paintWuling(), 6, { collide: 0, ax: 0 });
+  addSprite('taitunglandmark', paintTaitungLandmark(), 16, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('sanxiantai', paintSanxiantai(), 24, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('tarokogate', paintTarokoGate(), 14, { collide: 0, shadow: 0 });
+  addSprite('lanyang', paintLanyang(), 18, { collide: 0, shadow: 0, ax: 0 });
+  addSprite('changchun', paintChangchun(), 40, { collide: 0, shadow: 0, ax: 1 });
+  addSprite('monkeys', paintMonkeys(4800), 1.1, { collide: 0, shadow: 0.3 });
+  addSprite('shadao', paintShadao(), 5.5, { collide: 0, ax: 0 });
+  for (let i = 0; i < 2; i++) addSprite('jetski#' + i, paintJetski(4900 + i * 7), 1.6, { collide: 0, shadow: 0 });
+  addSprite('frogrock', paintFrogRock(), 6, { collide: 0, shadow: 0.4 });
+  addSprite('hawk', paintHawk(), 1.4, { collide: 0, shadow: 0, sway: 0.3 });
+  RAIL_TEX.marble = { L: 4, h: 14, solid: true };
+  addSprite('rail_marble', paintMarbleWall(5000), 14, { collide: 0, shadow: 0 });
 }
 
 // ===================== sprites: Taiwanese street fronts, signs, lamps, stalls, people (24 px per metre) =====================
@@ -2854,12 +4018,14 @@ class Deco {
     const nm = SPR[name] ? name : pickVar(name, this.rnd);
     if (!nm) return null;
     const S = SPR[nm], sc = o.scale || 1;
+    // a cleared forecourt in front of a landmark: nothing else stands there
+    if (this.p.gaps && !o.landmark) for (const g of this.p.gaps) if (s >= g[0] && s <= g[1] && (g[2] < 0 ? x < 0 : x > 0)) return null;
     // the inner side of a fork child, where its sibling runs close by: only what fits in the gap
     if (this.p.innerFree) {
       const i = Math.round(clamp(s, 0, this.p.L) / DS), sg = x < 0 ? -1 : 1;
       if (sg === -this.p.side) { const edge = sg < 0 ? this.p.outerL(i) : this.p.outerR(i), d = sg < 0 ? edge - x : x - edge; if (d + (S.ww * sc * (o.sx || 1)) / 2 > this.p.innerFree[i]) return null; }
     }
-    this.p.sprites.push({ s, x, id: S.id, sc, flip: o.flip != null ? !!o.flip : this.rnd() < 0.5, y: o.y || 0, sway: o.sway != null ? o.sway : S.sway, ph: this.rnd() * TAU, glow: o.glow != null ? o.glow : S.glow, sx: o.sx || 1 });
+    this.p.sprites.push({ s, x, id: S.id, sc, flip: o.flip != null ? !!o.flip : this.rnd() < 0.5, y: o.y || 0, sway: o.sway != null ? o.sway : S.sway, ph: this.rnd() * TAU, glow: o.glow != null ? o.glow : S.glow, sx: o.sx || 1, lm: o.landmark ? 1 : 0 });
     if (S.collide > 0 && o.collide !== false) this.collide(s, x, (S.ww * sc * (o.sx || 1) * S.collide) / 2 + 0.15, 0.6, o.kind || 'solid');
     return S;
   }
@@ -2884,6 +4050,13 @@ class Deco {
   }
   // a hanging wire through points [{s, x, y}] (y above the road)
   wire(pts) { for (let i = 0; i + 1 < pts.length; i++) this.p.wires.push({ s: pts[i].s, x0: pts[i].x, y0: pts[i].y, s1: pts[i + 1].s, x1: pts[i + 1].x, y1: pts[i + 1].y }); }
+  // clear one side of the road from s0 to s1 for a landmark: what was placed there goes, nothing more is put there
+  gap(s0, s1, sg) {
+    const p = this.p; (p.gaps = p.gaps || []).push([s0, s1, sg]);
+    const side = (x) => (sg < 0 ? x < 0 : x > 0);
+    p.sprites = p.sprites.filter((q) => !(q.s >= s0 && q.s <= s1 && side(q.x)));
+    p.colliders = p.colliders.filter((c) => !(c.s1 > s0 && c.s0 < s1 && side((c.x0 + c.x1) / 2)));
+  }
   collide(s, x, hx, hs, kind) { this.p.colliders.push({ s0: s - hs, s1: s + hs, x0: x - hx, x1: x + hx, kind: kind || 'solid' }); }
   finish() {
     const p = this.p, nb = Math.ceil(p.L / BUCKET) + 2;
@@ -2955,8 +4128,10 @@ function decoratePiece(p) {
     const s0 = p.secStartS[j], s1 = j + 1 < p.secs.length ? p.secStartS[j + 1] : p.L;
     if (sec.bridge) TAGS._bridge(D, s0, s1, sec);
     for (const sg of [-1, 1]) { const t = sg > 0 ? sec.R : sec.L; if (t === 'city' || t === 'town' || t === 'plaza' || t === 'harbor') D.rail(s0, s1, sg, 0, 'kerb'); if (SIDE_DRESS[t]) SIDE_DRESS[t](D, s0, s1, sg); }
+    D.sec = sec;
     for (const t of sec.tags || []) if (TAGS[t]) TAGS[t](D, s0, s1, sec);
   });
+  D.sec = null;
   D.finish();
 }
 // ---------- the dressing that comes with a side type, before the section's own tags ----------
@@ -3032,6 +4207,26 @@ function curveSigns(D) {
   });
 }
 
+// ===================== roadside life for the new ground types, so the plain and the high country are not empty =====================
+Object.assign(LIFE, {
+  paddy: { near: [14, ['betel', 'banyan', 'palm'], [1.0, 3]], under: [0.2, ['tuft', 'tuft', 'flowers'], [0.3, 3]], mid: [70, ['farmhouse', 'tinhouse', 'betel'], [16, 60], [1, 3]], far: [10, ['betel', 'banyan', 'casuarina'], [50, 150]], hill: [20, ['banyan', 'casuarina'], [150, 400]] },
+  cane: { near: [12, ['betel', 'banana', 'mango'], [1.0, 3]], under: [0.3, ['tuft', 'tuft'], [0.3, 4]], mid: [60, ['farmhouse', 'banana', 'betel'], [14, 50], [1, 3]], far: [12, ['betel', 'banyan'], [40, 140]] },
+  pineapple: { near: [12, ['mango', 'betel', 'banana'], [1.0, 3]], under: [0.28, ['tuft', 'flowers'], [0.3, 4]], mid: [60, ['farmhouse', 'tinhouse', 'mango'], [14, 50], [1, 3]], far: [11, ['mango', 'banyan'], [40, 140]], hill: [16, ['banyan', 'mango'], [140, 400]] },
+  salt: { near: [20, ['casuarina', 'bush'], [1.0, 3]], under: [0.14, ['tuft', 'reeds'], [0.3, 4]], mid: [80, ['tinhouse'], [30, 70], [1, 2]], far: [20, ['casuarina'], [60, 160]] },
+  milkfish: { near: [14, ['betel', 'palm', 'casuarina'], [1.0, 3]], under: [0.26, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
+  tea: { near: [10, ['betel', 'casuarina', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'bush'], [0.3, 4]], mid: [40, ['stonehouse', 'casuarina'], [10, 36], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
+  daylily: { near: [12, ['casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'flowers', 'flowers'], [0.3, 5]], mid: [50, ['stonehouse', 'tinhouse'], [12, 40], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
+  cabbage: { near: [12, ['casuarina', 'bush', 'rock'], [1.0, 3]], under: [0.3, ['tuft', 'rock'], [0.3, 5]], mid: [60, ['tinhouse', 'farmhouse'], [12, 40], [1, 2]], far: [8, ['casuarina'], [40, 120]], hill: [8, ['casuarina'], [120, 380]] },
+  highland: { near: [14, ['rock', 'bush', 'casuarina'], [1.0, 3]], under: [0.4, ['tuft', 'rock', 'tuft'], [0.3, 7]], mid: [30, ['rock', 'casuarina'], [8, 30], [2, 4]], far: [10, ['casuarina'], [30, 120]], hill: [10, ['casuarina'], [120, 380]] },
+  gorge: { near: [10, ['rock', 'rock', 'bush'], [0.8, 2.5]], under: [0.4, ['rock', 'tuft', 'bush'], [0.2, 3]], mid: [22, ['rock', 'rock', 'casuarina'], [4, 12], [2, 4]] },
+  lake: { near: [12, ['casuarina', 'banyan', 'bush'], [0.8, 2.5]], under: [0.2, ['tuft', 'reeds'], [0.3, 3]], far: [16, ['banyan', 'casuarina'], [160, 300]], hill: [12, ['banyan', 'casuarina'], [200, 460]] },
+  pebble: { near: [12, ['casuarina', 'pandanus', 'palm'], [0.8, 3]], under: [0.2, ['tuft', 'rock'], [0.3, 4]] },
+  mudflat: { near: [16, ['casuarina', 'bush', 'pandanus'], [0.8, 3]], under: [0.16, ['tuft', 'reeds', 'rock'], [0.3, 6]] },
+  river: { near: [12, ['banyan', 'casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'reeds', 'rock'], [0.3, 4]], far: [12, ['banyan', 'casuarina'], [130, 260]], hill: [12, ['banyan', 'casuarina'], [260, 460]] },
+});
+for (const t of ['paddy', 'cane', 'pineapple', 'salt', 'milkfish', 'tea', 'daylily', 'cabbage', 'river', 'mudflat', 'lake', 'pebble']) { POLE_TYPES.add(t); POST_TYPES.add(t); }
+for (const t of ['highland', 'gorge']) POST_TYPES.add(t);
+
 // ===================== tags: the set pieces along the route =====================
 // Every handler gets the decorator D and the section's s range, and places sprites, building fronts, rails and wires.
 function every(s0, s1, step, jitter, r, fn) { for (let s = s0 + step * 0.5; s < s1; s += step) fn(s + (jitter ? r.range(-jitter, jitter) : 0)); }
@@ -3068,7 +4263,7 @@ function lampRow(D, s0, s1, sg, off, step, kind) {
 }
 // a brown sight sign naming what is coming, on the side it stands; once per piece
 function sightSign(D, s, sg, id) {
-  const nm = 'sight_' + id + (sg > 0 ? '_r' : '_l'); if (!SPR[nm]) return;
+  const nm = 'sight_' + id + (sg > 0 ? '_r' : '_l'); if (!SPR[nm] || (D.sec && D.sec.diverge)) return;
   D.p._signs = D.p._signs || new Set(); if (D.p._signs.has(id)) return; D.p._signs.add(id);
   if (s < 10 || s > D.p.L - 10) return;
   D.spr(nm, s, D.lat(s, sg, 0.9), { flip: false, collide: false });
@@ -3339,6 +4534,170 @@ const TAGS = {
     }
   },
 };
+
+// ===================== tags for the rest of the island: what each new stage stands along its road =====================
+// Every handler: (D, s0, s1, sec). Big landmarks sit well back on one side with their sign a little before them.
+// a landmark close by the road clears a forecourt before it, so the houses of the street do not stand in front of it
+const landmark = (D, s, sg, name, dist, signId, signAt, o) => {
+  if (D.sec && D.sec.diverge) return; // the first section is laid twice on a fork child; the landmark stands once
+  o = o || {};
+  const S = SPR[name] || SPR[pickVar(name, D.rnd)];
+  if (S && (dist < 8 || o.gap)) D.gap(s - (o.gap || clamp(S.ww * 2.5, 56, 80)), s + Math.max(8, S.ww * 0.3), sg);
+  if (signId) sightSign(D, s - (signAt || 160), sg, signId);
+  D.spr(name, s, D.lat(s, sg, dist), { flip: false, collide: false, landmark: true, y: o.y || 0 });
+};
+const rowOf = (D, s0, s1, step, jitter, sg, name, d0, d1, o) => every(s0, s1, step, jitter, D.rnd, (s) => D.spr(name, s, D.lat(s, sg, D.rnd.range(d0, d1)), o));
+// a procession, registered here, walked out onto the road by the hazards once the player is near
+const parade = (D, s, kind) => { if (D.sec && D.sec.diverge) return; (D.p.parades = D.p.parades || []).push({ s, kind, done: false }); };
+Object.assign(TAGS, {
+  // ---------------- 台南 ----------------
+  okgoat(D, s0) { sightSign(D, s0 + 60, 1, 'okgoat'); },
+  sugarfactory(D, s0, s1) { landmark(D, s0 + 260, -1, 'sugarfactory', 9, 'sugarfactory'); },
+  sugartrain(D, s0, s1) { for (let s = s0 + 120; s < s1 - 40; s += 180) D.spr('sugartrain', s, D.lat(s, 1, 5.5), { flip: false, collide: false }); D.rail(s0, s1, 1, 4.4, 'kerb'); },
+  tomato(D, s0) { sightSign(D, s0 + 80, -1, 'tomato'); },
+  pineapples(D, s0, s1) { sightSign(D, s0 + 40, 1, 'pineapples'); rowOf(D, s0, s1, 70, 20, -1, 'farmhouse', 20, 40); },
+  paddies(D, s0, s1) { rowOf(D, s0, s1, 120, 30, D.rnd() < 0.5 ? -1 : 1, 'farmhouse', 24, 50); rowOf(D, s0, s1, 90, 20, 1, 'egrets', 6, 30, { collide: false }); },
+  chikan(D, s0, s1) { landmark(D, s0 + 300, -1, 'chikan', 3.2, 'chikan'); },
+  confucius(D, s0) { landmark(D, s0 + 200, -1, 'confucius', 3.2, 'confucius'); },
+  parade_xigang(D, s0, s1) { sightSign(D, s0 + 20, 1, 'xigang'); parade(D, s0 + 200, 'mazu'); },
+  // ---------------- 北門 · 布袋 · 鹿港 ----------------
+  saltmountain(D, s0, s1) { landmark(D, s0 + 300, 1, 'saltmountain', 12, 'saltmountain'); },
+  saltworks(D, s0, s1) { rowOf(D, s0, s1, 60, 15, -1, 'farmhouse', 30, 60); },
+  crystalchurch(D, s0, s1) { landmark(D, s0 + 240, -1, 'crystalchurch', 10, 'crystalchurch'); },
+  beehive(D, s0, s1) { sightSign(D, s0 + 40, -1, 'beehive'); for (let s = s0 + 160; s < s1 - 60; s += 120) D.spr('beehive', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, 2.5), { flip: false }); },
+  wangye(D, s0, s1) { const s = s0 + (s1 - s0) * 0.6; D.spr('bigtemple', s, D.lat(s, 1, 10), { flip: false, collide: false }); },
+  budai(D, s0) { sightSign(D, s0 + 60, 1, 'budai'); },
+  lukang(D, s0, s1) { landmark(D, s0 + 300, -1, 'lukangtemple', 3.2, 'lukang', 200); for (const sg of [-1, 1]) houseRow(D, s0, s1, sg, 4.8, { vsigns: true }); },
+  // ---------------- 嘉義 · 阿里山 ----------------
+  fountain(D, s0) { landmark(D, s0 + 200, 1, 'fountain', 3, 'fountain', 140); },
+  chickenrice(D, s0) { sightSign(D, s0 + 90, -1, 'chickenrice'); },
+  parade_xingang(D, s0, s1) { sightSign(D, s0 + 20, 1, 'xingang'); parade(D, s0 + 220, 'mazu'); },
+  teafarm(D, s0, s1) { if (!D.p._teasign) { D.p._teasign = 1; sightSign(D, s0 + 50, 1, 'teafarm'); } rowOf(D, s0, s1, 80, 20, D.rnd() < 0.5 ? -1 : 1, 'walkers', 8, 24, { collide: false }); },
+  alitrain(D, s0, s1) { if (!D.p._alisign) { D.p._alisign = 1; sightSign(D, s0 + 40, -1, 'alitrain'); } for (let s = s0 + 100; s < s1 - 40; s += 220) D.spr('alitrain', s, D.lat(s, -1, 6), { flip: false, collide: false }); D.rail(s0, s1, -1, 5, 'kerb'); },
+  fenqihu(D, s0, s1) { landmark(D, s0 + 180, -1, 'fenqihu', 3.2, 'fenqihu'); houseRow(D, s0 + 220, s1, -1, 4.8, { vsigns: true }); },
+  sakura(D, s0, s1) { if (!D.p._sakurasign) { D.p._sakurasign = 1; sightSign(D, s0 + 30, 1, 'sakura'); } rowOf(D, s0, s1, 14, 4, D.rnd() < 0.5 ? -1 : 1, 'sakura', 2.5, 12); },
+  cypress(D, s0, s1) { if (!D.p._cypsign) { D.p._cypsign = 1; sightSign(D, s0 + 30, -1, 'cypress'); } rowOf(D, s0, s1, 60, 20, D.rnd() < 0.5 ? -1 : 1, 'cypress', 6, 22); },
+  // ---------------- 東港 · 佳冬 ----------------
+  parade_donggang(D, s0, s1) { sightSign(D, s0 + 20, -1, 'donggang'); parade(D, s0 + 200, 'wangye'); },
+  linbian(D, s0) { sightSign(D, s0 + 40, -1, 'linbian'); },
+  hakka(D, s0, s1) { landmark(D, s0 + 240, -1, 'hakkahouse', 3.4, 'hakka'); },
+  // ---------------- 台中 · 大甲 · 三義 ----------------
+  // the great Buddha sits on his hill above 彰化: the hill first, the statue on its crown, the fields before it left open
+  bagua(D, s0, s1) { const s = s0 + 240; landmark(D, s, -1, 'bagua', 26, 'bagua', 180, { gap: 130, y: 8.5 }); D.spr('hill', s + 1, D.lat(s + 1, -1, 18), { flip: false, collide: false, landmark: true }); },
+  gaomei(D, s0, s1) { sightSign(D, s0 + 40, 1, 'gaomei'); },
+  boardwalk(D, s0, s1) { for (let s = s0 + 120; s < s1 - 60; s += 140) D.spr('boardwalk', s, D.lat(s, 1, 16), { flip: false, collide: false }); },
+  zhenlan(D, s0, s1) { landmark(D, s0 + 260, -1, 'zhenlan', 3.2, 'zhenlan'); },
+  parade_dajia(D, s0, s1) { sightSign(D, s0 + 20, 1, 'dajia'); parade(D, s0 + 300, 'mazu'); },
+  sanyi(D, s0, s1) { landmark(D, s0 + 200, -1, 'sanyi', 3, 'sanyi'); rowOf(D, s0 + 240, s1, 90, 20, -1, 'sanyi', 3, 5, { flip: false }); },
+  tung(D, s0, s1) { if (!D.p._tungsign) { D.p._tungsign = 1; sightSign(D, s0 + 30, 1, 'tung'); } rowOf(D, s0, s1, 16, 5, D.rnd() < 0.5 ? -1 : 1, 'tung', 3, 14); },
+  hakkavillage(D, s0, s1) { rowOf(D, s0, s1, 110, 30, D.rnd() < 0.5 ? -1 : 1, 'hakkahouse', 8, 20, { flip: false }); },
+  // ---------------- 南投 · 集集 ----------------
+  jiji(D, s0, s1) { landmark(D, s0 + 220, -1, 'jijistation', 3.2, 'jiji'); D.spr('lamp2', s0 + 196, D.lat(s0 + 196, -1, 1)); D.spr('lamp2', s0 + 244, D.lat(s0 + 244, -1, 1)); },
+  ontracks(D, s0, s1) { sightSign(D, s0 - 160, 1, 'ontracks'); D.spr('xinglight', s0 - 40, D.lat(s0 - 40, 1, 1), { flip: false }); D.spr('xinglight', s0 - 40, D.lat(s0 - 40, -1, 1), { flip: true }); D.spr('xinglight', s1 + 20, D.lat(s1 + 20, 1, 1), { flip: false }); },
+  jijitrain(D, s0, s1) { for (let s = s0 + 140; s < s1 - 40; s += 240) D.spr('jijitrain', s, D.lat(s, -1, 5.5), { flip: false, collide: false }); D.rail(s0, s1, -1, 4.4, 'kerb'); },
+  greentunnel(D, s0, s1) { sightSign(D, s0 + 30, 1, 'greentunnel'); every(s0 + 60, s1, 22, 4, D.rnd, (s) => { for (const sg of [-1, 1]) D.spr('camphor', s + (sg > 0 ? 11 : 0), D.lat(s, sg, 2.2), { collide: false }); }); },
+  plum(D, s0) { sightSign(D, s0 + 60, 1, 'plum'); },
+  snakekiln(D, s0, s1) { landmark(D, s0 + 220, 1, 'snakekiln', 6, 'snakekiln'); },
+  checheng(D, s0, s1) { sightSign(D, s1 - 160, -1, 'checheng'); rowOf(D, s0 + 200, s1, 50, 12, -1, 'tinhouse', 6, 16); },
+  lakeboats(D, s0, s1) { rowOf(D, s0, s1, 70, 20, 1, 'lakeboat', 20, 60, { collide: false }); },
+  // ---------------- 台東 · 花東縱谷 ----------------
+  duoliang(D, s0, s1) { landmark(D, s0 + 240, 1, 'duoliang', 14, 'duoliang'); },
+  jinlun(D, s0, s1) { sightSign(D, s0 + 40, -1, 'jinlun'); },
+  daylilies(D, s0, s1) { sightSign(D, s0 + 40, 1, 'daylilies'); rowOf(D, s0, s1, 90, 20, D.rnd() < 0.5 ? -1 : 1, 'walkers', 8, 24, { collide: false }); },
+  sugarapple(D, s0) { sightSign(D, s0 + 60, -1, 'sugarapple'); },
+  tiehua(D, s0, s1) { sightSign(D, s0 + 40, -1, 'tiehua'); for (let s = s0 + 120; s < s1 - 40; s += 40) D.spr('tiehua', s, D.lat(s, -1, 3), { y: 4.2, flip: false, collide: false }); },
+  balloons(D, s0, s1) { sightSign(D, s0 + 40, 1, 'balloons'); every(s0, s1, 90, 30, D.rnd, (s) => D.spr('balloon', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(20, 80)), { y: D.rnd.range(14, 40), collide: false })); },
+  brownave(D, s0, s1) { landmark(D, s0 + 300, -1, 'brownavetree', 10, 'brownave'); },
+  chishang(D, s0) { sightSign(D, s0 + 400, 1, 'chishang'); },
+  // ---------------- 恆春半島 ----------------
+  mudan(D, s0, s1) { landmark(D, s0 + 320, -1, 'dam', 30, 'mudan', 200, { gap: 180 }); },
+  shimen(D, s0, s1) { landmark(D, s0 + 200, 1, 'obelisk', 4, 'shimen', 120); },
+  xuhai(D, s0, s1) { sightSign(D, s0 + 40, -1, 'xuhai'); rowOf(D, s0, s1, 110, 30, -1, 'walkers', 10, 40, { collide: false }); },
+  gangzai(D, s0, s1) { sightSign(D, s0 + 40, 1, 'gangzai'); rowOf(D, s0, s1, 40, 10, 1, 'dune', 14, 40, { collide: false }); },
+  manzhou(D, s0) { sightSign(D, s0 + 60, -1, 'manzhou'); },
+  haikou(D, s0, s1) { sightSign(D, s0 + 40, 1, 'haikou'); rowOf(D, s0, s1, 40, 10, 1, 'dune', 14, 40, { collide: false }); },
+  hengchunstreet(D, s0) { sightSign(D, s0 + 60, 1, 'hengchunstreet'); },
+  longluan(D, s0) { sightSign(D, s0 + 60, 1, 'longluan'); },
+  egrets(D, s0, s1) { rowOf(D, s0, s1, 50, 12, 1, 'egrets', 6, 40, { collide: false }); },
+  // ---------------- 淡水 · 台北 ----------------
+  danshui(D, s0, s1) { sightSign(D, s0 + 40, -1, 'danshui'); },
+  fortsandomingo(D, s0, s1) { landmark(D, s0 + 220, -1, 'fort', 3.2, 'fortsandomingo'); },
+  loversbridge(D, s0, s1) { landmark(D, s0 + 240, 1, 'loversbridge', 20, 'loversbridge'); },
+  guandu() {},
+  taipeimrt(D, s0) { sightSign(D, s0 + 80, -1, 'taipeimrt'); },
+  ximending(D, s0) { sightSign(D, s0 + 80, 1, 'ximending'); },
+  taipei101(D, s0, s1) { const s = s0 + 200; sightSign(D, s0 + 20, 1, 'taipei101'); D.spr('taipei101', s, D.lat(s, 1, 24), { flip: false, collide: false }); },
+  // ---------------- 北海岸 ----------------
+  kites(D, s0, s1) { sightSign(D, s0 + 40, 1, 'kites'); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('kite', s, D.lat(s, 1, D.rnd.range(6, 30)), { y: D.rnd.range(6, 16), collide: false })); },
+  fuguijiao(D, s0, s1) { landmark(D, s0 + 240, 1, 'fuguijiao', 18, 'fuguijiao'); },
+  jinshan(D, s0) { sightSign(D, s0 + 60, -1, 'jinshan'); },
+  yehliurocks(D, s0, s1) { sightSign(D, s0 + 40, 1, 'yehliu'); rowOf(D, s0, s1, 50, 12, 1, 'yehliurocks', 10, 30, { collide: false }); },
+  queenhead(D, s0) { const s = s0 + 230; D.spr('queenhead', s, D.lat(s, 1, 12), { flip: false, collide: false }); rowOf(D, s0, s0 + 200, 40, 10, 1, 'yehliurocks', 10, 24, { collide: false }); },
+  // ---------------- 日月潭 ----------------
+  ropeway(D, s0, s1) { sightSign(D, s0 + 40, -1, 'ropeway'); for (let s = s0 + 100; s < s1 - 40; s += 50) D.spr('gondola', s, D.lat(s, -1, D.rnd.range(2, 20)), { y: 12 + D.rnd.range(0, 6), collide: false }); },
+  wenwu(D, s0, s1) { landmark(D, s0 + 240, -1, 'wenwu', 6, 'wenwu'); },
+  itashao(D, s0) { sightSign(D, s0 + 60, -1, 'itashao'); },
+  xiangshan(D, s0) { sightSign(D, s0 + 60, -1, 'xiangshan'); },
+  shuishe(D, s0) { const s = s0 + 220; sightSign(D, s0 + 30, 1, 'shuishe'); D.spr('shuishe', s, D.lat(s, 1, 6), { flip: false, collide: false }); },
+  // ---------------- 清境 · 合歡山 ----------------
+  cabbages(D, s0, s1) { if (!D.p._cabsign) { D.p._cabsign = 1; sightSign(D, s0 + 40, -1, 'cabbages'); } rowOf(D, s0, s1, 100, 30, -1, 'farmhouse', 14, 30); },
+  chalet(D, s0, s1) { if (!D.p._chaletsign) { D.p._chaletsign = 1; sightSign(D, s0 + 40, -1, 'cingjing'); } rowOf(D, s0, s1, 70, 20, -1, 'chalet', 4, 16, { flip: false }); },
+  sheep(D, s0, s1) { if (!D.p._sheepsign) { D.p._sheepsign = 1; sightSign(D, s0 + 40, 1, 'sheep'); } rowOf(D, s0, s1, 24, 6, D.rnd() < 0.5 ? -1 : 1, 'sheep', 4, 30, { collide: false }); },
+  hemlock(D, s0, s1) { if (!D.p._hehsign) { D.p._hehsign = 1; sightSign(D, s0 + 40, -1, 'hehuan'); } rowOf(D, s0, s1, 18, 5, D.rnd() < 0.5 ? -1 : 1, 'hemlock', 3, 16); },
+  wuling(D, s0) { const s = s0 + 220; D.spr('wuling', s, D.lat(s, 1, 4), { flip: false }); rowOf(D, s - 40, s + 40, 10, 3, 1, 'walkers', 7, 12, { collide: false }); },
+  // ---------------- 東海岸 ----------------
+  taitunglandmark(D, s0, s1) { landmark(D, s0 + 200, 1, 'taitunglandmark', 10, 'taitunglandmark', 140); },
+  xiaoyeliu(D, s0, s1) { sightSign(D, s0 + 40, 1, 'xiaoyeliu'); rowOf(D, s0, s1, 40, 10, 1, 'yehliurocks', 10, 26, { collide: false }); },
+  dulan(D, s0) { sightSign(D, s0 + 60, -1, 'dulan'); },
+  amis(D, s0, s1) { sightSign(D, s0 + 240, -1, 'amis'); rowOf(D, s0 + 260, s1, 60, 15, -1, 'totem', 2, 5); },
+  jinzun(D, s0) { sightSign(D, s0 + 60, 1, 'jinzun'); },
+  chenggong(D, s0) { sightSign(D, s0 + 60, 1, 'chenggong'); },
+  sanxiantai(D, s0) { const s = s0 + 200; D.spr('sanxiantai', s, D.lat(s, 1, 16), { flip: false, collide: false }); },
+  // ---------------- 花蓮 · 太魯閣 ----------------
+  qixingtan(D, s0) { sightSign(D, s0 + 60, 1, 'qixingtan'); },
+  qingshui(D, s0) { sightSign(D, s0 + 60, 1, 'qingshui'); },
+  tarokogate(D, s0, s1) { sightSign(D, s0 + 30, -1, 'tarokogate'); overRoad(D, 'tarokogate', s0 + 200, 0); },
+  truku(D, s0) { sightSign(D, s0 + 300, -1, 'truku'); },
+  marble(D, s0, s1, sec) { if (sec.L === 'gorge') D.rail(s0, s1, -1, 1.2, 'marble'); if (sec.R === 'gorge' && D.rnd() < 0.7) D.rail(s0, s1, 1, 6, 'marble'); },
+  swallowgrotto(D, s0) { sightSign(D, s0 + 60, 1, 'swallowgrotto'); },
+  // the shrine stands across the river on the far cliff, seen the whole way up to the finish
+  changchun(D, s0) { landmark(D, s0 + 230, -1, 'changchun', 12, null, 0, { gap: 240 }); },
+  // ---------------- 蘇花 · 宜蘭 ----------------
+  nanfangao(D, s0) { sightSign(D, s0 + 60, 1, 'nanfangao'); },
+  coldspring(D, s0) { sightSign(D, s0 + 60, -1, 'coldspring'); },
+  scallions(D, s0) { sightSign(D, s0 + 60, 1, 'scallions'); },
+  jiaoxi(D, s0) { sightSign(D, s0 + 60, -1, 'jiaoxi'); },
+  turtleisland(D, s0) { sightSign(D, s0 + 300, 1, 'turtleisland'); },
+  lanyang(D, s0) { landmark(D, s0 + 220, 1, 'lanyang', 10, 'lanyang', 190, { gap: 200 }); },
+  // ---------------- 恆春半島南端 ----------------
+  ropebridge(D, s0, s1) { landmark(D, s0 + 150, 1, 'ropebridge', 14, 'ropebridge', 120); },
+  jialeshui(D, s0, s1) { landmark(D, s0 + 260, 1, 'jialeshui', 12, 'jialeshui'); },
+  fengchuisha(D, s0, s1) { sightSign(D, s0 + 40, 1, 'fengchuisha'); rowOf(D, s0, s1, 40, 10, 1, 'dune', 8, 30, { collide: false }); },
+  hawks(D, s0, s1) { every(s0, s1, 70, 20, D.rnd, (s) => D.spr('hawk', s, D.lat(s, 1, D.rnd.range(4, 30)), { y: D.rnd.range(8, 20), collide: false })); },
+  grassland(D, s0) { sightSign(D, s0 + 60, 1, 'grassland'); },
+  sheding(D, s0) { sightSign(D, s0 + 40, -1, 'sheding'); },
+  monkeys(D, s0, s1) { rowOf(D, s0, s1, 60, 15, D.rnd() < 0.5 ? -1 : 1, 'monkeys', 1.5, 4, { collide: false }); },
+  shadao(D, s0, s1) { landmark(D, s0 + 200, 1, 'shadao', 6, 'shadao', 140); },
+  wanlitong(D, s0) { sightSign(D, s0 + 60, -1, 'wanlitong'); },
+  hongchaikeng(D, s0) { sightSign(D, s0 + 60, 1, 'hongchaikeng'); },
+  flyrock(D, s0) { const s = s0 + 250; D.spr('flyrock', s, D.lat(s, 1, 14), { flip: false, collide: false }); },
+  nanwan(D, s0) { sightSign(D, s0 + 60, 1, 'nanwan'); },
+  xiaowan(D, s0) { sightSign(D, s0 + 60, 1, 'xiaowan'); },
+  bananabay(D, s0) { sightSign(D, s0 + 60, 1, 'bananabay'); },
+  jetski(D, s0, s1) { rowOf(D, s0, s1, 60, 15, 1, 'jetski', 30, 70, { collide: false }); },
+  frogrock(D, s0, s1) { const s = s0 + (s1 - s0) * 0.5; D.spr('frogrock', s, D.lat(s, 1, 14), { flip: false, collide: false }); },
+});
+// 關渡大橋: the red steel arch over the river; added to the bridge handler
+{
+  const base = TAGS._bridge;
+  TAGS._bridge = function (D, s0, s1, sec) {
+    base(D, s0, s1, sec);
+    if (sec.bridge === 'arch') {
+      const p = D.p, sm = (s0 + s1) / 2, H = 26;
+      for (let k = 0; k <= 12; k++) { const t = k / 12, sa = s0 + (s1 - s0) * t, ia = Math.round(sa / DS); const y = 1.1 + Math.sin(t * Math.PI) * H; for (const xx of [p.outerR(ia) + 0.5, p.outerL(ia) - 0.5]) { if (k < 12) { const sb = s0 + (s1 - s0) * (k + 1) / 12, yb = 1.1 + Math.sin(((k + 1) / 12) * Math.PI) * H; D.wire([{ s: sa, x: xx, y }, { s: sb, x: xx, y: yb }]); } if (k % 2 === 0 && k > 0 && k < 12) D.wire([{ s: sa, x: xx, y }, { s: sa, x: xx, y: 1.1 }]); } }
+    }
+  };
+}
 
 // ===================== the ten cars: numbers, shapes and crews =====================
 // stats: top km/h, acc 0..1, grip 0..1, steer 0..1, mass 0..1, gears, engine voice.
@@ -5097,16 +6456,29 @@ function trafficUpdate(dt) {
   const mine = TRAFFIC.list.filter((v) => v.p === p);
   if (mine.length < want && RACE.state !== 'countdown') {
     const s = PC.s + rnd(420, ahead);
-    if (s < p.L - 20 && !TRAFFIC.list.some((v) => v.p === p && Math.abs(v.s - s) < 12)) { const veh = spawnVehicle(p, s); if (veh) TRAFFIC.list.push(veh); }
+    if (s < p.L - 20 && !p.sec(s).track && !TRAFFIC.list.some((v) => v.p === p && Math.abs(v.s - s) < 12)) { const veh = spawnVehicle(p, s); if (veh) TRAFFIC.list.push(veh); }
   }
+  trainsUpdate(dt);
   if (RACE.state === 'countdown' && TRAFFIC.list.length < 3) { const veh = spawnVehicle(p, PC.s + 90 + TRAFFIC.list.length * 70); if (veh) TRAFFIC.list.push(veh); }
   // move, follow, avoid
   for (let i = TRAFFIC.list.length - 1; i >= 0; i--) {
     const v = TRAFFIC.list[i];
     if (v.p !== p && v.p !== PC.piece.parent) { TRAFFIC.list.splice(i, 1); continue; }
+    // where the road turns into the railway the cars turn off: nothing but trains runs on the tracks
+    if (!v.train && v.s < v.p.L - 1 && v.p.sec(v.s).track) { TRAFFIC.list.splice(i, 1); continue; }
+    if (v.train) {
+      // a train: straight down its track at its speed, the horn when it is close enough to see; a head-on meeting is a crash
+      v.s += v.v * dt;
+      if (!v.horned && v.s - PC.s < 260) { v.horned = true; sfxTrainHorn(); hudMsg('火車！', '換到另一條軌道', '#ff4f6d', 1.6, false); }
+      if (v.s < PC.s - 60) { TRAFFIC.list.splice(i, 1); continue; }
+      if (!PC.crash && v.p === PC.piece && Math.abs(v.s - PC.s) < (v.len + 4.4) / 2 && Math.abs(v.x - PC.x) < (v.wid + 1.85) / 2) { pcCrash(1); fxHit(0, 1); sfxClang(1); }
+      continue;
+    }
     let lead = Infinity;
     for (const o of TRAFFIC.list) if (o !== v && o.p === v.p && o.s > v.s && Math.abs(o.x - v.x) < 1.6) lead = Math.min(lead, o.s - v.s);
     let target = lead < 22 ? Math.min(v.v0, lead < 10 ? 0 : v.v0 * (lead - 10) / 12) : v.v0;
+    // a procession ahead in this lane: ease up and crawl behind it, the way a street fills up behind one
+    for (const o of HAZ.list) if (o.parade && !o.smoke && o.p === v.p && Math.abs(o.x - v.x) < (o.wid + v.wid) / 2 && o.s > v.s) { const d = o.s - v.s; if (d < 26) target = Math.min(target, d < 8 ? Math.max(0, o.v - 0.2) : v.v0 * (d - 8) / 18 + o.v); }
     // pulling alongside would close the road: whoever is not in front hangs back a touch behind the leader of the group
     if (v.v > 4) {
       const sN = v.s + v.v * dt, iv = nearIntervals(v.p, sN, v.len, v, 8);
@@ -5292,7 +6664,7 @@ function paintHazards() {
 const HAZ_SIDES = { city: 1, town: 1, harbor: 1, plaza: 1, beach: 0.5, bay: 0.6 };
 function hazardsUpdate(dt) {
   const p = PC.piece; if (!p || RACE.state !== 'run') return;
-  tramXUpdate(dt);
+  tramXUpdate(dt); paradeUpdate(dt);
   // spawn: in built-up stretches, one every 200-400 m, stepping off one kerb and heading for the other
   if (PC.s > HAZ.nextS) {
     const s = PC.s + 150 + Math.random() * 120, sec = p.sec(Math.min(p.L - 1, s)), w = Math.max(HAZ_SIDES[sec.L] || 0, HAZ_SIDES[sec.R] || 0);
@@ -5312,7 +6684,8 @@ function hazardsUpdate(dt) {
     const h = HAZ.list[i];
     h.t += dt;
     if (h.hit) { h.hit += dt; h.x += h.vx * dt; h.vy -= 22 * dt; h.y = Math.max(0, h.y + h.vy * dt); if (h.hit > 1.6) HAZ.list.splice(i, 1); continue; }
-    if (h.rider) {
+    if (h.parade) { if (!paradeStep(h, dt)) { HAZ.list.splice(i, 1); continue; } }
+    else if (h.rider) {
       // along the road with the traffic, a wobble into the lane every so often
       h.s += h.v * dt; h.wob -= dt;
       if (h.wob < 0) { h.wob = 3 + Math.random() * 5; h.wx = Math.random() < 0.4 ? -1.6 - Math.random() * 1.4 : 0; }
@@ -5324,12 +6697,13 @@ function hazardsUpdate(dt) {
     }
     // the last-second dodge: a quick one hops back if the car is nearly on it and it is still near its own kerb
     const ds = h.s - PC.s, dx = h.x - PC.x;
-    if (!PC.crash && !HAZ.spinT && ds > 0 && ds < 2.2 + PC.v * 0.05 && Math.abs(dx) < (h.scoot ? 1.9 : 1.5)) {
+    if (h.smoke) continue;
+    if (!PC.crash && !HAZ.spinT && ds > 0 && ds < 2.2 + PC.v * 0.05 + (h.parade ? h.len * 0.5 : 0) && Math.abs(dx) < (h.scoot ? 1.9 : h.parade ? h.wid * 0.5 + 0.8 : 1.5)) {
       // hit: the car spins once and loses its speed; the one hit is tossed toward the far kerb
       h.hit = 0.001; h.vx = h.dir * 6 + Math.sign(dx || 1) * 3; h.vy = 7 + PC.v * 0.05; h.y = 0.01;
       HAZ.spinT = 0.001; HAZ.spinDur = 0.9; HAZ.spinDir = dx > 0 ? -1 : 1;
       PC.v *= 0.45; PC.drift = 0; sfxThud(0.8); sfxHorn(); shake(0.45); RACE.score = Math.max(0, RACE.score - 500);
-      hudMsg(h.scoot || h.rider ? '三寶！' : '哎呀！', h.scoot ? '機車突然衝出來' : h.rider ? ['腳踏車晃出來', '直排輪滑出來', '電動滑板衝出來'][h.kind] : '有人闖馬路', '#ff4f6d', 1.6, false);
+      hudMsg(h.parade ? '撞到陣頭！' : h.scoot || h.rider ? '三寶！' : '哎呀！', h.parade ? '廟會遶境，繞過去啊' : h.scoot ? '機車突然衝出來' : h.rider ? ['腳踏車晃出來', '直排輪滑出來', '電動滑板衝出來'][h.kind] : '有人闖馬路', '#ff4f6d', 1.6, false);
     }
   }
   if (HAZ.spinT) { HAZ.spinT += dt; PC.steerIn *= 0.2; if (HAZ.spinT > HAZ.spinDur) HAZ.spinT = 0; }
@@ -5347,6 +6721,7 @@ function drawTramX(xg, x, y, k, clip, fog) {
 }
 // drawn among the strip's items like the traffic
 function drawHazard(h, x, y, k, clip, fog) {
+  if (h.parade) return drawParadeOne(h, x, y, k, clip, fog);
   const name = h.rider ? 'rider' + h.kind + '#' + h.var : h.scoot ? 'scootside#' + (h.kind % 2) : 'ped' + h.kind + '_' + (Math.floor(h.t * 6) & 1), S = SPR[name]; if (!S) return;
   const hpx = S.wh * k, yy = y - h.y * k;
   if (yy - hpx >= clip) return;
@@ -5356,6 +6731,104 @@ function drawHazard(h, x, y, k, clip, fog) {
   else drawSpr(S, x, yy, hpx, 1, h.dir < 0, clip, fog, 0);
   if (h.hit && h.hit < 0.8) { const B = pixText('!', { s: 2, fill: 0xffe060, out: 0x140a1a, it: 0 }); blitC(B, x + hpx * 0.4, yy - hpx - 10, 'left'); }
 }
+
+// ===================== 廟會: a procession walking the road — the palanquin, the troupes, the banners, the drums =====================
+// Registered on a piece by its stage's tag; when the player comes within reach it walks out onto the road, two lanes wide at
+// the most, always leaving a lane free. It moves at walking pace in the direction of travel. Hitting any of it is like hitting
+// a 三寶: one spin, the speed gone. Traffic queues up behind it like anyone would.
+const PARADE = { v: 1.3 };
+function paradeUpdate(dt) {
+  const p = PC.piece; if (!p || !p.parades) return;
+  for (const q of p.parades) {
+    if (q.done || q.s - PC.s > 420 || q.s < PC.s - 40) continue;
+    q.done = true;
+    const i = Math.round(q.s / DS), hw = p.hw(q.s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
+    // the lanes it takes: the two on the left when there are three or more, one when there are two
+    const take = lanes >= 3 ? 2 : 1, xc = -hw + (LANE * take) / 2, spread = (LANE * take) / 2 - 0.9;
+    const col = q.kind === 'wangye'
+      ? [['marchers', -0.6, 0], ['marchers', 0.6, 4], ['drumcart', 0, 9], ['marchers', -0.5, 14], ['kingboat', 0, 22], ['marchers', 0.6, 30], ['marchers', -0.6, 34], ['crackersmoke', 0.3, 36], ['marchers', 0, 40]]
+      : [['marchers', -0.6, 0], ['marchers', 0.6, 3], ['crackersmoke', -0.3, 5], ['drumcart', 0, 9], ['marchers', -0.5, 14], ['marchers', 0.5, 17], ['palanquin', 0, 24], ['marchers', -0.6, 30], ['marchers', 0.6, 33], ['crackersmoke', 0.2, 36], ['marchers', 0, 40]];
+    for (const [name, lx, ds] of col) HAZ.list.push({ p, s: q.s + ds, x: xc + lx * spread, to: 0, dir: 0, v: PARADE.v, parade: true, spr: name, smoke: name === 'crackersmoke', kind: 0, t: Math.random() * 10, hit: 0, vy: 0, y: 0, vx: 0, len: name === 'kingboat' ? 8 : name === 'palanquin' ? 3 : 2.5, wid: name === 'kingboat' ? 3 : 2.2 });
+    hudMsg('廟會', q.kind === 'wangye' ? '東港迎王・王船遶境' : '媽祖遶境', '#ffd23a', 2.2, false);
+    sfxDrums();
+  }
+}
+// one of the column, stepping forward; smoke drifts up and fades, replaced by a fresh puff
+function paradeStep(h, dt) {
+  h.s += h.v * dt;
+  if (h.smoke) { h.y = (h.t % 2.5) * 1.2; }
+  return h.p === PC.piece && h.s > PC.s - 40 && h.s < h.p.L - 10;
+}
+function drawParadeOne(h, x, y, k, clip, fog) {
+  const S = SPR[h.spr] || SPR[pickVar(h.spr, Math.random)]; if (!S) return;
+  const hpx = S.wh * k, yy = y - h.y * k;
+  if (yy - hpx >= clip) return;
+  if (h.smoke) { VG.globalAlpha = 0.6 * (1 - (h.t % 2.5) / 2.5); drawSpr(S, x, yy, hpx * (1 + (h.t % 2.5) * 0.4), 1, false, clip, fog, 0); VG.globalAlpha = 1; return; }
+  if (h.y < 0.05) { VG.fillStyle = 'rgba(0,0,0,0.25)'; VG.beginPath(); VG.ellipse(x, y - 0.5, hpx * 0.35, Math.max(1, hpx * 0.06), 0, 0, TAU); VG.fill(); }
+  // the marchers' step: a little bob in time with the drums
+  const bob = h.spr === 'marchers' ? Math.round(Math.abs(Math.sin(h.t * 6)) * 1.5 * Math.min(1, k / 20)) : 0;
+  if (h.hit && h.hit > 0.25 && h.hit < 1.1) { VG.save(); VG.translate(x, yy - hpx / 2); VG.rotate(Math.PI * Math.min(1, (h.hit - 0.25) / 0.6) * 2); VG.translate(-x, -(yy - hpx / 2)); drawSpr(S, x, yy, hpx, 1, false, clip, fog, 0); VG.restore(); }
+  else drawSpr(S, x, yy - bob, hpx, 1, false, clip, fog, 0);
+}
+// the drums and gongs heard as it comes into view
+function sfxDrums() { if (!AU.ctx) return; const t = AU.ctx.currentTime; for (let k = 0; k < 8; k++) { noiseHit(t + k * 0.22, 'lowpass', 260, 1, 0.3, 0.12); if (k % 2) tone(t + k * 0.22, 'triangle', 1400, 1100, 0.05, 0.2); } for (let k = 0; k < 20; k++) noiseHit(t + 1.8 + k * 0.045 + Math.random() * 0.02, 'bandpass', 3000 + Math.random() * 2000, 2, 0.12, 0.03); }
+
+// ===================== the crazy branch: the road runs onto the railway, and the trains come the other way =====================
+// A section with track: true is laid as two tracks (two lanes). While the player is on one, a train comes down one of the
+// tracks toward them every so often, horn going: move to the other track or meet it head on. Trains are traffic vehicles
+// running the wrong way, painted head-on and turned a little each way, so one passing alongside shows its flank.
+const TRAINS = { nextT: 0, kinds: { ali: { col: 0xd8242a, band: 0xf2f2ee, name: 'alitrainx' }, jiji: { col: 0xf2f2ee, band: 0x2a5ad0, name: 'jijitrainx' } } };
+// a loco or coach: a long box, the cab face with its windows and lamp, a stripe along the flank
+function trainModel(kind, coach, view) {
+  const K = TRAINS.kinds[kind], col = K.col, L = coach ? 14 : 12, zA = 1.5, hw = 1.3, zs = view === 'front' ? L - 2 * zA : 0, Z = (z) => z - zs;
+  const body = { col, tone: (n, P) => (n[1] > 0.75 ? P[4] : n[1] < -0.3 ? P[0] : Math.abs(n[2]) > 0.5 ? P[3] : n[0] < 0 ? P[2] : P[1]), secs: [rectSec(Z(-zA), hw, 0.5, 3.4, { r: 0.2 }), rectSec(Z(L - zA - 0.4), hw, 0.5, 3.4, { r: 0.2 }), rectSec(Z(L - zA), hw - 0.1, 0.5, 3.2, { r: 0.25 })] };
+  const tyres = []; for (const z of [0.6, 2.2, L - 2 * zA - 1.0, L - 2 * zA + 0.6]) for (const sx of [-1, 1]) tyres.push({ x: sx * 0.75, z: Z(z), R: 0.45, w: 0.2 });
+  const extras = [(c) => {
+    const zf = Z(L - zA) + 0.001, zr = Z(-zA) - 0.001;
+    for (const z of [zf, zr]) {
+      plate(c, z, -hw + 0.2, hw - 0.2, 1.9, 3.0, GLASS_F[1]); plate(c, z, -hw + 0.1, hw - 0.1, 1.2, 1.5, K.band);
+      plate(c, z, -0.3, 0.3, 2.3, 2.9, 0xfff8dc); plate(c, z, -0.2, 0.2, 2.45, 2.75, 0xffffff, 0.012);
+      plate(c, z, -hw + 0.1, hw - 0.1, 0.5, 0.7, 0x1c1a22); plate(c, z, -hw, hw, 0.3, 0.45, 0xd8dce0);
+    }
+    for (const sx of [-1, 1]) { detail(c, [[sx * (hw + 0.001), 1.2, Z(-zA + 0.2)], [sx * (hw + 0.001), 1.2, Z(L - zA - 0.2)], [sx * (hw + 0.001), 1.5, Z(L - zA - 0.2)], [sx * (hw + 0.001), 1.5, Z(-zA + 0.2)]], K.band); for (let w = 0; w < 5; w++) { const z0 = Z(-zA + 0.8 + w * 2.3); detail(c, [[sx * (hw + 0.001), 1.9, z0], [sx * (hw + 0.001), 1.9, z0 + 1.6], [sx * (hw + 0.001), 2.9, z0 + 1.6], [sx * (hw + 0.001), 2.9, z0]], GLASS[0]); } }
+  }];
+  return { parts: [body], tyres, extras, shadow: { hw: hw + 0.1, z0: Z(-zA), z1: Z(L - zA) } };
+}
+function paintTrains() {
+  for (const kind in TRAINS.kinds) {
+    const K = TRAINS.kinds[kind];
+    // head-on and turned: the frames are keyed by the view angle, like the turned frames of the traffic
+    const set = (TRAFFIC_SPR[K.name] = { rear: [], front: [], turn: [] });
+    const r = trafficRender((v) => trainModel(kind, false, v), 'front', 2.8, 3.6);
+    addSprite(K.name + '_f', r.px, r.wh, { collide: 0, shadow: 0, meta: { lights: r.lights } }); set.front.push(K.name + '_f');
+    const byAng = {};
+    for (const a of [-0.7, -0.3, 0.3, 0.7]) { const rr = trafficRender((v) => trainModel(kind, false, v), 'front', 2.8, 3.6, Math.PI + a), nm = K.name + '_f@' + a; addSprite(nm, rr.px, rr.wh, { collide: 0, shadow: 0, meta: { lights: rr.lights } }); byAng[a] = nm; }
+    set.turn[0] = byAng;
+  }
+}
+// called from the traffic update: on a track section, send a train down one of the tracks now and then
+function trainsUpdate(dt) {
+  const p = PC.piece, sec = p.sec(Math.min(p.L - 1, PC.s));
+  if (!sec.track) { TRAINS.nextT = G.t + 1.5; return; }
+  if (G.t < TRAINS.nextT || RACE.state !== 'run') return;
+  TRAINS.nextT = G.t + 7 + Math.random() * 4;
+  // where the tracks end: no train starts beyond that
+  let j = p.secs.indexOf(sec); while (j + 1 < p.secs.length && p.secs[j + 1].track) j++;
+  const endS = j + 1 < p.secs.length ? p.secStartS[j + 1] : p.L;
+  const i0 = Math.round(PC.s / DS), hw = p.hw(PC.s), tracks = Math.max(1, Math.round((2 * hw) / LANE));
+  const track = Math.floor(Math.random() * tracks), x = -hw + LANE * (track + 0.5);
+  const kind = sec.train || 'ali', K = TRAINS.kinds[kind], set = TRAFFIC_SPR[K.name];
+  // the loco, then its coaches behind it (further up the line, since it is coming toward us)
+  const s0 = Math.min(endS - 40, PC.s + 420 + Math.random() * 120), n = 3;
+  if (s0 < PC.s + 160) return;
+  for (let k = 0; k < n; k++) {
+    const s = s0 + k * 12.5;
+    if (s > endS - 2) break;
+    TRAFFIC.list.push({ spr: SPR[set.front[0]], turn: set.turn[0], type: 'train', p, s, x, v: -16, v0: -16, vPrev: -16, brake: 0, len: 12, wid: 2.8, lane: x, oncoming: true, passed: true, hitT: 0, push: 0, lc: null, lcT: 1e9, sig: 0, sigT: 0, manners: manners(), train: true, horned: k > 0 });
+  }
+}
+// the horn, two tones, long
+function sfxTrainHorn() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'sawtooth', 311, 300, 0.12, 1.2); tone(t, 'sawtooth', 370, 360, 0.1, 1.2); tone(t + 0.02, 'square', 155, 150, 0.06, 1.1); }
 
 // ===================== HUD: time, speed and revs, gear, route map, pedals, the shift box, messages =====================
 const hudCanvas = $('hud'), hud = hudCanvas.getContext('2d');
@@ -5528,27 +7001,6 @@ function drawStartLights(cx, cy) {
     hud.fillStyle = on ? (green ? '#7cf26a' : i === 3 ? '#ffd23a' : '#ff4f6d') : '#2a2448';
     hud.beginPath(); hud.arc(cx - 66 + i * 44, cy, 15, 0, TAU); hud.fill();
   }
-}
-// the route as a little tree: where you've been, where you are, what lies ahead
-const MAP_NODES = { s1: [0, 0], s2b: [1, -1], s2a: [1, 1], s3: [2, 0], s4a: [3, -1], s4b: [3, 1] };
-function drawRouteMap(x0, y) {
-  hud.fillStyle = 'rgba(10,16,40,.6)'; rrect(x0, y, 150, 40, 8); hud.fill();
-  otext('STAGE ' + RACE.stageNo, x0 + 8, y + 14, 8, '#3aa8ff', F_PIX, 'left', '#0a1028', 3);
-  const mx = x0 + 16, my = y + 26, dx = 24, dy = 9;
-  const P = (id) => [mx + MAP_NODES[id][0] * dx, my + MAP_NODES[id][1] * dy];
-  hud.lineWidth = 2.5;
-  for (const [a, b] of [['s1', 's2b'], ['s1', 's2a'], ['s2b', 's3'], ['s2a', 's3'], ['s3', 's4a'], ['s3', 's4b']]) {
-    const A = P(a), B = P(b), taken = RACE.route.includes(a) && RACE.route.includes(b);
-    hud.strokeStyle = taken ? '#ffd23a' : 'rgba(255,243,220,.3)'; hud.beginPath(); hud.moveTo(A[0], A[1]); hud.lineTo(B[0], B[1]); hud.stroke();
-  }
-  for (const id in MAP_NODES) {
-    const [x, yy] = P(id), here = PC.piece && PC.piece.id === id, been = RACE.route.includes(id);
-    hud.fillStyle = here ? '#ff4f6d' : been ? '#ffd23a' : '#4a4470'; hud.beginPath(); hud.arc(x, yy, here ? 5.5 : 4, 0, TAU); hud.fill();
-    if (here) { hud.strokeStyle = '#fff3dc'; hud.lineWidth = 1.5; hud.stroke(); }
-  }
-  // the two goals
-  otext('燈塔', mx + 3 * dx + 9, my - dy + 4, 9, '#ffffff', F_TC, 'left', '#0a1028', 2);
-  otext('貓鼻頭', mx + 3 * dx + 9, my + dy + 4, 9, '#ffffff', F_TC, 'left', '#0a1028', 2);
 }
 
 // ===================== the arcade HUD, painted on the game screen in pixels =====================
@@ -6321,7 +7773,21 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
   }
 }
 // one row of one road: asphalt, both shoulders, the lane lines, the edge lines, the fork split
+// a stretch of railway instead of road: ballast, the sleepers across every 0.7 m, two bright rails per track
+const BALLAST = [0x6a625a, 0x645c54], SLEEPER = 0x3e3028, RAILC = 0xc8ccd0;
+function trackRow(cx, rk, R, gs) {
+  const W = R.W, oL = R.oL, oR = R.oR, X = (o) => cx + o * rk, stripe = Math.floor(gs / 5) & 1;
+  fillSpanD(Math.round(X(oL)), Math.round(X(oR)), BALLAST[stripe]);
+  const tracks = Math.max(1, Math.round((2 * W) / LANE)), lw = Math.max(0.5, 0.09 * rk);
+  const sleeper = ((gs % 0.7) + 0.7) % 0.7 < 0.26;
+  for (let k = 0; k < tracks; k++) {
+    const c = -W + LANE * (k + 0.5);
+    if (sleeper) fillSpan(Math.round(X(c - 1.3)), Math.round(X(c + 1.3)), fogPx(SLEEPER, _f));
+    lineAt(X(c - 0.72), lw, RAILC, BALLAST[stripe]); lineAt(X(c + 0.72), lw, RAILC, BALLAST[stripe]);
+  }
+}
 function roadRow(cx, rk, R, gs, gsN) {
+  if (R.sec && R.sec.track) return trackRow(cx, rk, R, gs);
   const W = R.W, M = R.M, SH = R.SH, oL = R.oL, oR = R.oR;
   const X = (o) => cx + o * rk;
   const stripe = Math.floor(gs / 5) & 1, asph = ASPH[stripe];
@@ -6681,7 +8147,9 @@ function botDrive(dt) {
   const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
   if (BOT.lane >= lanes) BOT.lane = lanes - 1;
   const laneX = (l) => -hw + LANE * (l + 0.5), horizon = 40 + v * 1.6;
-  const clearAhead = (lx) => { let d = horizon; for (const o of TRAFFIC.list) if (o.p === p && o.s > s - 4 && o.s - s < horizon && (Math.abs(o.x - lx) < 2.3 || (o.lc && Math.abs(o.lc.x - lx) < 2.3))) d = Math.min(d, o.s - s); return d; };
+  const clearAhead = (lx) => { let d = horizon; for (const o of TRAFFIC.list) if (o.p === p && o.s > s - 4 && o.s - s < horizon && (Math.abs(o.x - lx) < 2.3 || (o.lc && Math.abs(o.lc.x - lx) < 2.3))) d = Math.min(d, o.s - s); for (const o of HAZ.list) if (o.parade && !o.smoke && o.p === p && o.s > s - 4 && o.s - s < horizon && Math.abs(o.x - lx) < 2.6) d = Math.min(d, o.s - s); return d; };
+  // a train coming down my track: off it, now
+  for (const o of TRAFFIC.list) if (o.train && o.p === p && o.s > s && o.s - s < 420 && Math.abs(o.x - laneX(BOT.lane)) < 2.3 && lanes > 1) { BOT.lane = BOT.lane === 0 ? 1 : 0; BOT.laneT = G.t + 1.5; break; }
   const cur = clearAhead(laneX(BOT.lane));
   if (cur < horizon && G.t > BOT.laneT) {
     let best = BOT.lane, bd = cur + 14;
@@ -6691,7 +8159,7 @@ function botDrive(dt) {
   let xt = laneX(BOT.lane);
   // follow the leader in this lane: never closer than a car length and a bit
   const lead = clearAhead(xt);
-  if (lead < horizon) { let lv = 0; for (const o of TRAFFIC.list) if (o.p === p && Math.abs(o.s - s - lead) < 0.5 && Math.abs(o.x - xt) < 2.3) lv = o.v; const gap = lead - 7; vSafe = Math.min(vSafe, gap < 4 ? Math.max(0, lv - 2) : Math.sqrt(Math.max(0, lv * lv + 2 * 12 * gap))); }
+  if (lead < horizon) { let lv = 0; for (const o of TRAFFIC.list) if (o.p === p && Math.abs(o.s - s - lead) < 0.5 && Math.abs(o.x - xt) < 2.3) lv = o.v; for (const o of HAZ.list) if (o.parade && o.p === p && Math.abs(o.s - s - lead) < 0.5 && Math.abs(o.x - xt) < 2.6) lv = o.v; const gap = lead - 7; vSafe = Math.min(vSafe, gap < 4 ? Math.max(0, lv - 2) : Math.sqrt(Math.max(0, lv * lv + 2 * 12 * gap))); }
   // a tram across the road ahead: stop short of it while it is crossing, like anyone would
   for (const xg of HAZ.xings) if (xg.p === p && xg.on && xg.s > s - 3 && xg.s - s < 140) { const gap = Math.max(0, xg.s - s - 12); vSafe = Math.min(vSafe, Math.sqrt(2 * 14 * gap)); }
   // forks: drift toward the side we want over the last stretch
@@ -6804,10 +8272,17 @@ async function boot() {
   resize();
   await loadFonts();
   if (typeof loadRefCars === 'function') await loadRefCars();
-  paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintHazards(); paintBig(); paintCity(); paintRails(); paintTraffic();
+  const t0 = performance.now();
+  paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintHazards(); paintBig(); paintCity(); paintRails(); paintTraffic(); paintTaiwan(); paintTrains();
+  const tA = performance.now();
   packAtlas();
+  const tB = performance.now();
   buildWorld();
-  for (const id in STAGES) buildBackdrop(STAGES[id].pano, STAGES[id].clouds);
+  const tC = performance.now();
+  // the backdrops: the first stage and its two children now, the rest a little at a time once the title is up
+  for (const id of ['s1', 's2n', 's2s']) buildBackdrop(STAGES[id].pano, STAGES[id].clouds);
+  G.bootMs = { paint: Math.round(tA - t0), atlas: Math.round(tB - tA), world: Math.round(tC - tB), back: Math.round(performance.now() - tC) };
+  { const rest = Object.keys(STAGES).filter((id) => !['s1', 's2n', 's2s'].includes(id)); const tick = () => { const id = rest.shift(); if (!id) return; buildBackdrop(STAGES[id].pano, STAGES[id].clouds); setTimeout(tick, 150); }; setTimeout(tick, 800); }
   fxInit();
   uiInit(); avatarInit();
   startAttract();
@@ -6815,14 +8290,16 @@ async function boot() {
 }
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
-  G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, gapLeft, nearIntervals,
-  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); },
+  G, ROUTE, SPR, SPRL, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, gapLeft, nearIntervals,
+  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); }, showResult, openRecords, courseLayout, startEnding,
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
   speed(k) { G.speed = k; },
   halt(on) { G.halt = !!on; },
   // run the race without drawing: seconds of game time in fixed steps, stopping at the goal or time-up
   sim(sec, h) { h = h || 1 / 60; const n = Math.round(sec / h); for (let i = 0; i < n; i++) { tick(h); if (RACE.state === 'goal' && RACE.goalT > 1 || RACE.state === 'timeup' && RACE.overT > 1) break; } return this.state(); },
+  // the ending scene for a goal, drawn n frames in: the picture, for the tests
+  ending(goal, n, car) { RACE.carIdx = car || 0; RACE.goal = goal; startEnding(); for (let i = 0; i < (n || 90); i++) drawEnding(1 / 30); return view.toDataURL('image/png'); },
   go(pi, s, x) { PC.piece = ROUTE.pieces[pi]; PC.s = s; PC.x = x == null ? PC.x : x; CAM.init = false; },
   run() { RACE.state = 'run'; RACE.countdown = 0; },
   cam(o) { Object.assign(CAM.cfg, o); CAM.init = false; return CAM.cfg; },
@@ -6844,7 +8321,7 @@ const UI = { scr: null, sel: 0, auto: true, gearbox: 'at', ctrl: 'tilt', song: 0
 const SAVE = { load(k, d) { try { const v = localStorage.getItem('kr.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, save(k, v) { try { localStorage.setItem('kr.' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } } };
 const SET = Object.assign({ music: 0.6, sfx: 0.9, sens: 18, quality: 'high', guide: true }, SAVE.load('settings', {}));
 if (SET.sens === 28) SET.sens = 18;   // the old default was too lazy
-const ROUTE_NAMES = { s1: '高雄港', s2a: '海線', s2b: '山線', s3: '枋山', s4a: '鵝鑾鼻', s4b: '貓鼻頭' };
+const ROUTE_NAMES = {}; for (const id in STAGES) ROUTE_NAMES[id] = STAGES[id].name;
 const STAT_ROWS = [['極速', (c) => c.top / 340, (c) => c.top + ''], ['加速', (c) => c.acc, null], ['抓地', (c) => c.grip, null], ['操控', (c) => c.steer, null], ['車重', (c) => c.mass, null]];
 const ENGINE_NAME = { v12: 'V12', v8: 'V8', i6: '直列六缸', i4: '直列四缸', flat6: '水平對臥六缸', turbo: '渦輪增壓' };
 function h(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
@@ -6853,7 +8330,7 @@ function uiInit() {
   root.innerHTML = `
   <section class="scr" id="s-title">
     <div class="title-wrap">
-      <div class="logo"><span class="logo-tc">衝向墾丁</span><span class="logo-en">KENTING RUN</span><span class="logo-yr">高雄港 → 鵝鑾鼻　1993</span></div>
+      <div class="logo"><span class="logo-tc">衝向寶島</span><span class="logo-en">FORMOSA RUN</span><span class="logo-yr">高雄港出發・環島十條路線　1993</span></div>
       <div class="tap" id="tap">點一下開始　TAP TO START</div>
       <div class="menu" id="menu" hidden>
         <button class="btn big" data-go="select">開始遊戲</button>
@@ -6933,6 +8410,7 @@ function onUiClick(e) {
     if (k === 'host') netHost();
     else if (k === 'join') netJoin(($('net-code') || {}).value);
     else if (k === 'leave') { netLeave(); renderOnline(); }
+    else if (k === 'rejoin') { const code = NET.code; netJoin(code); }
     else if (k === 'car') { UI.from = 'online'; show('select'); }
     else if (k === 'start') { if (NET.phase === 'race') NET.phase = 'lobby'; netHostStart(); }
     else if (k === 'lobby') { NET.phase = 'lobby'; G.paused = false; toTitle(); show('online'); }
@@ -7062,6 +8540,51 @@ function uiFrame() {
   if (G.mode === 'attract' && (RACE.state === 'goal' || RACE.state === 'timeup' || PC.s > PC.piece.L - 50 && !PC.piece.children.length && !PC.piece.next)) startAttract();
   if (G.mode === 'play' && !UI.resultShown && ((RACE.state === 'goal' && RACE.goalT > 2.6) || (RACE.state === 'timeup' && RACE.overT > 3.2))) showResult();
 }
+// ---------- the course map: the stages as a fan from the harbour out to the ten endings ----------
+// Rows by depth from s1; an ending sits at its slot in the last row, every other stage at the middle of its children,
+// so a stage two roads share sits between them and nothing crosses. Built once from STAGES.
+const COURSE = { rows: null, nodes: null, edges: null, paths: null };
+function courseLayout() {
+  if (COURSE.nodes) return COURSE;
+  const rows = [['s1']], seen = new Set(['s1']);
+  for (let r = 0; rows[r].some((id) => (STAGES[id].children || []).length); r++) {
+    const next = [];
+    for (const id of rows[r]) for (const c of STAGES[id].children || []) if (!seen.has(c) && STAGES[c]) { seen.add(c); next.push(c); }
+    rows.push(next);
+  }
+  const nodes = {}, last = rows.length - 1;
+  rows[last].forEach((id, i) => { nodes[id] = { row: last, y: (i + 0.5) / rows[last].length }; });
+  for (let r = last - 1; r >= 0; r--) for (const id of rows[r]) { const ch = (STAGES[id].children || []).filter((c) => nodes[c]); nodes[id] = { row: r, y: ch.length ? ch.reduce((a, c) => a + nodes[c].y, 0) / ch.length : 0.5 }; }
+  const edges = [];
+  for (const id in nodes) for (const c of STAGES[id].children || []) if (nodes[c]) edges.push([id, c]);
+  const paths = [];
+  (function walk(id, acc) { const ch = (STAGES[id].children || []).filter((c) => nodes[c]); if (!ch.length) { paths.push(acc.concat(id)); return; } for (const c of ch) walk(c, acc.concat(id)); })('s1', []);
+  Object.assign(COURSE, { rows, nodes, edges, paths });
+  return COURSE;
+}
+// the map as an SVG: the roads taken in gold, the stage reached last marked, every name small beside its stage
+function courseMapSVG(route, goal) {
+  const C = courseLayout(), W = 340, H = 232, R = C.rows.length, padL = 28, padR = 72, padT = 14, padB = 8;
+  const X = (r) => padL + (r / (R - 1)) * (W - padL - padR), Y = (y) => padT + y * (H - padT - padB);
+  const on = (id) => route.includes(id), taken = (a, b) => on(a) && on(b) && route.indexOf(b) === route.indexOf(a) + 1;
+  const lastId = route[route.length - 1];
+  let s = `<svg class="cmap" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="路線圖">`;
+  const sorted = C.edges.slice().sort((e, f) => (taken(e[0], e[1]) ? 1 : 0) - (taken(f[0], f[1]) ? 1 : 0));
+  for (const [a, b] of sorted) {
+    const A = C.nodes[a], B = C.nodes[b], t = taken(a, b), x0 = X(A.row), x1 = X(B.row), y0 = Y(A.y), y1 = Y(B.y), xm = (x0 + x1) / 2;
+    s += `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} C${xm.toFixed(1)} ${y0.toFixed(1)} ${xm.toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="${t ? '#ffd23a' : 'rgba(255,243,220,.22)'}" stroke-width="${t ? 2.6 : 1.2}" stroke-linecap="round"/>`;
+  }
+  for (const id in C.nodes) {
+    const n = C.nodes[id], x = X(n.row), y = Y(n.y), here = on(id), end = !(STAGES[id].children || []).length, last = id === lastId;
+    const col = last ? (goal ? '#ff4f6d' : '#ff8a3a') : here ? '#ffd23a' : '#4a4470';
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${last ? 4.6 : here ? 3.6 : 2.6}" fill="${col}"${last ? ' stroke="#fff3dc" stroke-width="1.4"' : ''}/>`;
+    const nm = STAGES[id].name, fill = here ? '#fff3dc' : 'rgba(255,243,220,.5)', fs = here ? 9.5 : 8.5;
+    if (end) s += `<text x="${(x + 7).toFixed(1)}" y="${(y + 3.2).toFixed(1)}" font-size="${fs}" font-weight="${here ? 700 : 400}" fill="${fill}">${nm}</text>`;
+    else if (n.row === 0) s += `<text x="${x.toFixed(1)}" y="${(y - 7).toFixed(1)}" font-size="${fs}" font-weight="700" fill="${fill}" text-anchor="middle">${nm}</text>`;
+    else s += `<text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" font-size="${fs}" font-weight="${here ? 700 : 400}" fill="${fill}" text-anchor="middle">${nm}</text>`;
+  }
+  return s + '</svg>';
+}
 // ---------- results and records ----------
 function routeKey() { return RACE.route.join('>'); }
 function showResult() {
@@ -7081,10 +8604,11 @@ function showResult() {
   $('result').innerHTML = `
     <div class="res-banner" style="color:${goal ? 'var(--sun)' : 'var(--hot)'}">${goal ? 'GOAL!' : 'TIME UP'}</div>
     <p class="res-sub">${RACE.route.map((r) => ROUTE_NAMES[r]).join(' → ')}　・　${c.name}　${UI.gearbox === 'seq' ? 'MT(b)' : UI.auto ? 'AT' : 'MT'}</p>
+    <div class="res-body"><div class="cmap-box">${courseMapSVG(RACE.route, goal)}</div>
     <table class="sp"><tr><td>檢查點</td><td class="t">時間</td></tr>${splits}
       <tr><td><b>${goal ? '總時間' : '行駛時間'}</b>${newBest ? '<span class="new">NEW RECORD</span>' : ''}</td><td class="t"><b>${fmtTime(RACE.elapsed)}</b></td></tr>
       <tr><td>分數${rank ? '（第 ' + rank + ' 名）' : ''}</td><td class="t">${Math.floor(RACE.score).toLocaleString('en-US')}</td></tr>
-      <tr><td>撞車</td><td class="t">${RACE.crashes} 次</td></tr></table>
+      <tr><td>撞車</td><td class="t">${RACE.crashes} 次</td></tr></table></div>
     ${NET.on ? '<div id="net-rank"></div>' : ''}
     <div class="actions">${goal ? '<button class="btn big" data-act="ending">看結局</button>' : ''}${NET.on ? '<button class="btn" data-net="lobby">回房間</button>' : '<button class="btn" data-act="again">再跑一次</button>'}<button class="btn ghost" data-act="title">回標題</button></div>`;
   show('result');
@@ -7099,7 +8623,8 @@ function renderRank() {
 }
 function openRecords() {
   const rec = SAVE.load('records', { routes: {}, scores: [] });
-  const routes = [['s1>s2b>s3>s4a', '山線 → 鵝鑾鼻'], ['s1>s2b>s3>s4b', '山線 → 貓鼻頭'], ['s1>s2a>s3>s4a', '海線 → 鵝鑾鼻'], ['s1>s2a>s3>s4b', '海線 → 貓鼻頭']];
+  // every road through the island, named by the stages after the harbour
+  const routes = courseLayout().paths.map((pth) => [pth.join('>'), `<b>${STAGES[pth[pth.length - 1]].name}</b><div class="via">經 ${pth.slice(1, -1).map((id) => STAGES[id].name).join('・')}</div>`]);
   const carName = (id) => (CARS.find((c) => c.id === id) || {}).name || '';
   $('records').innerHTML = `<h2 class="ttl">紀錄</h2>
     <table class="sp">${routes.map(([k, n]) => { const r = rec.routes[k]; return `<tr><td>${n}</td><td>${r ? carName(r.car) + (r.box === 'seq' ? ' MT(b)' : r.auto ? ' AT' : ' MT') : '—'}</td><td class="t">${r ? fmtTime(r.t) : '--\'--"--'}</td></tr>`; }).join('')}</table>
@@ -7169,6 +8694,7 @@ function renderOnline() {
     ${NET.err ? `<p class="note" style="color:#ff8aa0">${NET.err}</p>` : ''}
     <div class="actions">
       <button class="btn ghost" data-net="leave">離開</button>
+      ${!NET.host && NET.lost ? '<button class="btn big" data-net="rejoin">重新連線</button>' : ''}
       <button class="btn" data-net="car">選車（${CARS[NET.me.car].name}）</button>
       ${NET.host ? `<button class="btn big" data-net="start" ${players.length < 1 ? 'disabled' : ''}>${racing ? '再跑一次' : '開始！'}</button>` : ''}
     </div>`;
@@ -7227,44 +8753,124 @@ function drawGhost(x, y, k, clip) {
 // A scene at the goal at sunset: the landmark, the sea, the car pulling in, the couple getting out, three lines of story.
 const ENDINGS = {
   rosso: {
-    s4a: ['燈塔的光剛亮起來，阿凱把車停在草坡上。', '「小晴，我們從高雄一路開到台灣最南端了。」', '他從口袋拿出一個小盒子。小晴笑著說：「好啦，我願意。」'],
-    s4b: ['貓鼻頭的風好大，小晴的頭髮整個飛起來。', '「明年夏天，我們再開一次這條路？」', '阿凱看著海平面上的太陽：「每年都來。」'],
+    s5a: ['一〇一的燈一層一層亮起來，阿凱把車停在信義路邊。', '「小晴，從高雄港開到這裡，我們把半個台灣都開完了。」', '他從口袋拿出一個小盒子。小晴笑著說：「好啦，我願意。」'],
+    s5b: ['女王頭在風裡站了幾千年，今天多了兩個看她的人。', '小晴說：「聽說她的脖子越來越細，哪天會斷掉。」', '阿凱握住她的手：「那我們每年都來看她一次。」'],
+    s5c: ['日月潭的水面平得像一面鏡子，映著兩個人的影子。', '「如果當年你沒有在高雄港等我上車……」', '阿凱把鑰匙放進她手裡：「那我現在就會在這裡等。」'],
+    s5d: ['武嶺的石碑旁，氣溫只有八度，小晴把阿凱的外套搶走了。', '雲海在腳下翻湧，紅色的羅索停在三千兩百公尺的路肩。', '「這是台灣最高的路。」阿凱說，「也是我們開過最高的地方。」'],
+    s5e: ['長春祠的泉水從峽谷裡落下來，聲音蓋過了引擎。', '小晴仰頭看大理石的峭壁，好一會兒沒有說話。', '「阿凱，下次我們用走的進來好不好？」　「好。」'],
+    s5f: ['蘭陽博物館斜斜地插在水裡，像一塊剛從海裡撈起的石頭。', '龜山島浮在遠遠的海上，小晴數著它背上的燈。', '阿凱說：「宜蘭人說，看得到龜山島，就是到家了。」'],
+    s5g: ['龍磐的草原一路滑進太平洋，風大得連話都要用喊的。', '「阿凱！」小晴喊，「你看！星星已經出來了！」', '他們躺在引擎蓋上，等整片天空暗下來。'],
+    s5h: ['燈塔的光剛亮起來，阿凱把車停在草坡上。', '「小晴，我們從高雄一路開到台灣最南端了。」', '他從口袋拿出一個小盒子。小晴笑著說：「好啦，我願意。」'],
+    s5i: ['關山的風好大，小晴的頭髮整個飛起來。', '「明年夏天，我們再開一次這條路？」', '阿凱看著掉進海裡的太陽：「每年都來。」'],
+    s5j: ['船帆石在夕陽裡變成一塊黑色的剪影，像真的要開走。', '小晴脫了鞋踩進海裡：「阿凱，水是溫的！」', '阿凱沒有下車，他正偷偷把一枚戒指從口袋裡拿出來。'],
   },
   vespa: {
-    s4a: ['黃蜂一個甩尾停在燈塔前，輪胎還在冒煙。', '莉娜摘下墨鏡：「三百一十八公里，你真的是瘋子。」', '杰森：「下次換妳開。」　莉娜早就把鑰匙搶走了。'],
-    s4b: ['他們在貓鼻頭比誰先拍到夕陽。', '杰森的相機沒電了，莉娜的拍立得剛好吐出照片。', '照片上是兩個人笑到看不見眼睛的臉。'],
+    s5a: ['黃蜂一個甩尾停在一〇一腳下，警衛皺了一下眉頭。', '莉娜摘下墨鏡：「三百一十八公里，你真的是瘋子。」', '杰森：「下次換妳開。」　莉娜早就把鑰匙搶走了。'],
+    s5b: ['他們在野柳比誰能先找到女王頭。', '杰森找到的是一顆長得像馬桶的石頭，莉娜笑到蹲下去。', '拍立得吐出照片的時候，太陽剛好掉進海裡。'],
+    s5c: ['黃蜂繞完整圈環湖公路，輪胎上還沾著山裡的泥。', '莉娜：「這湖我們三十二分鐘就繞完了，遊艇要一個小時。」', '杰森：「所以我們贏了遊艇。」　莉娜：「我們贏了全世界。」'],
+    s5d: ['三千兩百公尺，黃蜂的引擎第一次喘不過氣。', '莉娜：「它在哭。」　杰森：「它在高興。」', '兩個人在武嶺的石碑前，把車的照片拍了四十張。'],
+    s5e: ['峽谷太窄，黃蜂的排氣聲在大理石之間跑了好幾個來回。', '莉娜摘下墨鏡：「這裡不能飆，杰森。」', '杰森熄了火：「我知道。這裡要用看的。」'],
+    s5f: ['黃蜂衝過清水斷崖，莉娜連眼睛都沒眨一下。', '到了蘭陽博物館，她才發現自己的手一直抓著門把。', '杰森：「怕嗎？」　莉娜：「怕你開太慢。」'],
+    s5g: ['龍磐的風把黃蜂的車門吹得砰一聲關上。', '莉娜在草原上張開手臂，像要被吹走。', '杰森拍下那張照片，後來成了他手機的桌布。'],
+    s5h: ['黃蜂一個甩尾停在燈塔前，輪胎還在冒煙。', '莉娜摘下墨鏡：「三百一十八公里，你真的是瘋子。」', '杰森：「下次換妳開。」　莉娜早就把鑰匙搶走了。'],
+    s5i: ['他們在關山比誰先拍到夕陽。', '杰森的相機沒電了，莉娜的拍立得剛好吐出照片。', '照片上是兩個人笑到看不見眼睛的臉。'],
+    s5j: ['黃蜂停在船帆石前，兩個人爭論那塊石頭像什麼。', '杰森說像帆船，莉娜說像尼克森的側臉。', '最後他們決定，它像一塊很大的石頭。'],
   },
   argento: {
-    s4a: ['一九六三年，他們騎著腳踏車來這裡度蜜月。', '王伯伯在燈塔旁的石欄上，找到當年刻下的兩個名字。', '秀琴阿嬤輕輕握住他的手：「三十年了，還是你開最穩。」'],
-    s4b: ['銀狐慢慢停在海邊，引擎還在溫溫地響。', '「當年你說，要帶我看全台灣最漂亮的夕陽。」', '王伯伯點點頭：「這次沒有遲到吧？」'],
+    s5a: ['一九六三年，王伯伯騎腳踏車載秀琴去看當時最高的樓。', '六十年後，銀狐停在一〇一前面，樓高了一百層。', '秀琴阿嬤說：「樓高了，你還是開得那麼穩。」'],
+    s5b: ['王伯伯年輕時在野柳當過漁夫，他指著一塊石頭說那時候還沒有名字。', '秀琴阿嬤看著女王頭：「她也老了。」', '王伯伯：「她跟妳一樣，越老越好看。」'],
+    s5c: ['銀狐繞到湖邊的時候，日月潭上只剩一艘船。', '「當年我們也坐過這種船，船票五塊錢。」', '秀琴阿嬤笑了：「你那時候緊張得把船票弄丟了。」'],
+    s5d: ['銀狐用二檔慢慢爬上武嶺，引擎很老了，但沒有熄火。', '王伯伯停好車，給秀琴披上毛毯。', '「三十年前你說要帶我來看雲海。」　「今天沒有遲到。」'],
+    s5e: ['長春祠的台階，秀琴阿嬤一步一步走上去，王伯伯在後面扶著。', '泉水在他們腳下流了幾十年，沒有停過。', '「下次還來嗎？」　「只要你還開得動。」'],
+    s5f: ['銀狐開過清水斷崖的時候，秀琴阿嬤把眼睛閉起來了。', '到了宜蘭，她才睜開眼睛，看見遠遠的龜山島。', '「當年你說要帶我去環島，」她說，「現在才走一半。」'],
+    s5g: ['龍磐的草原上，王伯伯把銀狐的引擎熄了。', '他們坐在車裡，聽著風，沒有開收音機。', '秀琴阿嬤：「這樣就很好了。」　王伯伯點點頭。'],
+    s5h: ['一九六三年，他們騎著腳踏車來這裡度蜜月。', '王伯伯在燈塔旁的石欄上，找到當年刻下的兩個名字。', '秀琴阿嬤輕輕握住他的手：「三十年了，還是你開最穩。」'],
+    s5i: ['銀狐慢慢停在關山，引擎還在溫溫地響。', '「當年你說，要帶我看全台灣最漂亮的夕陽。」', '王伯伯點點頭：「這次沒有遲到吧？」'],
+    s5j: ['船帆石前，王伯伯拿出一張泛黃的照片。', '照片裡一對年輕人靠在一台腳踏車上，背後是同一塊石頭。', '秀琴阿嬤說：「這次換汽車了。」　兩個人笑了很久。'],
   },
   ballena: {
-    s4a: ['大熊答應阿弟，期末考考好就帶他來看燈塔。', '天色暗下來，燈塔的光束一圈一圈掃過海面。', '阿弟大喊：「爸！牠在跟我們打招呼！」'],
-    s4b: ['藍鯨停在貓鼻頭，阿弟已經衝去買冰了。', '「兩支芒果冰！」老闆多送了一支給大熊。', '父子倆坐在引擎蓋上，看太陽掉進海裡。'],
+    s5a: ['大熊答應阿弟，期末考考好就帶他去看一〇一的煙火。', '沒有煙火，但一〇一的燈一層一層亮起來。', '阿弟說：「爸，這個比煙火還好看。」'],
+    s5b: ['藍鯨停在野柳，阿弟說女王頭長得像隔壁班的老師。', '大熊叫他小聲一點，自己卻偷笑了。', '回程的路上，阿弟在後座睡著了，手裡還握著一顆石頭。'],
+    s5c: ['阿弟第一次看到這麼大的湖，問爸爸裡面有沒有鯨魚。', '大熊說：「有啊，一台藍色的。」', '阿弟想了很久才聽懂，然後笑到打嗝。'],
+    s5d: ['武嶺的溫度讓阿弟第一次看到自己呼出來的氣。', '「爸！我在噴煙！」', '大熊把他抱上引擎蓋，兩個人一起看雲海。'],
+    s5e: ['峽谷裡沒有訊號，阿弟的遊戲機終於放下來了。', '他抬頭看長春祠的瀑布，看了很久。', '大熊沒有催他，這是這趟旅行他最想看到的畫面。'],
+    s5f: ['阿弟在蘭陽博物館前面數龜山島背上的燈，數到一半就亂了。', '大熊：「不用數，它每天都在那裡。」', '阿弟：「那我明天再來數一次。」'],
+    s5g: ['龍磐的風把阿弟的帽子吹到太平洋去了。', '他哭了一下，然後發現天上有一百萬顆星星。', '大熊說：「帽子換星星，划算嗎？」　阿弟點點頭。'],
+    s5h: ['大熊答應阿弟，期末考考好就帶他來看燈塔。', '天色暗下來，燈塔的光束一圈一圈掃過海面。', '阿弟大喊：「爸！牠在跟我們打招呼！」'],
+    s5i: ['藍鯨停在關山，阿弟已經衝去買冰了。', '「兩支芒果冰！」老闆多送了一支給大熊。', '父子倆坐在引擎蓋上，看太陽掉進海裡。'],
+    s5j: ['阿弟說船帆石是一隻擱淺的鯨魚，大熊說是帆船。', '兩個人吵了十分鐘，最後決定問媽媽。', '媽媽在電話裡說：「你們兩個，回來洗澡。」'],
   },
   bamboo: {
-    s4a: ['小安和佳佳約好畢業前一定要完成這趟旅行。', '佳佳的圍巾被風吹走，掛在燈塔前的欄杆上。', '「就留在這裡吧，」小安說，「代表我們來過。」'],
-    s4b: ['青竹小小的引擎一路都沒有讓她們失望。', '佳佳在筆記本上寫：高雄到貓鼻頭，一天。', '小安在下面補一行：下一站，環島。'],
+    s5a: ['小安和佳佳約好畢業前一定要完成這趟旅行。', '青竹停在一〇一腳下，兩個人仰頭看到脖子酸。', '佳佳在筆記本上寫：高雄到台北，一天。小安補一行：下一站，環島。'],
+    s5b: ['佳佳在野柳把圍巾弄丟了，風太大。', '小安說：「就留在這裡吧，代表我們來過。」', '女王頭在後面看著兩個女生笑成一團。'],
+    s5c: ['青竹小小的引擎繞完整個日月潭，一次都沒有熄火。', '佳佳在碼頭買了兩顆茶葉蛋，熱熱的。', '「畢業以後呢？」　「畢業以後，再開一次。」'],
+    s5d: ['青竹爬到武嶺的時候，兩個女生都在喊加油。', '它真的爬上來了，排氣管還在喘。', '小安拍拍引擎蓋：「你最棒了。」'],
+    s5e: ['長春祠的泉水下面，佳佳說她想哭。', '小安問為什麼，佳佳說不知道，就是太漂亮了。', '小安也沒有說話，她也想哭。'],
+    s5f: ['蘇花公路太嚇人，佳佳一路閉著眼睛唱歌。', '到了蘭陽博物館，她才發現小安也在唱。', '兩個人在龜山島前面，把那首歌唱完。'],
+    s5g: ['龍磐的草原上，佳佳把筆記本打開，風翻了好幾頁。', '上面寫著這一路經過的每一個地方。', '小安在最後一頁畫了一台小小的綠色車子。'],
+    s5h: ['小安和佳佳約好畢業前一定要完成這趟旅行。', '佳佳的圍巾被風吹走，掛在燈塔前的欄杆上。', '「就留在這裡吧，」小安說，「代表我們來過。」'],
+    s5i: ['青竹小小的引擎一路都沒有讓她們失望。', '佳佳在筆記本上寫：高雄到關山，一天。', '小安在下面補一行：下一站，環島。'],
+    s5j: ['船帆石前的沙灘上，小安和佳佳把鞋子脫了。', '海水很溫，青竹停在後面，像在看她們玩。', '佳佳說：「畢業快樂。」　小安說：「畢業快樂。」'],
   },
   blanco: {
-    s4a: ['浪仔說南灣的浪今天太小，乾脆來看燈塔。', '阿妹指著海面：「你看，有人在衝浪耶。」', '浪仔已經把衝浪板從後座拿出來了。'],
-    s4b: ['白浪的翻燈眨了一下，好像在說辛苦了。', '阿妹靠在車門上吃著烤玉米。', '「明天早上六點，去後灣等第一道浪。」'],
+    s5a: ['浪仔第一次來台北，說這裡的浪在哪裡。', '阿妹指著一〇一：「浪在上面，人潮的浪。」', '浪仔把衝浪板留在後座，決定今天用走的。'],
+    s5b: ['野柳的浪拍在女王頭下面，浪仔說這裡不能下水。', '阿妹說：「那你看她就好。」', '浪仔看了一眼，說還是阿妹比較好看。'],
+    s5c: ['日月潭沒有浪，浪仔有點失望。', '阿妹租了一艘手划船，兩個人在湖中間漂了一下午。', '浪仔說：「沒有浪也可以。」'],
+    s5d: ['白浪開到武嶺，浪仔說這是他看過最高的浪。', '阿妹：「那是雲。」　浪仔：「雲海也是海。」', '他把衝浪板舉起來，在三千兩百公尺拍了一張照。'],
+    s5e: ['長春祠的瀑布下，浪仔說水太冷不能衝。', '阿妹笑他：「你哪裡都想衝。」', '浪仔靠著白浪的車門說：「只想跟妳一起衝。」'],
+    s5f: ['南方澳的浪浪仔聽過，但沒衝過。', '蘭陽博物館前，他看著龜山島後面的海，眼睛發亮。', '阿妹嘆氣：「明天六點，是不是？」　「五點半。」'],
+    s5g: ['龍磐沒有沙灘，只有草原和風。', '浪仔把衝浪板放在草地上，躺上去看星星。', '阿妹躺在旁邊：「這是你今年最安靜的一天。」'],
+    s5h: ['浪仔說南灣的浪今天太小，乾脆來看燈塔。', '阿妹指著海面：「你看，有人在衝浪耶。」', '浪仔已經把衝浪板從後座拿出來了。'],
+    s5i: ['白浪的翻燈眨了一下，好像在說辛苦了。', '阿妹靠在車門上吃著烤玉米。', '「明天早上六點，去後灣等第一道浪。」'],
+    s5j: ['船帆石旁邊的浪剛剛好，浪仔三秒鐘就下水了。', '阿妹坐在白浪的引擎蓋上幫他計時。', '太陽掉進海裡的時候，他還在等最後一道浪。'],
   },
   adler: {
-    s4a: ['林警官今天休假，小陳還是一路都在報車號。', '「學長，那台載芒果的小貨車超速了！」', '林警官嘆氣：「……我們剛剛開兩百多。」'],
-    s4b: ['黑鷹停在貓鼻頭，兩個人難得沒穿制服。', '小陳：「學長，原來你會笑喔。」', '林警官把墨鏡戴上：「這句話不准寫進報告。」'],
+    s5a: ['林警官今天休假，小陳還是一路都在報車號。', '到了一〇一，小陳說這裡的違停比高雄多三倍。', '林警官嘆氣：「我們也是違停。」'],
+    s5b: ['黑鷹停在野柳，小陳想爬上去摸女王頭。', '林警官一把拉住他：「這個要罰的。」', '小陳：「學長，你休假也在執法喔。」'],
+    s5c: ['日月潭的環湖公路，小陳說這裡適合追逐戰。', '林警官把車停在碼頭：「今天只追夕陽。」', '小陳難得沒有頂嘴，他在拍照。'],
+    s5d: ['武嶺的停車場，黑鷹是唯一一台黑色的車。', '小陳說這裡氧氣少，講話要省一點。', '林警官：「那你從上山就應該開始省。」'],
+    s5e: ['長春祠前，小陳終於安靜了十分鐘。', '林警官看著瀑布說：「這才是我休假想看的東西。」', '小陳：「學長，那台遊覽車停在黃線上。」'],
+    s5f: ['清水斷崖上，小陳一直報海拔，林警官一直叫他閉嘴。', '到了蘭陽博物館，兩個人都沒話說了。', '龜山島後面的天空，紅得像剛發的罰單。'],
+    s5g: ['龍磐的風把小陳的帽子吹走了，是警帽。', '林警官看著它飛向太平洋，什麼都沒說。', '小陳：「學長，這個要報遺失嗎？」　「報。」'],
+    s5h: ['林警官今天休假，小陳還是一路都在報車號。', '「學長，那台載芒果的小貨車超速了！」', '林警官嘆氣：「……我們剛剛開兩百多。」'],
+    s5i: ['黑鷹停在關山，兩個人難得沒穿制服。', '小陳：「學長，原來你會笑喔。」', '林警官把墨鏡戴上：「這句話不准寫進報告。」'],
+    s5j: ['船帆石前，小陳用手機查這塊石頭有多高。', '林警官：「十八公尺。」　小陳：「學長你怎麼知道？」', '「我以前在這裡當過救生員。」　小陳的下巴掉了。'],
   },
   raiden: {
-    s4a: ['Z-93 和 K-07 從二〇九三年回來，只為了看一次一九九三年的燈塔。', '「資料庫裡沒有這種顏色的天空。」', 'K-07 把這一刻存成永久記憶，編號 1993-0001。'],
-    s4b: ['紫電的霓虹在夕陽裡變成淡淡的粉紅色。', '「我們的時代，海已經沒有這麼藍了。」', 'Z-93 關掉引擎，第一次決定什麼都不記錄。'],
+    s5a: ['二〇九三年的台北一〇一已經不在了，Z-93 只在資料庫裡看過它。', 'K-07 站在它腳下，把每一層的燈都記下來。', '「編號 1993-0002。」　「這一筆，永久保存。」'],
+    s5b: ['女王頭在二〇九三年的檔案裡只剩下一張照片。', 'Z-93 看著她：「她的脖子還在。」', 'K-07：「我們的時代，她已經斷了二十年。」　兩個人站了很久。'],
+    s5c: ['紫電的霓虹在湖面上映成一條線。', 'K-07：「這個湖在二〇九三年還在，但是沒有人划船了。」', 'Z-93 租了一艘船，第一次決定什麼都不記錄。'],
+    s5d: ['武嶺，三千兩百七十五公尺，紫電的電池在低溫裡亮起警示。', 'K-07：「我們的時代，這條路已經封了。」', 'Z-93 把這一刻存成永久記憶，編號 1993-0003。'],
+    s5e: ['長春祠的泉水，二〇九三年的資料庫說它已經乾了。', 'Z-93 把手伸進水裡，是冷的。', 'K-07：「記錄：水還在。」'],
+    s5f: ['龜山島在二〇九三年的海圖上還在，但形狀不太一樣。', 'K-07 把現在的樣子存下來，覆蓋掉舊的。', 'Z-93：「這樣算是改寫歷史嗎？」　「算是記住它。」'],
+    s5g: ['龍磐的星空，Z-93 數到一萬顆就停了。', 'K-07：「我們的時代，光害讓這裡只剩三百顆。」', '紫電的霓虹關掉了，兩個人在黑暗裡看完整片銀河。'],
+    s5h: ['Z-93 和 K-07 從二〇九三年回來，只為了看一次一九九三年的燈塔。', '「資料庫裡沒有這種顏色的天空。」', 'K-07 把這一刻存成永久記憶，編號 1993-0001。'],
+    s5i: ['紫電的霓虹在夕陽裡變成淡淡的粉紅色。', '「我們的時代，海已經沒有這麼藍了。」', 'Z-93 關掉引擎，第一次決定什麼都不記錄。'],
+    s5j: ['船帆石在二〇九三年還在，Z-93 確認過。', 'K-07：「那為什麼還要來看？」', 'Z-93：「因為一九九三年的風，資料庫裡沒有。」'],
   },
   arancia: {
-    s4a: ['Sofia 從義大利來台灣參加比賽，順便開來看燈塔。', '豆豆一下車就跑去追燈塔旁邊的蝴蝶。', '「Bellissimo！」　豆豆也跟著汪了一聲。'],
-    s4b: ['橘陽的車頭編號 7 在夕陽下閃閃發亮。', '豆豆衝進海裡，又全身濕答答地跑回來甩水。', 'Sofia 大笑：「明年的比賽，我們一起贏。」'],
+    s5a: ['Sofia 說台北的交通比羅馬還瘋狂，她很喜歡。', '豆豆在一〇一腳下對著每一個路人搖尾巴。', '「Bellissimo！」　豆豆也跟著汪了一聲。'],
+    s5b: ['豆豆在野柳對著女王頭叫了三分鐘。', 'Sofia 說牠以為那是一隻很大的貓。', '回到橘陽上，豆豆還在往後看。'],
+    s5c: ['橘陽停在水社碼頭，豆豆第一次看到這麼大的水，不敢下去。', 'Sofia 抱牠上了遊艇，牠全程把頭埋在她懷裡。', '下船的時候，牠又變回英雄了。'],
+    s5d: ['武嶺的風讓豆豆的耳朵一直翻過來。', 'Sofia 說義大利的阿爾卑斯山也是這樣冷。', '豆豆不知道阿爾卑斯山是什麼，牠只想回車上。'],
+    s5e: ['長春祠的台階豆豆跑了三趟，Sofia 走了一趟。', '牠在瀑布下面喝水，喝到打嗝。', 'Sofia 坐在石頭上笑：「這是我看過最美的加油站。」'],
+    s5f: ['橘陽開過清水斷崖，豆豆把頭伸出窗外，耳朵飛起來。', '蘭陽博物館前，Sofia 說這個建築像一塊義大利的起司。', '豆豆對著龜山島叫，牠以為那也是一隻動物。'],
+    s5g: ['龍磐的草原，豆豆跑到看不見。', 'Sofia 不擔心，牠每次都會回來，而且會帶一根樹枝。', '這次牠帶回來一隻螃蟹，Sofia 尖叫了。'],
+    s5h: ['Sofia 從義大利來台灣參加比賽，順便開來看燈塔。', '豆豆一下車就跑去追燈塔旁邊的蝴蝶。', '「Bellissimo！」　豆豆也跟著汪了一聲。'],
+    s5i: ['橘陽的車頭編號 7 在夕陽下閃閃發亮。', '豆豆衝進海裡，又全身濕答答地跑回來甩水。', 'Sofia 大笑：「明年的比賽，我們一起贏。」'],
+    s5j: ['船帆石旁邊的沙灘，豆豆挖了一個洞，想把橘陽埋起來。', 'Sofia 說這樣明天就不能回家了。', '豆豆想了想，又把洞填回去。'],
   },
   oro: {
-    s4a: ['新郎新娘的婚紗照，最後一站選在鵝鑾鼻。', '攝影師喊：「看燈塔！三、二、一！」', '新娘的頭紗被風吹起來，剛好蓋住兩個人的臉。'],
-    s4b: ['金沙停在海邊，後座綁滿了「新婚」的氣球。', '「從高雄港到這裡，我們的第一趟旅行。」', '新郎打開車門：「老婆，下一趟要去哪？」'],
+    s5a: ['新郎新娘的婚紗照，最後一站選在一〇一。', '攝影師喊：「看大樓！三、二、一！」', '新娘的頭紗被風吹起來，剛好蓋住兩個人的臉。'],
+    s5b: ['金沙停在野柳，後座的氣球被風吹得亂七八糟。', '新娘說女王頭是今天第一個祝福他們的人。', '新郎說：「她點頭了。」　其實是風。'],
+    s5c: ['日月潭的遊艇上，新郎新娘補拍了一張婚紗照。', '船長說他載過三百對新人，這對最會笑。', '新娘說：「因為他開車開得最慢。」'],
+    s5d: ['武嶺，三千兩百公尺，新娘的婚紗外面套了一件羽絨外套。', '新郎說這是全台灣最高的結婚紀念照。', '攝影師的手凍到快按不下快門。'],
+    s5e: ['長春祠的泉水前，新娘把捧花放在石頭上。', '「給下一對來的人。」', '新郎牽著她走上台階，瀑布在後面一直響。'],
+    s5f: ['金沙停在蘭陽博物館前，氣球少了一半，都飛到龜山島去了。', '新娘說沒關係，那是送給海的。', '新郎打開車門：「老婆，下一趟要去哪？」'],
+    s5g: ['龍磐的星空下，攝影師說今天的照片不用修圖。', '新郎新娘躺在草原上，氣球綁在腳踝上。', '「我們的第一趟旅行。」　「還有很多趟。」'],
+    s5h: ['新郎新娘的婚紗照，最後一站選在鵝鑾鼻。', '攝影師喊：「看燈塔！三、二、一！」', '新娘的頭紗被風吹起來，剛好蓋住兩個人的臉。'],
+    s5i: ['金沙停在關山，後座綁滿了「新婚」的氣球。', '「從高雄港到這裡，我們的第一趟旅行。」', '新郎打開車門：「老婆，下一趟要去哪？」'],
+    s5j: ['船帆石前，新娘把捧花丟向海，又被浪送回來。', '新郎撿起來還給她：「它想跟妳回家。」', '金沙的後座，氣球們擠在一起，聽著兩個人笑。'],
   },
 };
 const END = { on: false, car: null, goal: 's4a', t: 0, line: 0, chars: 0, set: null, spr: null, people: null, done: false };
@@ -7303,8 +8909,9 @@ function paintStander(o, seed) {
   px.outline(0x1a1410);
   return px;
 }
+const END_SCENE = { s5a: ['taipei101', 0.74, 165, 'city'], s5b: ['queenhead', 0.72, 120, 'sea'], s5c: ['shuishe', 0.7, 220, 'lake'], s5d: ['wuling', 0.74, 90, 'high'], s5e: ['changchun', 0.72, 260, 'gorge'], s5f: ['lanyang', 0.34, 140, 'sea'], s5g: ['pavilion', 0.78, 70, 'sea'], s5h: ['lighthouse', 0.78, 210, 'sea'], s5i: ['flyrock', 0.72, 110, 'sea'], s5j: ['sailrock', 0.72, 150, 'sea'] };
 function startEnding() {
-  const c = CARS[RACE.carIdx], goal = RACE.goal === 's4b' ? 's4b' : 's4a';
+  const c = CARS[RACE.carIdx], goal = END_SCENE[RACE.goal] ? RACE.goal : 's5h';
   Object.assign(END, { on: true, car: c, goal, t: 0, line: 0, chars: 0, done: false });
   END.set = buildBackdrop(STAGES[goal].pano, STAGES[goal].clouds + 7);
   END.spr = carSide(c, 52);
@@ -7327,14 +8934,29 @@ function drawEnding(dt) {
   const T = todMix(TOD.golden, TOD.sunset, clamp(END.t / 22, 0, 1), {}), g2 = vctx, gy = Y0 + 40;
   drawSky(g2, 1.35, END.t, T);
   drawBackdrop(g2, END.set, 1.35, END.t, 1);
-  // the sea out to the horizon, glittering, then the grass of the headland
-  const sg = g2.createLinearGradient(0, Y0, 0, gy); sg.addColorStop(0, '#3a8ab8'); sg.addColorStop(1, '#2aa8c0'); g2.fillStyle = sg; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
-  for (let i = 0; i < 70; i++) { const y = Y0 + 2 + (i * 37 % (gy - Y0)), x = (i * 131 + END.t * (8 + i % 5)) % RW; g2.fillStyle = 'rgba(255,240,200,' + (0.3 + 0.4 * ((i * 7 + Math.floor(END.t * 6)) % 3 === 0)) + ')'; g2.fillRect(x, y, 2 + (y - Y0) / 12, 1); }
-  g2.fillStyle = '#6aac44'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#5a9a3a'; for (let y = gy; y < RH; y += 6) g2.fillRect(0, y, RW, 2);
-  // the landmark
-  const lm = END.goal === 's4a' ? SPR.lighthouse : SPR.catrock;
-  if (lm) drawSpr(lm, END.goal === 's4a' ? RW * 0.78 : RW * 0.72, END.goal === 's4a' ? gy + 18 : Y0 + 18, END.goal === 's4a' ? 210 : 80, 1, false, RH, 0, 0);
-  for (let i = 0; i < 6; i++) { const S = SPRL[(SPR['palm#' + (i % 4)] || {}).id]; if (S) drawSpr(S, RW * (0.05 + i * 0.09) + (i % 2) * 20, gy + 30 + (i % 3) * 14, 120 + (i % 3) * 30, 1, i % 2 === 1, RH, 0, 0); }
+  // the middle ground of the place: the sea glittering to the horizon, a still lake, a city square, the cloud sea, the gorge
+  const kind = (END_SCENE[END.goal] || END_SCENE.s5h)[3];
+  if (kind === 'sea' || kind === 'lake') {
+    const sg = g2.createLinearGradient(0, Y0, 0, gy); sg.addColorStop(0, kind === 'lake' ? '#3a8aa0' : '#3a8ab8'); sg.addColorStop(1, kind === 'lake' ? '#4a9ab0' : '#2aa8c0'); g2.fillStyle = sg; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
+    const n = kind === 'lake' ? 30 : 70;
+    for (let i = 0; i < n; i++) { const y = Y0 + 2 + (i * 37 % (gy - Y0)), x = (i * 131 + END.t * (8 + i % 5)) % RW; g2.fillStyle = 'rgba(255,240,200,' + (0.3 + 0.4 * ((i * 7 + Math.floor(END.t * 6)) % 3 === 0)) + ')'; g2.fillRect(x, y, 2 + (y - Y0) / 12, 1); }
+    g2.fillStyle = '#6aac44'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#5a9a3a'; for (let y = gy; y < RH; y += 6) g2.fillRect(0, y, RW, 2);
+  } else if (kind === 'city') {
+    g2.fillStyle = '#8a8e96'; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
+    g2.fillStyle = '#b8b4ac'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#a8a49c'; for (let y = gy; y < RH; y += 8) g2.fillRect(0, y, RW, 2); for (let x = 0; x < RW; x += 26) g2.fillRect(x, gy, 2, RH - gy);
+  } else if (kind === 'high') {
+    g2.fillStyle = '#e8eef2'; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
+    for (let i = 0; i < 40; i++) { const y = Y0 + 4 + (i * 23 % (gy - Y0)), x = (i * 97 + END.t * (3 + i % 3)) % RW; g2.fillStyle = 'rgba(255,255,255,0.8)'; g2.fillRect(x, y, 14 + (i % 4) * 8, 2); }
+    g2.fillStyle = '#9aa06a'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#8a9060'; for (let y = gy; y < RH; y += 6) g2.fillRect(0, y, RW, 2);
+  } else {
+    g2.fillStyle = '#3a8ab0'; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
+    for (let i = 0; i < 40; i++) { const y = Y0 + 2 + (i * 29 % (gy - Y0)), x = (i * 113 + END.t * (10 + i % 5)) % RW; g2.fillStyle = 'rgba(232,248,255,0.7)'; g2.fillRect(x, y, 3 + (y - Y0) / 10, 1); }
+    g2.fillStyle = '#b8b4b0'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#a8a4a0'; for (let y = gy; y < RH; y += 5) g2.fillRect(0, y, RW, 2);
+  }
+  // the landmark of this goal
+  const sc = END_SCENE[END.goal] || END_SCENE.s5h, lm = SPR[sc[0]];
+  if (lm) drawSpr(lm, RW * sc[1], sc[3] === 'sea' ? Y0 + 18 : gy + 18, sc[2], 1, false, RH, 0, 0);
+  if (kind === 'sea' || kind === 'lake') for (let i = 0; i < 6; i++) { const S = SPRL[(SPR['palm#' + (i % 4)] || {}).id]; if (S) drawSpr(S, RW * (0.05 + i * 0.09) + (i % 2) * 20, gy + 30 + (i % 3) * 14, 120 + (i % 3) * 30, 1, i % 2 === 1, RH, 0, 0); }
   // the car rolls in from the left and stops
   const img = END.spr;
   if (img) {
@@ -7403,7 +9025,16 @@ function netDrop(id) { const P = NET.peers.get(id); if (!P) return; try { if (P.
 function netWire(P, pc, connId) {
   P.pc = pc; P.connId = connId;
   pc.onicecandidate = (e) => { if (e.candidate) netSend({ type: 'CANDIDATE', dst: P.id, payload: { candidate: e.candidate, type: 'data', connectionId: connId } }); };
-  pc.onconnectionstatechange = () => { P.conn = pc.connectionState; if (pc.connectionState === 'failed' || pc.connectionState === 'closed' || pc.connectionState === 'disconnected') { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = '和房主斷線了'; netLobbyChanged(); } } };
+  // 'disconnected' is often a passing thing on a phone (a network change, a tab put aside for a moment): wait before
+  // giving up on it; 'failed' and 'closed' are final
+  pc.onconnectionstatechange = () => {
+    const st = pc.connectionState; P.conn = st;
+    const gone = () => { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = '和房主斷線了（房主的手機要保持亮著、頁面在前面）'; NET.lost = true; NET.status = ''; netLobbyChanged(); } };
+    clearTimeout(P.discTO);
+    if (st === 'failed' || st === 'closed') gone();
+    else if (st === 'disconnected') { P.discTO = setTimeout(() => { if (P.pc === pc && pc.connectionState === 'disconnected') gone(); }, 8000); if (P.host) { NET.status = '和房主的連線不穩，等一下…'; netLobbyChanged(); } }
+    else if (st === 'connected' && P.host) { NET.status = ''; netLobbyChanged(); }
+  };
   pc.ondatachannel = (e) => netChannel(P, e.channel);
 }
 const NET_PART = 12000;   // a photo does not fit one data-channel message: it goes in parts, reassembled on the other side
@@ -7434,7 +9065,7 @@ function netAll(m, except) { for (const P of NET.peers.values()) if (P !== excep
 // ---------- host ----------
 function netHost() {
   netLeave(); netMe();
-  NET.on = true; NET.host = true; NET.phase = 'lobby'; NET.err = ''; NET.code = netCode(); NET.status = '開房間中…';
+  NET.on = true; NET.host = true; NET.phase = 'lobby'; NET.err = ''; NET.code = netCode(); NET.status = '開房間中…'; netWake(true);
   const open = () => netSignal('kr-' + NET.code, {
     open() { NET.status = ''; netLobbyChanged(); },
     taken() { NET.code = netCode(); try { NET.ws.close(); } catch (e) { /* retry */ } open(); },
@@ -7456,7 +9087,7 @@ function netJoin(code) {
   netLeave(); netMe();
   code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (code.length !== 6) { NET.err = '房號是 6 個字'; netLobbyChanged(); return; }
-  NET.on = true; NET.host = false; NET.phase = 'lobby'; NET.err = ''; NET.code = code; NET.status = '連線中…'; NET.joinT = G.t;
+  NET.on = true; NET.host = false; NET.phase = 'lobby'; NET.err = ''; NET.code = code; NET.status = '連線中…'; NET.joinT = G.t; netWake(true);
   clearTimeout(NET.joinTO); NET.joinTO = setTimeout(() => { const P = [...NET.peers.values()].find((q) => q.host); if (NET.on && !NET.host && !(P && P.ctl && P.ctl.readyState === 'open')) { NET.err = '連不上房主：房號打錯，或是兩邊的網路擋住了直連'; NET.status = ''; netLobbyChanged(); } }, 15000);
   const hostId = 'kr-' + code, P = netPeer(hostId); P.host = true;
   netSignal('krp-' + netToken(), {
@@ -7477,8 +9108,16 @@ function netJoin(code) {
   });
   netLobbyChanged();
 }
+// the screen stays on while online: a phone that locks drops the connection for everyone
+function netWake(on) {
+  if (!navigator.wakeLock) return;
+  if (!on) { if (NET.wake) { NET.wake.release().catch(() => {}); NET.wake = null; } return; }
+  if (NET.wake) return;
+  navigator.wakeLock.request('screen').then((w) => { NET.wake = w; w.addEventListener('release', () => { NET.wake = null; }); }).catch(() => {});
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && NET.on) netWake(true); });
 function netLeave() {
-  clearTimeout(NET.joinTO);
+  clearTimeout(NET.joinTO); netWake(false); NET.lost = false;
   if (NET.ws) { try { NET.ws.close(); } catch (e) { /* closing */ } }
   clearInterval(NET.hb);
   for (const P of NET.peers.values()) { try { if (P.pc) P.pc.close(); } catch (e) { /* gone */ } }
