@@ -520,8 +520,9 @@ class Piece {
     const first = stageSecs[0], last = stageSecs[stageSecs.length - 1];
     // ---- the sections actually laid: a divergence bend for fork children, the stage, a widened fork stretch ----
     const secs = [];
-    if (this.side) secs.push(Object.assign({}, first, { len: DIVERGE_LEN, k: this.side * 0.0016, dy: 0, tags: (first.tags || []).filter((t) => t !== 'checkpoint' && t !== 'start'), diverge: true }));
-    for (const s of stageSecs) secs.push(s);
+    // a fork child's checkpoint arch stands just past the split, in its divergence bend, not 460 m further on
+    if (this.side) secs.push(Object.assign({}, first, { len: DIVERGE_LEN, k: this.side * 0.0016, dy: 0, tags: (first.tags || []).filter((t) => t !== 'start'), diverge: true }));
+    for (const s of stageSecs) secs.push(this.side && s === first ? Object.assign({}, s, { tags: (s.tags || []).filter((t) => t !== 'checkpoint') }) : s);
     if (def.children && def.children.length === 2) {
       const cl = STAGES[def.children[0]].sections[0].lanes || 2, cr = STAGES[def.children[1]].sections[0].lanes || 2;
       this.forkLanes = [cl, cr];
