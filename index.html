@@ -661,8 +661,8 @@ function sideBands(type) { return SIDE_BANDS[type] || SIDE_BANDS.grass; }
 // tags: what the scenery builder places along it. Forks: children [left, right].
 const STAGES = {
   s1: {
-    label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: 90,
-    traffic: { per100: 2.0, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1 } },
+    label: '高雄・港都出發', name: '高雄港', en: 'KAOHSIUNG HARBOR', tod: ['day', 'day'], pano: 'kaohsiung', clouds: 11, time: 98,
+    traffic: { per100: 2.0, mix: { scooter: 5, sedan: 3, taxi: 2, bus: 1, bluetruck: 1, suv: 1, wagon: 1 } },
     children: ['s2b', 's2a'],
     sign: { L: ['山線', '國3・沿山公路', '三地門・大武山'], R: ['海線・旗津', '過港隧道・東港', '大鵬灣'] },
     sections: [
@@ -681,8 +681,8 @@ const STAGES = {
     ],
   },
   s2a: {
-    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 90,
-    traffic: { per100: 1.5, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 1, bus: 1, pickup: 1 } },
+    label: '旗津・台17海線', name: '海線・旗津 → 大鵬灣', en: 'COAST ROAD', tod: ['day', 'day'], pano: 'coast', clouds: 23, time: 98,
+    traffic: { per100: 1.5, mix: { scooter: 3, sedan: 3, bluetruck: 2, gravel: 2, bus: 1, pickup: 1, suv: 1, rebar: 1 } },
     next: 's3',
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'harbor', tags: ['checkpoint', 'townhouse', 'tunnelsign', 'lamps'] },
@@ -702,8 +702,8 @@ const STAGES = {
     ],
   },
   s2b: {
-    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 84,
-    traffic: { per100: 1.3, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 1 } },
+    label: '屏東・沿山公路', name: '山線・沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: 92,
+    traffic: { per100: 1.3, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 2, suv: 1 } },
     next: 's3',
     sections: [
       { len: 300, k: 0, lanes: 3, sh: 2.4, L: 'grass', R: 'grass', tags: ['checkpoint', 'betel', 'dawu'] },
@@ -719,8 +719,8 @@ const STAGES = {
     ],
   },
   s3: {
-    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 76,
-    traffic: { per100: 1.4, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 1, pickup: 1 } },
+    label: '枋山・山海公路', name: '枋山海岸', en: 'FANGSHAN COAST', tod: ['day', 'day'], pano: 'southcoast', clouds: 47, time: 84,
+    traffic: { per100: 1.4, mix: { scooter: 2, sedan: 3, bus: 2, bluetruck: 2, gravel: 2, pickup: 1, rebar: 1, logs: 1, wagon: 1 } },
     children: ['s4a', 's4b'],
     sign: { L: ['恆春・墾丁', '台26', '鵝鑾鼻'], R: ['海生館', '濱海公路', '貓鼻頭'] },
     sections: [
@@ -736,8 +736,8 @@ const STAGES = {
     ],
   },
   s4a: {
-    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 74, goal: '鵝鑾鼻燈塔',
-    traffic: { per100: 1.6, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1 } },
+    label: '墾丁・南灣晴空', name: '墾丁・鵝鑾鼻', en: 'KENTING', tod: ['day', 'day'], pano: 'hengchun', clouds: 59, time: 82, goal: '鵝鑾鼻燈塔',
+    traffic: { per100: 1.6, mix: { scooter: 4, sedan: 3, bus: 2, taxi: 1, suv: 2, wagon: 1, gravel: 1 } },
     sections: [
       { len: 560, k: 0, lanes: 3, sh: 2.0, L: 'hills', R: 'farm', tags: ['checkpoint', 'oldgate', 'palmgroup'] },
       { len: 440, k: 0.003, L: 'town', R: 'town', tags: ['townhouse', 'betelstand', 'lamps', 'chuhuo', 'kentingarch'] },
@@ -749,8 +749,8 @@ const STAGES = {
     ],
   },
   s4b: {
-    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 74, goal: '貓鼻頭',
-    traffic: { per100: 1.2, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2 } },
+    label: '後灣・濱海公路', name: '海生館・貓鼻頭', en: 'WEST CAPE', tod: ['day', 'day'], pano: 'westcape', clouds: 71, time: 82, goal: '貓鼻頭',
+    traffic: { per100: 1.2, mix: { scooter: 3, sedan: 3, bus: 1, pickup: 2, suv: 2, wagon: 1, logs: 1 } },
     sections: [
       { len: 380, k: 0, lanes: 3, sh: 1.8, L: 'farm', R: 'beach', tags: ['checkpoint', 'palmgroup'] },
       { len: 160, k: 0, dy: 3, L: 'water', R: 'water', bridge: 'cable', tags: [] },
@@ -1666,7 +1666,7 @@ function paintBig() {
   addSprite('oldgate', paintOldGate(), 12, { collide: 0.95 });
   addSprite('lighthouse', paintLighthouse(), 24, { collide: 0.6 });
   addSprite('aquarium', paintAquarium(), 20, { collide: 0 });
-  addSprite('pylon', paintPylon(), 70, { collide: 0.25 });
+  addSprite('pylon', paintPylon(), 70, { collide: 0, ax: 1 });
   addSprite('btower', paintBasculeTower(), 15, { collide: 0.8 });
 }
 
@@ -2347,8 +2347,18 @@ function paintSouthPoint() {
   px.outline(0x2a3040);
   return px;
 }
+function paintXingLight() {
+  const W = 40, H = 120, px = new Pix(W, H);
+  px.rect(17, 30, 6, 90, 0x8a8e94); px.rect(17, 30, 2, 90, 0xb8bcc2);
+  px.poly([4, 8, 36, 30, 34, 36, 2, 14], 0xf4f4f0); px.poly([36, 8, 4, 30, 6, 36, 38, 14], 0xf4f4f0);   // the crossbuck
+  px.rect(2, 40, 36, 16, 0x1a1a1e); px.ellipse(11, 48, 6, 6, 0xd8242a); px.ellipse(29, 48, 6, 6, 0xd8242a); px.ellipse(11, 48, 3, 3, 0xff8a8a);
+  px.rect(10, 60, 20, 10, 0xf2c21a); px.text('輕軌', 20, 60, 8, 0x1a1a1a, { align: 'center', maxW: 18 });
+  px.outline(0x1a1418);
+  return px;
+}
 // the sights, registered
 function paintSights() {
+  addSprite('xinglight', paintXingLight(), 3.6, { collide: 0.2, shadow: 0.3 });
   const S = [
     ['kpmc', '高雄流行音樂中心', 'Kaohsiung Music Center'], ['harborbridge', '大港橋', 'Great Harbor Bridge'], ['pier2', '駁二藝術特區', 'Pier-2 Art Center'],
     ['dome', '美麗島站', 'Formosa Boulevard'], ['pagodas', '蓮池潭・龍虎塔', 'Dragon & Tiger Pagodas'], ['lrt', '高雄輕軌', 'Kaohsiung LRT'], ['tower85', '85 大樓', '85 Sky Tower'],
@@ -2359,7 +2369,7 @@ function paintSights() {
     ['aquarium', '國立海洋生物博物館', 'Aquarium'], ['guanshan', '關山夕照', 'Guanshan Sunset'], ['baisha', '白沙灣', 'Baisha Bay'], ['houbihu', '後壁湖', 'Houbihu Harbour'], ['maobitou', '貓鼻頭', 'Maobitou'],
     ['hengchun', '恆春古城', 'Hengchun Old Town'], ['kenting', '墾丁大街', 'Kenting Street'], ['nanwan', '南灣', 'Nanwan Beach'], ['sailrock', '船帆石', 'Sail Rock'], ['eluanbi', '鵝鑾鼻燈塔', 'Eluanbi Lighthouse'], ['longpan', '龍磐公園', 'Longpan Park'],
     ['weiwuying', '衛武營', 'Weiwuying Arts Center'], ['buddha', '佛光山佛陀紀念館', 'Fo Guang Shan'], ['ferris', '義大世界', 'E-DA World'], ['gaoping', '高屏溪斜張橋', 'Gaoping Bridge'], ['wanluan', '萬巒豬腳', 'Wanluan Pork Knuckle'],
-    ['fuan', '車城福安宮', 'Fuan Temple'], ['sichongxi', '四重溪溫泉', 'Sichongxi Hot Spring'], ['chuhuo', '出火', 'Chuhuo Fire'], ['nuke', '核三廠', 'Maanshan Plant'], ['kentingpark', '墾丁國家公園', 'Kenting National Park'], ['southpoint', '台灣最南點', 'Southernmost Point'],
+    ['lrtxing', '輕軌平交道', 'LRT Crossing'], ['fuan', '車城福安宮', 'Fuan Temple'], ['sichongxi', '四重溪溫泉', 'Sichongxi Hot Spring'], ['chuhuo', '出火', 'Chuhuo Fire'], ['nuke', '核三廠', 'Maanshan Plant'], ['kentingpark', '墾丁國家公園', 'Kenting National Park'], ['southpoint', '台灣最南點', 'Southernmost Point'],
   ];
   for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0, shadow: 0.3, ax: d < 0 ? 1 : 0 });
   addSprite('kpmc', paintKPMC(), 64, { collide: 0, shadow: 0, ax: 0 });
@@ -2380,7 +2390,7 @@ function paintSights() {
   addSprite('ferry', paintFerry(), 7, { collide: 0, shadow: 0 });
   addSprite('tuna', paintTuna(), 7, { collide: 0.7, shadow: 0.5 });
   addSprite('glassbridge', paintGlassBridge(), 52, { collide: 0, shadow: 0, ax: 0 });
-  addSprite('dppylon', paintDpPylon(), 46, { collide: 0.4, shadow: 0.3 });
+  addSprite('dppylon', paintDpPylon(), 46, { collide: 0, shadow: 0.3, ax: 1 });
   addSprite('weiwuying', paintWeiwuying(), 22, { collide: 0, shadow: 0, ax: 1 });
   addSprite('buddha', paintBuddha(), 68, { collide: 0, shadow: 0, ax: 1 });
   addSprite('ferris', paintFerris(0.3), 70, { collide: 0, shadow: 0, ax: 0 });
@@ -2835,6 +2845,11 @@ class Deco {
     const nm = SPR[name] ? name : pickVar(name, this.rnd);
     if (!nm) return null;
     const S = SPR[nm], sc = o.scale || 1;
+    // the inner side of a fork child, where its sibling runs close by: only what fits in the gap
+    if (this.p.innerFree) {
+      const i = Math.round(clamp(s, 0, this.p.L) / DS), sg = x < 0 ? -1 : 1;
+      if (sg === -this.p.side) { const edge = sg < 0 ? this.p.outerL(i) : this.p.outerR(i), d = sg < 0 ? edge - x : x - edge; if (d + (S.ww * sc * (o.sx || 1)) / 2 > this.p.innerFree[i]) return null; }
+    }
     this.p.sprites.push({ s, x, id: S.id, sc, flip: o.flip != null ? !!o.flip : this.rnd() < 0.5, y: o.y || 0, sway: o.sway != null ? o.sway : S.sway, ph: this.rnd() * TAU, glow: o.glow != null ? o.glow : S.glow, sx: o.sx || 1 });
     if (S.collide > 0 && o.collide !== false) this.collide(s, x, (S.ww * sc * (o.sx || 1) * S.collide) / 2 + 0.15, 0.6, o.kind || 'solid');
     return S;
@@ -2919,8 +2934,8 @@ function decoratePiece(p) {
       if (L.near && L.near[0] && due(sg, 'near', s, L.near[0])) { const k = r.pick(L.near[1]), off = r.range(L.near[2][0], L.near[2][1]); if (off < room) { plant(D, k, s, D.lat(s, sg, off), r.range(0.9, 1.15)); if (r() < 0.5) plant(D, 'bush', s + r.range(-2, 2), D.lat(s, sg, off + r.range(-0.8, 1.2)), r.range(0.8, 1.2), { collide: false }); } }
       if (L.under && r() < L.under[0]) { const off = r.range(L.under[2][0], L.under[2][1]); if (off < room) plant(D, r.pick(L.under[1]), s, D.lat(s, sg, off), r.range(0.75, 1.3), { collide: false }); }
       if (L.mid && due(sg, 'mid', s, L.mid[0])) { const n = r.int(L.mid[3][0], L.mid[3][1]); if (L.mid[2][1] < room) grove(D, L.mid[1], s, sg, L.mid[2][0], L.mid[2][1], n, r); }
-      if (L.far && due(sg, 'far', s, L.far[0])) { const off = r.range(L.far[2][0], L.far[2][1]); if (off < room) plant(D, r.pick(L.far[1]), s, D.lat(s, sg, off), r.range(1.1, 1.6) * (1 + off / 300), { collide: false }); }
-      if (L.hill && due(sg, 'hill', s, L.hill[0])) { const off = r.range(L.hill[2][0], L.hill[2][1]); if (off < room) plant(D, r.pick(L.hill[1]), s, D.lat(s, sg, off), r.range(1.8, 2.8) * (1 + off / 500), { collide: false }); }
+      if (L.far && due(sg, 'far', s, L.far[0])) { const off = r.range(L.far[2][0], L.far[2][1]); if (off < room) plant(D, r.pick(L.far[1]), s, D.lat(s, sg, off), r.range(1.0, 1.4), { collide: false }); }
+      if (L.hill && due(sg, 'hill', s, L.hill[0])) { const off = r.range(L.hill[2][0], L.hill[2][1]); if (off < room) plant(D, r.pick(L.hill[1]), s, D.lat(s, sg, off), r.range(1.2, 1.7), { collide: false }); }
     }
   }
   poleLine(D);
@@ -2991,7 +3006,7 @@ function poleLine(D) {
 const POST_TYPES = new Set(['grass', 'farm', 'orchard', 'hills', 'mountain', 'fishpond', 'industrial', 'beach', 'cliff', 'riverbed']);
 function postLine(D) {
   const p = D.p;
-  for (let s = 4; s < p.L - 4; s += 8) {
+  for (let s = 4; s < p.L - 4; s += 6) {
     const sec = p.sec(s); if (sec.bridge || sec.fork) continue;
     for (const sg of [-1, 1]) { const t = sg > 0 ? sec.R : sec.L; if (POST_TYPES.has(t)) D.spr('post', s, D.lat(s, sg, 0.35), { flip: sg > 0, sway: 0, collide: false }); }
   }
@@ -3117,6 +3132,12 @@ const TAGS = {
     D.p.grounds = D.p.grounds || [];
     D.p.grounds.push({ s0, s1, sg: -1, o0: 7.5, o1: 15.5, a: 0x7cbc4c, b: 0x74b246, per: 6, rails: [9.8, 11.2, 12.6, 14.0] });
     D.p.anim.push({ kind: 'tram', s0, s1, sg: -1, off: 11.9 });
+    // a level crossing in the middle: the tracks turn across the road, lights and bells, the tram comes through
+    const xs = Math.round((s0 + s1) / 2 / DS) * DS;
+    D.p.grounds.push({ s0: xs - 2.2, s1: xs + 2.2, sg: 1, o0: -40, o1: 0, a: 0x9a9690, b: 0x9a9690, per: 100, rails: [] });
+    for (const sg of [-1, 1]) { D.spr('xinglight', xs - 9, D.lat(xs - 9, sg, 0.6), { flip: sg > 0, collide: false, sway: 0 }); }
+    sightSign(D, xs - 150, 1, 'lrtxing');
+    tramCrossing(D.p, xs); (D.p.xings = D.p.xings || []).push(xs);
   },
   tower85(D) {
     // the 85 Sky Tower stands ahead and to the left as you leave the start
@@ -3291,21 +3312,21 @@ const TAGS = {
     D.rail(s0, s1, -1, 0.1, 'parapet'); D.rail(s0, s1, 1, 0.1, 'parapet');
     const p = D.p;
     if (sec.bridge === 'cable') {
-      const sm = (s0 + s1) / 2, i = Math.round(sm / DS), mx = p.outerL(i) - 1.8, H = 68;
-      D.spr('pylon', sm, mx, { flip: false, collide: true });
+      const sm = (s0 + s1) / 2, i = Math.round(sm / DS), mx = p.outerL(i) - 0.6, H = 68;
+      D.spr('pylon', sm, mx, { flip: false, collide: false }); D.collide(sm, mx - 4, 4, 3, 'wall');
       for (let k = 1; k <= 9; k++) for (const dir of [-1, 1]) {
         const sa = sm + dir * k * 24;
         if (sa < 0 || sa > p.L) continue;
         const ia = Math.round(sa / DS);
-        for (const xx of [p.outerR(ia) - 0.4, p.outerL(ia) + 0.4]) D.wire([{ s: sm, x: mx, y: H - 4 - k * 2.2 }, { s: sa, x: xx, y: 1.1 }]);
+        for (const xx of [p.outerR(ia) - 0.4, p.outerL(ia) + 0.4]) D.wire([{ s: sm, x: mx - 7, y: H - 4 - k * 2.2 }, { s: sa, x: xx, y: 1.1 }]);
       }
     }
     if (sec.bridge === 'bascule') {
       // 鵬灣跨海大橋: one tall mast on the left at the start of the lifting span, its stays fanning forward over the deck
-      const sm = (s0 + s1) / 2 - 40, i = Math.round(sm / DS), mx = p.outerL(i) - 2.2, H = 44;
-      D.spr('dppylon', sm, mx, { flip: false, collide: true });
-      for (let k = 1; k <= 7; k++) { const sa = sm + k * 16; if (sa > p.L) break; const ia = Math.round(sa / DS); D.wire([{ s: sm, x: mx + 2, y: H - 3 - k * 1.6 }, { s: sa, x: p.outerL(ia) + 0.6, y: 1.2 }]); D.wire([{ s: sm, x: mx + 2, y: H - 3 - k * 1.6 }, { s: sa, x: p.outerR(ia) - 0.6, y: 1.2 }]); }
-      for (let k = 1; k <= 2; k++) { const sa = sm - 24 * k; if (sa < 0) break; const ia = Math.round(sa / DS); D.wire([{ s: sm, x: mx + 2, y: H - 2 - k }, { s: sa, x: p.outerL(ia) - 1, y: 1.2 }]); }
+      const sm = (s0 + s1) / 2 - 40, i = Math.round(sm / DS), mx = p.outerL(i) - 0.8, H = 44;
+      D.spr('dppylon', sm, mx, { flip: false, collide: false }); D.collide(sm, mx - 4, 4, 3, 'wall');
+      for (let k = 1; k <= 7; k++) { const sa = sm + k * 16; if (sa > p.L) break; const ia = Math.round(sa / DS); D.wire([{ s: sm, x: mx - 6, y: H - 3 - k * 1.6 }, { s: sa, x: p.outerL(ia) + 0.6, y: 1.2 }]); D.wire([{ s: sm, x: mx - 6, y: H - 3 - k * 1.6 }, { s: sa, x: p.outerR(ia) - 0.6, y: 1.2 }]); }
+      for (let k = 1; k <= 2; k++) { const sa = sm - 24 * k; if (sa < 0) break; const ia = Math.round(sa / DS); D.wire([{ s: sm, x: mx - 6, y: H - 2 - k }, { s: sa, x: p.outerL(ia) - 1, y: 1.2 }]); }
     }
   },
 };
@@ -4166,6 +4187,81 @@ function gravelModel(view) {
   }];
   return { parts: [chassis, hopper, cab], tyres, extras, shadow: { hw: hw + 0.08, z0: Z(-zA), z1: Z(L - zA) } };
 }
+
+// an SUV: tall boxy body, big tyres, a spare on the back
+function suvModel(col, view) {
+  const L = 4.8, zA = 1.0, wb = 2.8, hw = 0.95, zs = view === 'front' ? wb : 0, Z = (z) => z - zs;
+  const body = { col, secs: [rectSec(Z(-zA), hw - 0.04, 0.42, 1.1, { r: 0.1 }), rectSec(Z(-0.2), hw, 0.4, 1.16, { r: 0.1 }), rectSec(Z(3.0), hw, 0.4, 1.12, { r: 0.1 }), rectSec(Z(L - zA), hw - 0.06, 0.44, 1.0, { r: 0.1 })] };
+  const cabin = { col, tone: cabinTone, secs: [rectSec(Z(-zA + 0.05), hw - 0.08, 1.1, 1.14), rectSec(Z(-zA + 0.3), hw - 0.1, 1.1, 1.92, { r: 0.1 }), rectSec(Z(2.5), hw - 0.1, 1.1, 1.92, { r: 0.1 }), rectSec(Z(3.3), hw - 0.08, 1.1, 1.16)] };
+  const tyres = [{ x: -0.8, z: Z(0), R: 0.38, w: 0.26 }, { x: 0.8, z: Z(0), R: 0.38, w: 0.26 }, { x: -0.8, z: Z(wb), R: 0.38, w: 0.26 }, { x: 0.8, z: Z(wb), R: 0.38, w: 0.26 }];
+  const extras = [(c) => {
+    if (view === 'rear') {
+      const z = Z(-zA) - 0.001;
+      for (const sx of [-1, 1]) { const q = plate(c, z, sx * (hw - 0.3), sx * (hw - 0.06), 0.8, 1.3, 0xd01a22); plate(c, z, sx * (hw - 0.26), sx * (hw - 0.1), 1.0, 1.22, 0xff6a5a, 0.012); lampBox(c, q); }
+      plate(c, z, -0.22, 0.22, 0.56, 0.7, 0xf4f4ec); plate(c, z, -hw + 0.06, hw - 0.06, 0.44, 0.52, 0x1c1a22);
+      const q = plate(c, z - 0.02, -0.4, 0.4, 0.6, 1.4, 0x1c1a22); plate(c, z - 0.03, -0.3, 0.3, 0.7, 1.3, 0x2e2e34, 0.012);   // the spare on the door
+      plate(c, z, -hw + 0.1, hw - 0.1, 1.46, 1.9, GLASS[1]);
+      detail(c, [[-hw + 0.2, 1.94, Z(-zA + 0.3)], [hw - 0.2, 1.94, Z(-zA + 0.3)], [hw - 0.2, 2.06, Z(-zA + 0.3)], [-hw + 0.2, 2.06, Z(-zA + 0.3)]], 0x2a2a30, 0.02);   // the roof rails
+    } else {
+      const z = Z(L - zA) + 0.001;
+      for (const sx of [-1, 1]) { const q = plate(c, z, sx * (hw - 0.36), sx * (hw - 0.06), 0.7, 0.94, 0xfff8dc); lampBox(c, q); }
+      plate(c, z, -0.5, 0.5, 0.62, 0.92, 0x16161a); for (let k = 0; k < 3; k++) plate(c, z, -0.48, 0.48, 0.66 + k * 0.08, 0.68 + k * 0.08, 0x4a4a52, 0.012);
+      plate(c, z, -0.22, 0.22, 0.5, 0.6, 0xf4f4ec);
+    }
+    for (const sx of [-1, 1]) detail(c, [[sx * (hw + 0.02), 1.2, Z(2.7)], [sx * (hw + 0.22), 1.2, Z(2.7)], [sx * (hw + 0.22), 1.34, Z(2.7)], [sx * (hw + 0.02), 1.34, Z(2.7)]], shadeHex(col, 0.8));
+  }];
+  return { parts: [body, cabin], tyres, extras, shadow: { hw: hw + 0.08, z0: Z(-zA), z1: Z(L - zA) } };
+}
+// a station wagon: a sedan with the roof carried all the way back, a roof box on top
+function wagonModel(col, view) {
+  const L = 4.7, zA = 1.0, wb = 2.7, hw = 0.88, zs = view === 'front' ? wb : 0, Z = (z) => z - zs;
+  const body = { col, secs: [rectSec(Z(-zA), hw - 0.04, 0.3, 0.9, { r: 0.1 }), rectSec(Z(-0.2), hw, 0.28, 0.94, { r: 0.1 }), rectSec(Z(2.9), hw, 0.3, 0.9, { r: 0.1 }), rectSec(Z(L - zA), hw - 0.06, 0.34, 0.78, { r: 0.1 })] };
+  const cabin = { col, tone: cabinTone, secs: [rectSec(Z(-zA + 0.05), hw - 0.1, 0.9, 0.94), rectSec(Z(-zA + 0.25), hw - 0.12, 0.9, 1.48, { r: 0.08 }), rectSec(Z(2.3), hw - 0.12, 0.9, 1.48, { r: 0.08 }), rectSec(Z(3.05), hw - 0.1, 0.9, 0.94)] };
+  const roofbox = boxPart(0.36, 1.48, 1.72, Z(0.2), Z(2.0), 0x2a2a30, { r: 0.08 });
+  const tyres = [{ x: -0.74, z: Z(0), R: 0.31, w: 0.2 }, { x: 0.74, z: Z(0), R: 0.31, w: 0.2 }, { x: -0.74, z: Z(wb), R: 0.31, w: 0.2 }, { x: 0.74, z: Z(wb), R: 0.31, w: 0.2 }];
+  const extras = [(c) => {
+    if (view === 'rear') {
+      const z = Z(-zA) - 0.001;
+      for (const sx of [-1, 1]) { const q = plate(c, z, sx * (hw - 0.3), sx * (hw - 0.06), 0.62, 1.0, 0xd01a22); plate(c, z, sx * (hw - 0.26), sx * (hw - 0.1), 0.8, 0.96, 0xff6a5a, 0.012); lampBox(c, q); }
+      plate(c, z, -0.2, 0.2, 0.42, 0.54, 0xf4f4ec); plate(c, z, -hw + 0.06, hw - 0.06, 0.3, 0.36, 0x1c1a22);
+      plate(c, z, -hw + 0.14, hw - 0.14, 1.02, 1.44, GLASS[1]);
+    } else {
+      const z = Z(L - zA) + 0.001;
+      for (const sx of [-1, 1]) { const q = plate(c, z, sx * (hw - 0.36), sx * (hw - 0.08), 0.5, 0.7, 0xfff8dc); lampBox(c, q); }
+      plate(c, z, -0.42, 0.42, 0.5, 0.68, 0x16161a); plate(c, z, -0.2, 0.2, 0.38, 0.48, 0xf4f4ec);
+    }
+    for (const sx of [-1, 1]) detail(c, [[sx * (hw + 0.02), 1.0, Z(2.5)], [sx * (hw + 0.2), 1.0, Z(2.5)], [sx * (hw + 0.2), 1.12, Z(2.5)], [sx * (hw + 0.02), 1.12, Z(2.5)]], shadeHex(col, 0.8));
+  }];
+  return { parts: [body, cabin, roofbox], tyres, extras, shadow: { hw: hw + 0.08, z0: Z(-zA), z1: Z(L - zA) } };
+}
+// a semi-trailer: a flatbed behind a tractor, loaded with bundles of rebar or a stack of logs, the ends toward you
+function trailerModel(load, view) {
+  const L = 16, zA = 1.5, hw = 1.24, zs = view === 'front' ? 12.5 : 0, Z = (z) => z - zs;
+  const bed = boxPart(hw, 0.95, 1.25, Z(-zA), Z(10.5), 0x3a3a42);
+  const chassis = boxPart(hw - 0.3, 0.5, 0.95, Z(-zA), Z(10.2), 0x2a2a30);
+  const cab = { col: load === 'logs' ? 0x18884a : 0xd8242a, tone: (n, P) => (n[1] > 0.75 ? P[4] : n[2] > 0.5 ? GLASS[1] : n[2] < -0.5 ? P[3] : n[0] < 0 ? P[2] : P[1]), secs: [rectSec(Z(10.6), hw - 0.08, 0.9, 3.1, { r: 0.1 }), rectSec(Z(12.9), hw - 0.08, 0.9, 3.1, { r: 0.1 }), rectSec(Z(L - zA), hw - 0.2, 0.9, 1.5, { r: 0.1 })] };
+  const parts = [chassis, bed, cab];
+  if (load === 'logs') { for (let row = 0; row < 3; row++) for (let k = 0; k < 4 - row; k++) { const x = (k - (3 - row) / 2) * 0.62, y = 1.25 + row * 0.54 + 0.3; parts.push({ col: 0x8a5a2a, secs: [rectSec(Z(-zA + 0.3), 0.3, y - 0.3, y + 0.3, { r: 0.3 }), rectSec(Z(10.2), 0.3, y - 0.3, y + 0.3, { r: 0.3 })].map((sec) => ({ z: sec.z, pts: sec.pts.map((q) => [q[0] + x, q[1]]) })) }); } }
+  else { parts.push(boxPart(hw - 0.2, 1.25, 1.75, Z(-zA - 0.9), Z(10.2), 0x5a5a62)); }   // the rebar bundles stick out past the bed
+  for (const sx of [-1, 1]) parts.push(boxPart(0.06, 1.25, 2.5, Z(2.6 + sx * 0), Z(2.7), 0xd8242a));
+  const tyres = []; for (const z of [0, 1.4, 11.2, 12.6]) for (const sx of [-1, 1]) tyres.push({ x: sx * 0.98, z: Z(z), R: 0.5, w: 0.3 });
+  const extras = [(c) => {
+    if (view === 'rear') {
+      const z = Z(-zA) - 0.001, ze = load === 'logs' ? Z(-zA + 0.3) : Z(-zA - 0.9);
+      for (const sx of [-1, 1]) { const q = plate(c, z, sx * (hw - 0.34), sx * (hw - 0.1), 0.98, 1.2, 0xd01a22); lampBox(c, q); }
+      plate(c, z, -0.24, 0.24, 1.0, 1.16, 0xf4f4ec);
+      for (let k = 0; k < 6; k++) { plate(c, z + 0.001, -hw + 0.1 + k * 0.4, -hw + 0.3 + k * 0.4, 0.98, 1.22, k % 2 ? 0xd8242a : 0xf4f4ec, 0.011); }   // the hazard stripes
+      if (load === 'logs') { for (let row = 0; row < 3; row++) for (let k = 0; k < 4 - row; k++) { const x = (k - (3 - row) / 2) * 0.62, y = 1.55 + row * 0.54; const pts = []; for (let a = 0; a < 10; a++) pts.push([x + Math.cos((a / 10) * TAU) * 0.3, y + Math.sin((a / 10) * TAU) * 0.3, ze - 0.001]); detail(c, pts, 0xd8b078, 0.013); const inner = pts.map((q) => [x + (q[0] - x) * 0.6, y + (q[1] - y) * 0.6, q[2]]); detail(c, inner, 0xb88848, 0.014); } }
+      else { for (let i = 0; i < 24; i++) { const x = -hw + 0.3 + (i % 8) * 0.28, y = 1.33 + Math.floor(i / 8) * 0.16; detail(c, [[x - 0.04, y - 0.04, ze - 0.001], [x + 0.04, y - 0.04, ze - 0.001], [x + 0.04, y + 0.04, ze - 0.001], [x - 0.04, y + 0.04, ze - 0.001]], 0x8a8a92, 0.013); } plate(c, ze - 0.002, -0.3, 0.3, 1.3, 1.7, 0xd8242a, 0.014); }
+    } else {
+      const z = Z(L - zA) + 0.001;
+      plate(c, z, -hw + 0.12, hw - 0.12, 2.0, 2.95, GLASS_F[1]); plate(c, z, -hw + 0.1, hw - 0.1, 1.0, 1.1, 0x9aa0a6);
+      for (const sx of [-1, 1]) { const q = plate(c, z, sx * (hw - 0.36), sx * (hw - 0.1), 1.2, 1.4, 0xfff8dc); lampBox(c, q); }
+      plate(c, z, -0.5, 0.5, 1.2, 1.8, 0x16161a);
+    }
+  }];
+  return { parts, tyres, extras, shadow: { hw: hw + 0.08, z0: Z(-zA - 0.9), z1: Z(L - zA) } };
+}
 function paintScooterRider(seed, front) {
   const rnd = mulberry(seed), M = (m) => Math.round(m * TPPM), W = M(0.8), H = M(1.72), px = new Pix(W + 2, H + 2), cx = W / 2 + 1;
   const body = rnd.pick([0xffffff, 0xd8242a, 0x1a58b8, 0x2a2a2a, 0xf2c21a, 0x9aa0a6, 0x3ac8d8]), helmet = rnd.pick([0xd8242a, 0xffffff, 0x1a58b8, 0xf2c21a, 0xf27aa8, 0x2a2a2a, 0x18884a]);
@@ -4194,12 +4290,16 @@ function paintTraffic() {
   reg('bluetruck', 'front', 'blue_f', trafficRender((v) => blueTruckModel(null, v), 'front', 2.1, 2.15));
   [0x1a58b8, 0xd8242a, 0xf2a01a, 0x18884a].forEach((c, i) => { reg('bus', 'rear', 'bus_r#' + i, trafficRender((v) => busModel(c, v), 'rear', 3.2, 3.5)); reg('bus', 'front', 'bus_f#' + i, trafficRender((v) => busModel(c, v), 'front', 3.2, 3.5)); });
   reg('gravel', 'rear', 'grav_r', trafficRender((v) => gravelModel(v), 'rear', 3.2, 3.7)); reg('gravel', 'front', 'grav_f', trafficRender((v) => gravelModel(v), 'front', 3.2, 3.7));
+  [0x2a2a30, 0xf2f2ee, 0x8a1a2a, 0x4a6a9a].forEach((c, i) => { reg('suv', 'rear', 'suv_r#' + i, trafficRender((v) => suvModel(c, v), 'rear', 2.4, 2.2)); });
+  [0xd8d2c0, 0x2a4a8a, 0x6a2a4a].forEach((c, i) => { reg('wagon', 'rear', 'wagon_r#' + i, trafficRender((v) => wagonModel(c, v), 'rear', 2.3, 1.9)); });
+  reg('rebar', 'rear', 'rebar_r', trafficRender((v) => trailerModel('rebar', v), 'rear', 3.2, 3.6));
+  reg('logs', 'rear', 'logs_r', trafficRender((v) => trailerModel('logs', v), 'rear', 3.2, 3.6));
   for (let i = 0; i < 8; i++) { reg('scooter', 'rear', 'scoot_r#' + i, paintScooterRider(500 + i * 7, false), 1.72); reg('scooter', 'front', 'scoot_f#' + i, paintScooterRider(600 + i * 7, true), 1.72); }
 }
 
 // ===================== the player's car: engine, gearbox, grip, drifting, crashes =====================
 const REDLINE = { v12: 8200, v8: 6600, i6: 7200, i4: 7600, flat6: 7800, turbo: 8600 };
-const WORLD_K = 1.35;   // the world passes a little faster than the speedo says, the arcade way
+const WORLD_K = 1.5;    // the world passes faster than the speedo says, the arcade way: the sense of speed is the game
 const PC = {
   spec: null, car: null, piece: null, s: 0, x: 0, v: 0, vx: 0, rpm: 900, gear: 1, gears: 6, auto: true,
   throttle: 0, brake: 0, steer: 0, steerIn: 0, shiftT: 0, shiftTo: 0, neutral: false, seq: false,
@@ -4648,6 +4748,7 @@ function sfxCrash(k) {
 }
 function sfxPop() { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseHit(t, 'lowpass', 900 + Math.random() * 600, 1, 0.16, 0.05); }
 function sfxBeep(hi) { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'square', hi ? 1320 : 660, 0, 0.12, hi ? 0.6 : 0.22); }
+function sfxBell() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'square', 1760, 0, 0.08, 0.12); tone(t + 0.14, 'square', 1760, 0, 0.08, 0.12); }
 function sfxChime() { if (!AU.ctx) return; const t = AU.ctx.currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(t + i * 0.07, 'triangle', f, 0, 0.14, 0.4)); }
 function sfxWarn() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'square', 880, 0, 0.07, 0.12); }
 function sfxPass(k, pan) {
@@ -4791,7 +4892,14 @@ const TRAFFIC = { list: [], pool: {}, oncoming: [], spawnS: 0, density: 1, passC
 const VTYPES = {
   sedan: { len: 4.5, wid: 1.8 }, taxi: { len: 4.6, wid: 1.8 }, pickup: { len: 5.0, wid: 1.9 }, bluetruck: { len: 4.8, wid: 1.7 },
   bus: { len: 11.5, wid: 2.5 }, gravel: { len: 8.0, wid: 2.5 }, scooter: { len: 1.9, wid: 0.8 },
+  suv: { len: 4.8, wid: 1.9 }, wagon: { len: 4.7, wid: 1.8 }, rebar: { len: 17, wid: 2.5 }, logs: { len: 16, wid: 2.5 },
 };
+// manners by stage: how often a vehicle changes lanes, how long it signals first, how close ahead of you it dares to,
+// and how likely it is to weave straight back. Stage 1 is polite; by stage 4 it is Taiwan at rush hour.
+function manners() {
+  const n = clamp((RACE.stageNo || 1) - 1, 0, 3);
+  return { every: 14 - n * 3, signal: 1.4 - n * 0.35, ahead: 70 - n * 15, weave: 0.1 + n * 0.25, cut: n * 0.2 };
+}
 const GAP_CAR = 2.4;        // the gap a car needs between the clearances (the player's car is 1.85 m wide)
 const GAP_CLEAR = 0.5;      // the clearance kept beside every vehicle when checking for a gap
 function trafficReset() {
@@ -4835,8 +4943,9 @@ function spawnVehicle(p, s) {
   for (const c of picks) if (gapLeft(p, s, iv, c, T.wid)) { x = c; break; }
   if (x == null) return null;
   let v;
-  if (type === 'scooter') v = rnd(10, 15); else if (type === 'bus' || type === 'gravel') v = rnd(13, 19); else v = rnd(16, 25);
-  return { spr, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0 };
+  if (type === 'scooter') v = rnd(10, 15); else if (type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs') v = rnd(14, 19); else if (type === 'suv') v = rnd(18, 26); else v = rnd(16, 25);
+  const M = manners();
+  return { spr, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0, lc: null, lcT: rnd(2, M.every), sig: 0, sigT: 0, manners: M };
 }
 function trafficUpdate(dt) {
   const p = PC.piece, pd = p.def.traffic || { per100: 1 };
@@ -4868,6 +4977,7 @@ function trafficUpdate(dt) {
     }
     v.vPrev = v.v; v.v = lerp(v.v, target, clamp(dt * (target < v.v ? 3 : 1.5), 0, 1)); v.brake = lerp(v.brake, v.v < v.vPrev - 0.02 || target < 1 ? 1 : 0, clamp(dt * 8, 0, 1));
     v.s += v.v * dt;
+    laneChange(v, dt);
     if (v.hitT > 0) { v.hitT -= dt; v.x += v.push * dt; v.push *= 0.9; }
     const hw = v.p.hw(v.s);
     v.x = clamp(v.x, -hw + v.wid / 2, hw + Math.max(0, v.p.shoulder(v.s) - 0.3) - v.wid / 2);
@@ -4893,6 +5003,25 @@ function trafficUpdate(dt) {
     }
   }
 }
+// a lane change: wait, signal, move across; the manners of the stage decide how much warning you get
+function laneChange(v, dt) {
+  if (v.type === 'scooter' || v.oncoming) return;
+  const M = v.manners, p = v.p, hw = p.hw(v.s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
+  if (v.lc) {
+    // signalling first, then sliding over; the indicator stays on until the car is in its new lane
+    v.sigT += dt;
+    if (v.sigT > v.lc.wait) { v.x = lerp(v.x, v.lc.x, clamp(dt * 2.2, 0, 1)); if (Math.abs(v.x - v.lc.x) < 0.1) { v.x = v.lc.x; v.lane = v.x; v.sig = 0; const weave = Math.random() < M.weave; v.lc = null; v.lcT = weave ? rnd(0.3, 1.2) : rnd(M.every * 0.6, M.every * 1.6); } }
+    return;
+  }
+  v.lcT -= dt; if (v.lcT > 0 || lanes < 2) return;
+  v.lcT = rnd(M.every * 0.6, M.every * 1.6);
+  const cur = clamp(Math.round((v.x + hw) / LANE - 0.5), 0, lanes - 1), dir = cur === 0 ? 1 : cur === lanes - 1 ? -1 : (Math.random() < 0.5 ? -1 : 1), nx = -hw + LANE * (cur + dir + 0.5);
+  // not into someone beside, never closing the road, and not right in front of the player unless the manners allow it
+  for (const o of TRAFFIC.list) if (o !== v && o.p === p && Math.abs(o.s - v.s) < (o.len + v.len) / 2 + 6 && Math.abs(o.x - nx) < 2.4) return;
+  const iv = nearIntervals(p, v.s, v.len, v, 8); if (iv.length && !gapLeft(p, v.s, iv, nx, v.wid)) return;
+  if (p === PC.piece) { const ds = v.s - PC.s, closing = Math.max(0, PC.v - v.v), need = closing * (M.signal + 1.5) + 8; if (ds > 0 && ds < Math.max(need, M.ahead * 0.5) && Math.abs(nx - PC.x) < 2.4 && Math.random() > M.cut) return; }
+  v.lc = { x: nx, wait: M.signal * rnd(0.7, 1.3) }; v.sig = dir; v.sigT = 0;
+}
 // a vehicle on screen: a soft shadow, the picture, its brake lights glowing when it slows
 function drawVehicle(v, x, y, k, clip, fog) {
   const S = v.spr; if (!S) return;
@@ -4901,6 +5030,13 @@ function drawVehicle(v, x, y, k, clip, fog) {
   if (y <= clip) { VG.fillStyle = 'rgba(0,0,0,0.28)'; VG.beginPath(); VG.ellipse(x, y - 0.5, wpx * 0.56, Math.max(1, wpx * 0.1), 0, 0, TAU); VG.fill(); }
   drawSpr(S, x, y, hpx, 1, false, clip, fog, 0);
   const L = S.meta && S.meta.lights;
+  if (v.sig && (Math.floor(G.t * 3) & 1) && y - hpx < clip) {
+    const sc = hpx / S.h, x0 = x - wpx / 2, cx = x0 + (v.sig < 0 ? 0.12 : 0.88) * wpx, cy = y - hpx * (v.type === 'bus' || v.type === 'gravel' || v.type === 'rebar' || v.type === 'logs' ? 0.3 : 0.42), r = Math.max(2, wpx * 0.07);
+    VG.globalCompositeOperation = 'lighter';
+    const rg = VG.createRadialGradient(cx, cy, 0, cx, cy, r * 1.6); rg.addColorStop(0, 'rgba(255,190,40,0.95)'); rg.addColorStop(0.5, 'rgba(255,150,20,0.5)'); rg.addColorStop(1, 'rgba(255,120,0,0)');
+    VG.fillStyle = rg; VG.fillRect(cx - r * 1.6, cy - r * 1.6, r * 3.2, r * 3.2);
+    VG.globalCompositeOperation = 'source-over';
+  }
   if (L && v.brake > 0.3 && y - hpx < clip) {
     const sc = hpx / S.h, x0 = x - wpx / 2;
     VG.globalCompositeOperation = 'lighter';
@@ -4919,8 +5055,22 @@ function drawVehicle(v, x, y, k, clip, fog) {
 // A pedestrian with a phone, an auntie with shopping, a scooter cutting straight across. They step off the kerb
 // ahead of you in towns and cities and amble to the other side. Hit one and the car spins a full turn and loses
 // its speed; the one you hit is knocked flying (and lands on the far pavement, cross, but fine — it is a cartoon).
-const HAZ = { list: [], nextS: 0, spinT: 0, spinDur: 0, spinDir: 1 };
-function hazardsReset() { HAZ.list.length = 0; HAZ.nextS = PC.s + 260; HAZ.spinT = 0; }
+const HAZ = { list: [], nextS: 0, spinT: 0, spinDur: 0, spinDir: 1, xings: [] };
+function hazardsReset() { HAZ.list.length = 0; HAZ.nextS = PC.s + 260; HAZ.spinT = 0; for (const x of HAZ.xings) { x.t = x.t0; x.hitT = 0; } }
+// a tram crossing: registered by the lightrail tag; the tram comes across every so often, bells and lights first
+function tramCrossing(p, s) { HAZ.xings.push({ p, s, t: 0, t0: 0, period: 16, warn: 2.6, speed: 9, len: 34, x: 0, on: false, hitT: 0 }); }
+function tramXUpdate(dt) {
+  for (const x of HAZ.xings) {
+    x.t += dt; const u = x.t % x.period;
+    // the tram's nose enters from the left 'warn' seconds after the bells start, and takes the width of the road plus its length
+    const run = (p => (p.outerR(Math.round(x.s / DS)) - p.outerL(Math.round(x.s / DS))) + x.len + 16)(x.p), dur = run / x.speed;
+    x.warnOn = u < x.warn + dur; x.on = u > x.warn && u < x.warn + dur;
+    x.x = x.on ? x.p.outerL(Math.round(x.s / DS)) - 8 - x.len + (u - x.warn) * x.speed : -999;   // the nose's leading edge... the tram spans x.x .. x.x + len
+    if (x.on && !PC.crash && x.p === PC.piece && Math.abs(PC.s - x.s) < 2.4 && PC.x > x.x - 1 && PC.x < x.x + x.len + 1) { pcCrash(0.8); sfxHorn(); }
+    if (x.warnOn && x.p === PC.piece && PC.s < x.s && x.s - PC.s < 90 && !x.bellT) { x.bellT = 0.01; }
+    if (x.bellT) { x.bellT += dt; if (x.bellT > 0.55) { x.bellT = 0; if (x.warnOn && x.p === PC.piece && Math.abs(x.s - PC.s) < 120) sfxBell(); } }
+  }
+}
 function paintPedSide(seed, kind) {
   // a walker seen from the side, two stride frames: kind 0 phone-staring, 1 auntie with bags, 2 kid running
   const rnd = mulberry(seed), frames = [];
@@ -4947,18 +5097,47 @@ function paintScooterSide(seed) {
   px.outline(0x1a1418);
   return px;
 }
+// the slow ones in your lane: a cyclist, an inline skater, someone on an electric skateboard — seen from behind
+function paintRiderBack(seed, kind) {
+  const rnd = mulberry(seed), W = 34, H = 60, px = new Pix(W, H), x = 17, y = 58;
+  const skin = rnd.pick([0xf2c8a0, 0xe0b088, 0xc89068]), shirt = rnd.pick([0xd8242a, 0xffffff, 0x1a58b8, 0xf2c21a, 0x18884a, 0xf27aa8, 0x3ac8d8]), pants = rnd.pick([0x2a3a6a, 0x3a3a3a, 0x1a1a2a]), hair = rnd.pick([0x1a1410, 0x3a2a1a]);
+  if (kind === 0) {   // bicycle: the rear wheel, the saddle, the rider hunched over the bars
+    px.ellipse(x, y - 8, 4, 8, 0x1a1a1e); px.ellipse(x, y - 8, 1.5, 5, 0x6a6a72); px.rect(x - 1, y - 24, 2, 10, 0x8a8e94); px.rect(x - 4, y - 26, 8, 3, 0x2a2a30);
+    px.rect(x - 7, y - 40, 14, 16, shirt); px.rect(x - 3, y - 30, 3, 10, pants); px.rect(x + 1, y - 32, 3, 10, pants);
+    px.rect(x - 11, y - 38, 4, 10, skin); px.rect(x + 7, y - 38, 4, 10, skin);
+    px.ellipse(x, y - 45, 5, 5, skin); px.ellipse(x, y - 48, 6, 4, 0xd8242a);   // the helmet
+  } else if (kind === 1) {   // inline skates: upright, arms out for balance, boots with wheels
+    px.rect(x - 6, y - 8, 5, 8, 0x2a2a30); px.rect(x + 1, y - 10, 5, 10, 0x2a2a30); for (let k = 0; k < 3; k++) { px.rect(x - 5 + k * 2, y - 1, 1, 1, 0xf2c21a); px.rect(x + 2 + k * 2, y - 3, 1, 1, 0xf2c21a); }
+    px.rect(x - 5, y - 24, 4, 16, pants); px.rect(x + 1, y - 26, 4, 16, pants);
+    px.rect(x - 6, y - 40, 12, 17, shirt); px.rect(x - 15, y - 38, 9, 3, skin); px.rect(x + 6, y - 36, 9, 3, skin);
+    px.ellipse(x, y - 45, 5, 6, skin); px.rect(x - 5, y - 51, 10, 4, hair);
+  } else {   // electric skateboard: crouched, knees bent, the board with its wheels
+    px.rect(x - 9, y - 4, 18, 3, 0x2a2a30); px.rect(x - 8, y - 2, 3, 2, 0xf2c21a); px.rect(x + 5, y - 2, 3, 2, 0xf2c21a);
+    px.rect(x - 7, y - 18, 4, 14, pants); px.rect(x + 3, y - 18, 4, 14, pants);
+    px.rect(x - 6, y - 32, 12, 15, shirt); px.rect(x - 10, y - 26, 4, 8, skin); px.rect(x + 6, y - 28, 4, 8, skin);
+    px.ellipse(x, y - 37, 5, 6, skin); px.ellipse(x, y - 40, 6, 4, 0x1a58b8);   // a cap
+  }
+  px.outline(0x1a1418);
+  return px;
+}
 function paintHazards() {
+  for (let i = 0; i < 3; i++) for (let v = 0; v < 2; v++) addSprite('rider' + i + '#' + v, paintRiderBack(4400 + i * 17 + v * 5, i), 1.6, { collide: 0, shadow: 0.3 });
   for (let i = 0; i < 3; i++) paintPedSide(4200 + i * 11, i).forEach((px, f) => addSprite('ped' + i + '_' + f, px, 1.75, { collide: 0, shadow: 0.3 }));
   for (let i = 0; i < 2; i++) addSprite('scootside#' + i, paintScooterSide(4300 + i * 13), 1.5, { collide: 0, shadow: 0.4 });
 }
 const HAZ_SIDES = { city: 1, town: 1, harbor: 1, plaza: 1, beach: 0.5, bay: 0.6 };
 function hazardsUpdate(dt) {
   const p = PC.piece; if (!p || RACE.state !== 'run') return;
+  tramXUpdate(dt);
   // spawn: in built-up stretches, one every 200-400 m, stepping off one kerb and heading for the other
   if (PC.s > HAZ.nextS) {
     const s = PC.s + 150 + Math.random() * 120, sec = p.sec(Math.min(p.L - 1, s)), w = Math.max(HAZ_SIDES[sec.L] || 0, HAZ_SIDES[sec.R] || 0);
     HAZ.nextS = PC.s + 200 + Math.random() * 220;
-    if (s < p.L - 30 && Math.random() < w) {
+    if (s < p.L - 30 && Math.random() < w * 0.5) {
+      // a rider along the edge of the road, in the rightmost lane, drifting out into it now and then
+      const i = Math.round(s / DS), kind = Math.floor(Math.random() * 3), hw = p.hw(s);
+      HAZ.list.push({ p, s, x: hw - 0.9 - Math.random() * 0.6, to: 0, dir: 0, v: kind === 0 ? 6 + Math.random() * 3 : kind === 1 ? 4 + Math.random() * 2 : 8 + Math.random() * 3, scoot: false, rider: true, kind, t: Math.random() * 10, hit: 0, vy: 0, y: 0, vx: 0, wob: 0, var: Math.random() < 0.5 ? 0 : 1 });
+    } else if (s < p.L - 30 && Math.random() < w) {
       const sg = Math.random() < 0.5 ? -1 : 1, scoot = Math.random() < 0.35, i = Math.round(s / DS);
       const from = sg < 0 ? p.outerL(i) - 0.8 : p.outerR(i) + 0.8, to = -from;
       const kind = Math.floor(Math.random() * 3);
@@ -4969,8 +5148,16 @@ function hazardsUpdate(dt) {
     const h = HAZ.list[i];
     h.t += dt;
     if (h.hit) { h.hit += dt; h.x += h.vx * dt; h.vy -= 22 * dt; h.y = Math.max(0, h.y + h.vy * dt); if (h.hit > 1.6) HAZ.list.splice(i, 1); continue; }
-    h.x += h.dir * h.v * dt;
-    if (h.p !== p || (h.dir > 0 ? h.x > h.to : h.x < h.to) || h.s < PC.s - 30) { HAZ.list.splice(i, 1); continue; }
+    if (h.rider) {
+      // along the road with the traffic, a wobble into the lane every so often
+      h.s += h.v * dt; h.wob -= dt;
+      if (h.wob < 0) { h.wob = 3 + Math.random() * 5; h.wx = Math.random() < 0.4 ? -1.6 - Math.random() * 1.4 : 0; }
+      const hw = h.p.hw(h.s); h.x = lerp(h.x, hw - 0.9 + (h.wx || 0), clamp(dt * 1.2, 0, 1));
+      if (h.p !== p || h.s < PC.s - 30 || h.s > h.p.L - 10) { HAZ.list.splice(i, 1); continue; }
+    } else {
+      h.x += h.dir * h.v * dt;
+      if (h.p !== p || (h.dir > 0 ? h.x > h.to : h.x < h.to) || h.s < PC.s - 30) { HAZ.list.splice(i, 1); continue; }
+    }
     // the last-second dodge: a quick one hops back if the car is nearly on it and it is still near its own kerb
     const ds = h.s - PC.s, dx = h.x - PC.x;
     if (!PC.crash && !HAZ.spinT && ds > 0 && ds < 2.2 + PC.v * 0.05 && Math.abs(dx) < (h.scoot ? 1.9 : 1.5)) {
@@ -4978,14 +5165,25 @@ function hazardsUpdate(dt) {
       h.hit = 0.001; h.vx = h.dir * 6 + Math.sign(dx || 1) * 3; h.vy = 7 + PC.v * 0.05; h.y = 0.01;
       HAZ.spinT = 0.001; HAZ.spinDur = 0.9; HAZ.spinDir = dx > 0 ? -1 : 1;
       PC.v *= 0.45; PC.drift = 0; sfxThud(0.8); sfxHorn(); shake(0.45); RACE.score = Math.max(0, RACE.score - 500);
-      hudMsg(h.scoot ? '三寶！' : '哎呀！', h.scoot ? '機車突然衝出來' : '有人闖馬路', '#ff4f6d', 1.6, false);
+      hudMsg(h.scoot || h.rider ? '三寶！' : '哎呀！', h.scoot ? '機車突然衝出來' : h.rider ? ['腳踏車晃出來', '直排輪滑出來', '電動滑板衝出來'][h.kind] : '有人闖馬路', '#ff4f6d', 1.6, false);
     }
   }
   if (HAZ.spinT) { HAZ.spinT += dt; PC.steerIn *= 0.2; if (HAZ.spinT > HAZ.spinDur) HAZ.spinT = 0; }
 }
+// the tram going across, drawn as one wide picture at the crossing's s; the lights flash while it is coming
+function drawTramX(xg, x, y, k, clip, fog) {
+  // x: the screen x of the road centre at the crossing; the tram's left edge is at road-x = xg.x
+  const S = SPR.tram; if (!S || !xg.on) return;
+  const i = Math.round(xg.s / DS), cx = (xg.p.outerL(i) + xg.p.outerR(i)) / 2;
+  const sx0 = x + (xg.x - cx) * k, w = xg.len * k, h = 3.6 * k;
+  if (y - h >= clip || sx0 > RW || sx0 + w < 0) return;
+  const pg = ATLAS.pages[S.pg];
+  VG.fillStyle = 'rgba(0,0,0,0.3)'; VG.fillRect(sx0, y - 1, w, Math.max(1, h * 0.08));
+  VG.drawImage(pg.lv[0], S.x, S.y, S.w, S.h, sx0, y - h, w, h);
+}
 // drawn among the strip's items like the traffic
 function drawHazard(h, x, y, k, clip, fog) {
-  const name = h.scoot ? 'scootside#' + (h.kind % 2) : 'ped' + h.kind + '_' + (Math.floor(h.t * 6) & 1), S = SPR[name]; if (!S) return;
+  const name = h.rider ? 'rider' + h.kind + '#' + h.var : h.scoot ? 'scootside#' + (h.kind % 2) : 'ped' + h.kind + '_' + (Math.floor(h.t * 6) & 1), S = SPR[name]; if (!S) return;
   const hpx = S.wh * k, yy = y - h.y * k;
   if (yy - hpx >= clip) return;
   if (h.y < 0.05) { VG.fillStyle = 'rgba(0,0,0,0.25)'; VG.beginPath(); VG.ellipse(x, y - 0.5, hpx * 0.3, Math.max(1, hpx * 0.06), 0, 0, TAU); VG.fill(); }
@@ -5742,7 +5940,9 @@ function nearOf(slot, b, vi) {
 }
 // ---------- the road raster ----------
 const ASPH = [0x64676e, 0x5a5d64], ASPH_SC = [0x6e7077, 0x64666d], ASPH_DOTS = [0x50525a, 0x7c7e86], PAINT = 0xf4f1e8, YELLOW = 0xf2c33a, KERB = 0xd2ccc0;
-let _row = 0, _f = 0;
+let _row = 0, _f = 0, _hy = 0;
+// how far to each side the ground is painted: a hill far ahead is a hump against the sky, not a green band across it
+const GROUND_REACH = 340, HILL_REACH = 90;
 function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
 const DKC = new Map();
 function dkHex(h) { let v = DKC.get(h); if (v === undefined) { v = shadeHex(h, 0.94); DKC.set(h, v); } return v; }
@@ -5790,8 +5990,9 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
   const n = bands.length, t = RV.t;
   const edge = (w) => xe + dir * w * rk;
   // outermost band first, all the way to the screen edge (or the limit), then each inner band over it
+  const reach = _y < _hy - 1 ? HILL_REACH : GROUND_REACH;
   for (let i = n - 1; i >= 0; i--) {
-    const b = bands[i], inner = i > 0 ? edge(bands[i - 1].w) : xe, outer = i === n - 1 ? (dir < 0 ? -1 : RW + 1) : edge(b.w);
+    const b = bands[i], inner = i > 0 ? edge(Math.min(bands[i - 1].w, reach)) : xe, outer = edge(Math.min(b.w, reach));
     let a0 = dir < 0 ? outer : inner, a1 = dir < 0 ? inner : outer;
     if (lim != null) { if (dir < 0) a0 = Math.max(a0, lim); else a1 = Math.min(a1, lim); }
     if (a1 <= 0 || a0 >= RW || a1 <= a0) continue;
@@ -5805,12 +6006,13 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
 function roadRow(cx, rk, R, gs, gsN) {
   const W = R.W, M = R.M, SH = R.SH, oL = R.oL, oR = R.oR;
   const X = (o) => cx + o * rk;
-  const stripe = Math.floor(gs / 6) & 1, asph = ASPH[stripe];
+  const stripe = Math.floor(gs / 5) & 1, asph = ASPH[stripe];
   fillSpanD(Math.round(X(oL)), Math.round(X(oR)), asph);
   // the shoulders wear a paler, coarser asphalt
   if (SH > 0.3) fillSpanD(Math.round(X(W)), Math.round(X(oR)), ASPH_SC[stripe]);
   if (M > 0.3) fillSpanD(Math.round(X(oL)), Math.round(X(-W)), ASPH_SC[stripe]);
   if (FX.marks.length) fxMarksRow(R.p, gs, X, rk, asph);
+  if (R.p.xings) for (const xs of R.p.xings) { const d = gs - R.p.gS - xs; if (d > -2.4 && d < 2.4) { fillSpan(Math.round(X(oL)), Math.round(X(oR)), fogPx(0x9a9690, _f)); if (Math.abs(d + 0.8) < 0.25 || Math.abs(d - 0.8) < 0.25) fillSpan(Math.round(X(oL)), Math.round(X(oR)), fogPx(0x5a5a62, _f)); } }
   const lw = 0.15 * rk, dash = (gs % 10 + 10) % 10 < 4;
   // dashed lines between the lanes, a solid white edge line each side
   const lanes = Math.round((2 * W) / LANE);
@@ -6035,6 +6237,7 @@ function drawStripItems(a, b, clip) {
     const sec = (a.p === p ? a : b).sec;
     for (const v of TRAFFIC.list) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
     for (const h of HAZ.list) if (h.p === p && h.s >= s0 && h.s < s1) items.push(item(8, h, p.gS + h.s, 0, p));
+    for (const xg of HAZ.xings) if (xg.p === p && xg.on && xg.s >= s0 && xg.s < s1) items.push(item(9, xg, p.gS + xg.s, 0, p));
     if (p.anim.length) for (const an of p.anim) animItems(an, p, s0, s1, items);
     if (GHOST.p === p && GHOST.s >= s0 && GHOST.s < s1) items.push(item(7, GHOST, p.gS + GHOST.s, 0, p));
   }
@@ -6049,6 +6252,7 @@ function drawStripItems(a, b, clip) {
     if (it.k === 5) { drawVehicle(it.o, xs, ys, ip.k, clip, fog); continue; }
     if (it.k === 7) { drawGhost(xs, ys, ip.k, clip); continue; }
     if (it.k === 8) { drawHazard(it.o, xs, ys, ip.k, clip, fog); continue; }
+    if (it.k === 9) { drawTramX(it.o, X0 + ip.cx * ip.k, ys, ip.k, clip, fog); continue; }
     const o = it.o, S = SPRL[o.id], h = S.wh * o.sc * ip.k;
     const near = h > 26, sway = near && o.sway ? Math.sin(RV.t * 1.4 + o.ph) * 0.035 * o.sway : 0;
     // small far things get their haze from the band laid over the horizon, not one by one
@@ -6110,7 +6314,7 @@ function renderFrame(T) {
   const t1 = performance.now();
   // the road raster, near to far
   buildSlots();
-  RV.fb.fill(0); RV.clipY = RH;
+  RV.fb.fill(0); RV.clipY = RH; _hy = horizonY();
   const S = RV.slots, ns = RV.ns;
   for (let k = 0; k + 1 < ns; k++) {
     const A = S[k], B = S[k + 1];
@@ -6153,7 +6357,7 @@ function botDrive(dt) {
   const hw = p.hw(s), lanes = Math.max(1, Math.round((2 * hw) / LANE));
   if (BOT.lane >= lanes) BOT.lane = lanes - 1;
   const laneX = (l) => -hw + LANE * (l + 0.5), horizon = 40 + v * 1.6;
-  const clearAhead = (lx) => { let d = horizon; for (const o of TRAFFIC.list) if (o.p === p && o.s > s - 4 && o.s - s < horizon && Math.abs(o.x - lx) < 2.3) d = Math.min(d, o.s - s); return d; };
+  const clearAhead = (lx) => { let d = horizon; for (const o of TRAFFIC.list) if (o.p === p && o.s > s - 4 && o.s - s < horizon && (Math.abs(o.x - lx) < 2.3 || (o.lc && Math.abs(o.lc.x - lx) < 2.3))) d = Math.min(d, o.s - s); return d; };
   const cur = clearAhead(laneX(BOT.lane));
   if (cur < horizon && G.t > BOT.laneT) {
     let best = BOT.lane, bd = cur + 14;
@@ -6284,7 +6488,7 @@ async function boot() {
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
   G, ROUTE, SPR, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, avatarSet, gapLeft, nearIntervals,
-  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, show(n) { show(n); },
+  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, show(n) { show(n); },
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
   speed(k) { G.speed = k; },
