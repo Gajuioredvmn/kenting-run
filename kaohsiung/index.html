@@ -1596,7 +1596,10 @@ function trafficTick(dt) {
     const dpx = C.x - v.x, dpz = C.z - v.z;
     if (dpx * dpx + dpz * dpz < 70 * 70) {
       const n = nearestOnPts(path.pts, C.x, C.z);
-      if (n.d < v.W / 2 + C.P.W / 2 + 0.5 && n.s > v.s) { const g = n.s - v.s - (v.L + C.P.L) / 2; if (gap == null || g < gap) { gap = Math.max(0.05, g); const hx = Math.sin(n.yaw), hz = Math.cos(n.yaw); dv = v.v - (phx * hx + phz * hz); } }
+      // a player who just sits there is, after a while, nudged past rather than waited on for ever
+      const blocked = n.d < v.W / 2 + C.P.W / 2 + 0.5 && n.s > v.s && n.s - v.s < 8 && v.v < 0.3 && pv < 0.5;
+      v.blockT = blocked ? (v.blockT || 0) + dt : 0;
+      if (n.d < v.W / 2 + C.P.W / 2 + 0.5 && n.s > v.s && v.blockT < 3.5) { const g = n.s - v.s - (v.L + C.P.L) / 2; if (gap == null || g < gap) { gap = Math.max(0.05, g); const hx = Math.sin(n.yaw), hz = Math.cos(n.yaw); dv = v.v - (phx * hx + phz * hz); } }
       // a stopped or sideways player right in front: stop and lean on the horn
       if (gap != null && gap < 3 && v.v < 1 && pv < 1) { if (v.horn <= 0 && r() < dt * 0.3) { v.horn = 1.5; sfxHornFar(Math.hypot(dpx, dpz)); } }
     }
@@ -1628,7 +1631,9 @@ function oncoming(v, n) {
   return false;
 }
 function junctionBusy(v, n) {
-  for (const c of n.conns || []) if (c.veh.length && c.from.e !== v.lane.e) return true;
+  // someone from another road is in the junction and moving (or from a road as big as ours)
+  const cls = v.lane.e.K.cls;
+  for (const c of n.conns || []) if (c.veh.length && c.from.e !== v.lane.e && (c.from.e.K.cls >= cls || c.veh.some((w) => w.v > 0.5))) return true;
   // a bigger road's traffic close to the junction has the right of way over a lane
   if (v.lane.e.K.cls === 0) for (const l of n.lanesIn || []) if (l.e !== v.lane.e && l.e.K.cls > 0) for (const w of l.veh) if (l.len - w.s < 25 && w.v > 2) return true;
   return false;
@@ -1659,8 +1664,8 @@ function trafficCollide(dt) {
       const cu = clamp(lu, -hx, hx), cv = clamp(lv, -hz, hz), du = lu - cu, dv = lv - cv, d = Math.hypot(du, dv); if (d >= rc) continue;
       let lnx, lnz, pen; if (d > 1e-3) { lnx = du / d; lnz = dv / d; pen = rc - d; } else { const toL = lu + hx, toR = hx - lu, toT = lv + hz, toB = hz - lv, m = Math.min(toL, toR, toT, toB); lnx = m === toL ? -1 : m === toR ? 1 : 0; lnz = m === toT ? -1 : m === toB ? 1 : 0; pen = m + rc; }
       const nx = lnx * c + lnz * sn, nz = -lnx * sn + lnz * c;
-      C.x += nx * pen * 0.7; C.z += nz * pen * 0.7; carBounce(nx, nz);
-      v.v *= 0.5; v.horn = 2; if (typeof sfxHornFar === 'function' && Math.random() < 0.3) sfxHornFar(3);
+      C.x += nx * pen; C.z += nz * pen; carBounce(nx, nz);
+      v.v *= 0.6; if (v.horn <= 0) v.horn = 2; if (typeof sfxHornFar === 'function' && Math.random() < 0.3) sfxHornFar(3);
     }
   }
 }
