@@ -1978,7 +1978,7 @@ function controlsUpdate(dt) {
   if (K.ArrowLeft || K.KeyA) steer -= 1; if (K.ArrowRight || K.KeyD) steer += 1;
   if (K.ArrowUp || K.KeyW || K.KeyZ) gas = 1; if (K.ArrowDown || K.KeyS || K.KeyX) brake = 1; if (K.Space) hand = 1;
   for (const t of CTL.touches.values()) { if (t.kind === 'gas') gas = 1; if (t.kind === 'brake') brake = 1; if (t.kind === 'hand') hand = 1; if (t.kind === 'steer' && t.x != null) steer = clamp((t.x - t.x0) / 90, -1, 1); }
-  if (CTL.mode === 'tilt' && CTL.tilt.ok && performance.now() - CTL.tilt.last < 600 && ![...CTL.touches.values()].some((t) => t.kind === 'steer')) { const d = -(CTL.tilt.theta - CTL.tilt.zero); steer = Math.abs(d) < 1.2 ? 0 : clamp((d - Math.sign(d) * 1.2) / CTL.sens, -1, 1); }
+  if (CTL.mode === 'tilt' && CTL.tilt.ok && performance.now() - CTL.tilt.last < 600 && ![...CTL.touches.values()].some((t) => t.kind === 'steer')) { const d = (CTL.tilt.theta - CTL.tilt.zero); steer = Math.abs(d) < 1.2 ? 0 : clamp((d - Math.sign(d) * 1.2) / CTL.sens, -1, 1); }
   // the wheel on a keyboard moves at a finite rate, so a tap is a nudge and a hold is full lock
   const analog = CTL.mode === 'tilt' && CTL.tilt.ok || [...CTL.touches.values()].some((t) => t.kind === 'steer');
   if (analog) CTL.steerT = steer; else { const rate = (K.ArrowLeft || K.ArrowRight || K.KeyA || K.KeyD) ? 3.5 : 8; CTL.steerT += clamp(steer - CTL.steerT, -rate * dt, rate * dt); }
