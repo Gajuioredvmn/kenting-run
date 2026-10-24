@@ -1475,7 +1475,7 @@ function paintTrafficKinds() {
 // lanes by a curve (straight on, right, left). Vehicles follow their lane at a distance s, keep their gap with the
 // IDM car-following law, stop at red lights, give way when turning left and when entering a junction that is in
 // use, and treat the player as one more car ahead. They are spawned and retired around the player.
-const TR = { lanes: [], conns: [], veh: [], max: 330, near: 380, far: 560, spawnT: 0, byEdge: new Map(), stats: {} };
+const TR = { lanes: [], conns: [], veh: [], max: 340, near: 430, far: 600, spawnT: 0, byEdge: new Map(), stats: {} };
 const LANE_V = { boulevard: 14, avenue: 12.5, street: 10, lane: 7, highway: 24, ramp: 10, quay: 10, hill: 8, rural: 9 };
 function offsetPts(pts, off) {   // the polyline moved to the right of travel by off metres (mitred)
   const o = polyOffsets(pts, Math.abs(off)); return off >= 0 ? o.R : o.L;
@@ -1506,16 +1506,25 @@ function buildLanes() {
         if (lo.e === li.e) continue;   // no U-turns
         const q = lo.pts, dOut = Math.atan2(q[1][1] - q[0][1], q[1][0] - q[0][0]), dA = angWrap(dOut - dIn);
         const turn = Math.abs(dA) < 0.5 ? 'straight' : dA > 0 ? 'right' : 'left';
+        if (n.ring) { if (lo.k !== Math.min(li.k, lo.nPer - 1)) continue; }
+        else {
         if (turn === 'straight' && lo.k !== Math.min(li.k, lo.nPer - 1)) continue;
         if (turn === 'right' && !(li.k === li.nPer - 1 && lo.k === lo.nPer - 1)) continue;
         if (turn === 'left' && !(li.k === 0 && lo.k === 0)) continue;
         if (Math.abs(dA) > 2.6) continue;
-        // a curve from the end of one to the start of the other
+        }
+        // a curve from the end of one to the start of the other; round the roundabout it follows the circle, the island on the left
         const P0 = b, P3 = q[0], d = Math.hypot(P3[0] - P0[0], P3[1] - P0[1]), k = Math.max(2, d * 0.45);
         const P1 = [P0[0] + Math.cos(dIn) * k, P0[1] + Math.sin(dIn) * k], P2 = [P3[0] - Math.cos(dOut) * k, P3[1] - Math.sin(dOut) * k];
         const pts = []; const N = turn === 'straight' ? 3 : 8;
-        for (let i = 0; i <= N; i++) { const t = i / N, u = 1 - t; pts.push([u * u * u * P0[0] + 3 * u * u * t * P1[0] + 3 * u * t * t * P2[0] + t * t * t * P3[0], u * u * u * P0[1] + 3 * u * u * t * P1[1] + 3 * u * t * t * P2[1] + t * t * t * P3[1]]); }
-        const c = { id: TR.conns.length, from: li, to: lo, pts, len: polyLen(pts), turn, node: n, veh: [], vmax: turn === 'straight' ? li.vmax : 5 };
+        if (n.ring) {
+          const R = 31 + li.k * 3.4, ph = (x, z) => Math.atan2(-(z - n.z), x - n.x);
+          let a0 = ph(P0[0], P0[1]), a1 = ph(P3[0], P3[1]); while (a1 <= a0 + 0.2) a1 += TAU;
+          pts.push(P0); const M = Math.max(4, Math.ceil((a1 - a0) / 0.22));
+          for (let i = 0; i <= M; i++) { const a = a0 + (a1 - a0) * i / M; pts.push([n.x + Math.cos(a) * R, n.z - Math.sin(a) * R]); }
+          pts.push(P3);
+        } else for (let i = 0; i <= N; i++) { const t = i / N, u = 1 - t; pts.push([u * u * u * P0[0] + 3 * u * u * t * P1[0] + 3 * u * t * t * P2[0] + t * t * t * P3[0], u * u * u * P0[1] + 3 * u * u * t * P1[1] + 3 * u * t * t * P2[1] + t * t * t * P3[1]]); }
+        const c = { id: TR.conns.length, from: li, to: lo, pts, len: polyLen(pts), turn, node: n, veh: [], vmax: n.ring ? 8 : turn === 'straight' ? li.vmax : 5 };
         TR.conns.push(c); li.next.push(c); (n.conns = n.conns || []).push(c);
       }
     }
@@ -1657,6 +1666,8 @@ function trafficSpawn(r, minD) {
     const l = TR.lanes[r.int(0, TR.lanes.length - 1)]; if (l.len < 30) continue;
     const s = 8 + r() * (l.len - 16), p = polyAt(l.pts, s), d = Math.hypot(p.x - C.x, p.z - C.z);
     if (d < (minD || 40) || d > TR.near) continue;
+    // never in plain view: behind or well to the side of the camera, or far enough to be lost in the haze
+    if (!minD && d < 330 && R3.cam) { const dx = p.x - R3.cam.position.x, dz = p.z - R3.cam.position.z, L = Math.hypot(dx, dz) || 1, fx = Math.sin(CAMV.az), fz = Math.cos(CAMV.az); if ((dx * fx + dz * fz) / L > 0.45) continue; }
     // not on top of another, and not too dense for the road
     const want = l.e.K.cls >= 3 ? 1 / 45 : l.e.K.cls === 2 ? 1 / 55 : l.e.K.cls === 1 ? 1 / 80 : 1 / 160;
     if (l.veh.length >= Math.max(1, Math.floor(l.len * want))) continue;
@@ -1690,6 +1701,8 @@ function trafficReset() {
   const r = _trr; for (let i = 0; i < TR.max * 0.7; i++) trafficSpawn(r, 60);
   for (let i = 0; i < PEO.max * 0.7; i++) spawnWalker(_pr);
   for (let k = 0; k < 90; k++) { for (const l of TR.lanes) if (l.veh.length > 1) l.veh.sort((p, q) => p.s - q.s); for (const v of TR.veh) { v.s += v.v * 0.1; if (v.s >= (v.conn || v.lane).len - 2) v.s = (v.conn || v.lane).len - 2; vehPose(v); } }
+  // and nothing left sitting on top of us after the roll-forward
+  const C = CAR; for (let i = TR.veh.length - 1; i >= 0; i--) { const v = TR.veh[i]; if (Math.hypot(v.x - C.x, v.z - C.z) < 35) retire(v, i); }
 }
 
 // a police car set loose on a lane some way off, already moving, hunting the player
@@ -1757,6 +1770,7 @@ function spawnWalker(r) {
   while (tries++ < 10) {
     const l = PEO.loops[r.int(0, PEO.loops.length - 1)]; if (l.len < 20 || l.people >= 1 + l.len / 50) continue;
     const s = r() * l.len, p = polyAt(l.pts, s), d = Math.hypot(p.x - C.x, p.z - C.z); if (d < 25 || d > PEO.near) continue;
+    if (d < 180 && R3.cam && G.mode === 'drive' && G.t > 1) { const dx = p.x - R3.cam.position.x, dz = p.z - R3.cam.position.z, L = Math.hypot(dx, dz) || 1; if ((dx * Math.sin(CAMV.az) + dz * Math.cos(CAMV.az)) / L > 0.5) continue; }
     const w = { loop: l, s, dir: r() < 0.5 ? 1 : -1, v: 1.0 + r() * 0.7, kind: 'person' + r.int(0, 7), x: p.x, z: p.z, y: 0, yaw: 0, side: (r() - 0.5) * 1.6, cross: null, cs: 0, wait: 0, knocked: 0, dodge: 0, anim: r() * 10, id: Math.random() };
     l.people++; PEO.list.push(w); walkerPose(w); return w;
   }
@@ -3409,8 +3423,11 @@ function carStep(dt) {
   // the ground under each end, and what it is made of
   C.surface = groundKind(C.x, C.z); C.mu = GK_MU[C.surface]; const gdrag = GK_DRAG[C.surface];
   // ---- steering: the wheel moves at a finite rate, and less lock is available at speed ----
-  const vfwd = Math.max(0, C.vx), lockK = 1 / (1 + vfwd * vfwd / 900);
-  const target = -C.steerIn * P.steerMax * (0.35 + 0.65 * lockK);   // the input is right-positive; the body frame's steer is left-positive
+  // the input is right-positive; the body frame's steer is left-positive. Small tilts give fine steering (the input
+  // is raised to a power), and the lock on offer shrinks with speed so a full tilt at 80 km/h is a lane change, not a spin
+  const vfwd = Math.max(0, C.vx), lockK = Math.max(0.1, 1 / (1 + vfwd / 9));
+  const inp = Math.sign(C.steerIn) * Math.pow(Math.abs(C.steerIn), 1.5);
+  const target = -inp * P.steerMax * lockK;
   C.steer += clamp(target - C.steer, -P.steerRate * dt, P.steerRate * dt);
   // ---- reverse: standing still, the brake pedal held with no throttle puts it in R; the throttle takes it back to 1 ----
   if (Math.abs(C.vx) < 0.4) { if (C.brake > 0.3 && C.throttle < 0.05) { C.revT = (C.revT || 0) + dt; if (C.revT > 0.35) C.rev = true; } else C.revT = 0; if (C.throttle > 0.3 && C.brake < 0.05) C.rev = false; }
@@ -4188,8 +4205,8 @@ function boot() {
 // ---------- the drive ----------
 function startDrive(carIdx) {
   carSetup(CARS[carIdx], SET.auto);
-  // 中山路 just south of 美麗島, in the northbound lanes
-  const L = MAP.landmarks.美麗島; CAR.x = L[0] + 5.95; CAR.z = L[1] + 90; CAR.yaw = Math.PI; CAR.y = groundH(CAR.x, CAR.z); CAR.vyv = 0;
+  // 中山路 just south of 美麗島, heading south down the long straight toward 中央公園 and 三多商圈
+  const L = MAP.landmarks.美麗島; CAR.x = L[0] - 5.95; CAR.z = L[1] + 75; CAR.yaw = 0; CAR.y = groundH(CAR.x, CAR.z); CAR.vyv = 0;
   // the streets are already busy when we set off, but nothing right beside us
   trafficReset();
   r3CarSet(CARS[carIdx]); camReset();
@@ -4223,7 +4240,7 @@ function tick(dt) {
   for (const m of HUD.msgs) m.t += dt; HUD.msgs = HUD.msgs.filter((m) => m.t < m.dur);
   // in the water, or wedged: back to the road after a moment
   if (CAR.surface === GK.water) { G.wetT = (G.wetT || 0) + dt; if (G.wetT > 0.6 && !G.wetMsg) { G.wetMsg = true; hudMsg('掉進水裡了', '3 秒後回到路上', '#7cd0ff', 3); } if (G.wetT > 3.5) { carToRoad(); G.wetT = 0; G.wetMsg = false; } } else { G.wetT = 0; G.wetMsg = false; }
-  if (CAR.throttle > 0.5 && CAR.kmh < 1.5 && !CAR.rev) { G.stuckT = (G.stuckT || 0) + dt; if (G.stuckT > 4 && !G.stuckMsg) { G.stuckMsg = true; hudMsg('卡住了？', '按住煞車可倒車，或暫停→回到路上', '#ffd23a', 3); } } else { G.stuckT = 0; G.stuckMsg = false; }
+  if (CAR.throttle > 0.5 && CAR.kmh < 4 && !CAR.rev) { G.stuckT = (G.stuckT || 0) + dt; if (G.stuckT > 4 && !G.stuckMsg) { G.stuckMsg = true; hudMsg('卡住了？', '按住煞車可倒車，或暫停→回到路上', '#ffd23a', 3); } } else { G.stuckT = 0; G.stuckMsg = false; }
 }
 function onCarHit(into) { CAMV.shake = Math.min(1, into / 10); if (into > 2.5) sfxCrash(clamp(into / 20, 0.3, 1)); else sfxThud(0.5); }
 function onKerb() { CAMV.shake = Math.max(CAMV.shake, 0.3); sfxThud(0.4); }
