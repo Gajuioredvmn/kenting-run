@@ -4078,8 +4078,8 @@ class Deco {
 // undergrowth in between, clusters set back, a tree line further out, big trees on the far hills.
 // near: [every m, kinds, offset range]; under: [chance per 2 m, kinds, offset]; mid: [every m, kinds, offsets, count]; far / hill: [every m, kinds, offsets]
 const LIFE = {
-  grass: { near: [10, ['palm', 'palm', 'banyan', 'mango', 'betel', 'bougain'], [1.0, 3.5]], under: [0.45, ['bush', 'tuft', 'tuft', 'flowers', 'hibiscus'], [0.3, 7]], mid: [34, ['banyan', 'mango', 'casuarina', 'betel', 'palm'], [8, 26], [3, 6]], far: [9, ['banyan', 'casuarina', 'mango', 'betel'], [30, 120]], hill: [12, ['banyan', 'casuarina'], [120, 380]] },
-  farm: { near: [12, ['betel', 'betel', 'banana', 'mango'], [1.0, 3]], under: [0.32, ['tuft', 'tuft', 'flowers'], [0.3, 4]], mid: [52, ['farmhouse', 'tinhouse', 'banana', 'betel'], [14, 50], [1, 3]], far: [11, ['betel', 'banyan', 'casuarina'], [40, 140]], hill: [16, ['banyan', 'casuarina', 'betel'], [140, 420]] },
+  grass: { near: [8, ['palm', 'palm', 'banyan', 'mango', 'betel', 'bougain'], [1.0, 3.5]], under: [0.45, ['bush', 'tuft', 'tuft', 'flowers', 'hibiscus'], [0.3, 7]], mid: [24, ['banyan', 'mango', 'casuarina', 'betel', 'palm'], [7, 24], [3, 6]], far: [9, ['banyan', 'casuarina', 'mango', 'betel'], [30, 120]], hill: [12, ['banyan', 'casuarina'], [120, 380]] },
+  farm: { near: [9, ['betel', 'betel', 'banana', 'mango'], [1.0, 3]], under: [0.32, ['tuft', 'tuft', 'flowers'], [0.3, 4]], mid: [34, ['farmhouse', 'tinhouse', 'banana', 'betel'], [12, 44], [1, 3]], far: [11, ['betel', 'banyan', 'casuarina'], [40, 140]], hill: [16, ['banyan', 'casuarina', 'betel'], [140, 420]] },
   orchard: { near: [9, ['mango', 'mango', 'banana', 'betel'], [1.2, 3.5]], under: [0.38, ['tuft', 'bush', 'flowers'], [0.3, 4]], mid: [9, ['mango', 'mango', 'netrow'], [7, 40], [2, 4]], far: [10, ['mango', 'banyan', 'betel'], [44, 140]], hill: [14, ['banyan', 'mango'], [140, 400]] },
   hills: { near: [9, ['banyan', 'mango', 'palm', 'casuarina', 'bougain'], [1.0, 3.5]], under: [0.5, ['bush', 'tuft', 'tuft', 'rock', 'flowers'], [0.3, 6]], mid: [20, ['banyan', 'mango', 'casuarina', 'betel'], [6, 30], [4, 8]], far: [5, ['banyan', 'casuarina', 'mango'], [26, 110]], hill: [6, ['banyan', 'casuarina'], [110, 360]] },
   mountain: { near: [8, ['banyan', 'casuarina', 'betel', 'rock'], [1.0, 3.2]], under: [0.55, ['bush', 'tuft', 'rock', 'tuft'], [0.3, 5]], mid: [16, ['banyan', 'casuarina', 'mango'], [5, 24], [5, 9]], far: [4, ['banyan', 'casuarina'], [20, 100]], hill: [5, ['banyan', 'casuarina'], [100, 380]] },
@@ -4092,7 +4092,7 @@ const LIFE = {
   cliff: { near: [12, ['palm', 'bush'], [0.5, 2]], under: [0.34, ['tuft', 'bush', 'rock'], [0.2, 2.5]], mid: [18, ['rock', 'rock'], [5, 17], [2, 4]] },
   water: { far: [12, ['mangrove', 'reeds'], [240, 300]], hill: [20, ['banyan', 'casuarina'], [290, 460]] },
   riverbed: { under: [0.1, ['reeds', 'rock'], [10, 360]] },
-  fishpond: { near: [12, ['betel', 'betel', 'palm'], [1.0, 3]], under: [0.3, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
+  fishpond: { near: [9, ['betel', 'betel', 'palm'], [1.0, 3]], under: [0.3, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
   plaza: { near: [0], under: [0.07, ['walkers'], [2, 20]] },
 };
 const NO_COLLIDE = new Set(['walkers', 'scooters', 'umbrella', 'tuft', 'flowers', 'bush', 'hedge']);
@@ -4212,20 +4212,20 @@ function curveSigns(D) {
 
 // ===================== roadside life for the new ground types, so the plain and the high country are not empty =====================
 Object.assign(LIFE, {
-  paddy: { near: [14, ['betel', 'banyan', 'palm'], [1.0, 3]], under: [0.2, ['tuft', 'tuft', 'flowers'], [0.3, 3]], mid: [70, ['farmhouse', 'tinhouse', 'betel'], [16, 60], [1, 3]], far: [10, ['betel', 'banyan', 'casuarina'], [50, 150]], hill: [20, ['banyan', 'casuarina'], [150, 400]] },
-  cane: { near: [12, ['betel', 'banana', 'mango'], [1.0, 3]], under: [0.3, ['tuft', 'tuft'], [0.3, 4]], mid: [60, ['farmhouse', 'banana', 'betel'], [14, 50], [1, 3]], far: [12, ['betel', 'banyan'], [40, 140]] },
-  pineapple: { near: [12, ['mango', 'betel', 'banana'], [1.0, 3]], under: [0.28, ['tuft', 'flowers'], [0.3, 4]], mid: [60, ['farmhouse', 'tinhouse', 'mango'], [14, 50], [1, 3]], far: [11, ['mango', 'banyan'], [40, 140]], hill: [16, ['banyan', 'mango'], [140, 400]] },
-  salt: { near: [20, ['casuarina', 'bush'], [1.0, 3]], under: [0.14, ['tuft', 'reeds'], [0.3, 4]], mid: [80, ['tinhouse'], [30, 70], [1, 2]], far: [20, ['casuarina'], [60, 160]] },
-  milkfish: { near: [14, ['betel', 'palm', 'casuarina'], [1.0, 3]], under: [0.26, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
-  tea: { near: [10, ['betel', 'casuarina', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'bush'], [0.3, 4]], mid: [40, ['stonehouse', 'casuarina'], [10, 36], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
-  daylily: { near: [12, ['casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'flowers', 'flowers'], [0.3, 5]], mid: [50, ['stonehouse', 'tinhouse'], [12, 40], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
-  cabbage: { near: [12, ['casuarina', 'bush', 'rock'], [1.0, 3]], under: [0.3, ['tuft', 'rock'], [0.3, 5]], mid: [60, ['tinhouse', 'farmhouse'], [12, 40], [1, 2]], far: [8, ['casuarina'], [40, 120]], hill: [8, ['casuarina'], [120, 380]] },
-  highland: { near: [14, ['rock', 'bush', 'casuarina'], [1.0, 3]], under: [0.4, ['tuft', 'rock', 'tuft'], [0.3, 7]], mid: [30, ['rock', 'casuarina'], [8, 30], [2, 4]], far: [10, ['casuarina'], [30, 120]], hill: [10, ['casuarina'], [120, 380]] },
+  paddy: { near: [9, ['betel', 'banyan', 'palm'], [1.0, 3]], under: [0.2, ['tuft', 'tuft', 'flowers'], [0.3, 3]], mid: [40, ['farmhouse', 'tinhouse', 'betel', 'egrets'], [12, 50], [1, 3]], far: [10, ['betel', 'banyan', 'casuarina'], [50, 150]], hill: [20, ['banyan', 'casuarina'], [150, 400]] },
+  cane: { near: [9, ['betel', 'banana', 'mango'], [1.0, 3]], under: [0.3, ['tuft', 'tuft'], [0.3, 4]], mid: [36, ['farmhouse', 'banana', 'betel'], [12, 44], [1, 3]], far: [12, ['betel', 'banyan'], [40, 140]] },
+  pineapple: { near: [9, ['mango', 'betel', 'banana'], [1.0, 3]], under: [0.28, ['tuft', 'flowers'], [0.3, 4]], mid: [36, ['farmhouse', 'tinhouse', 'mango'], [12, 44], [1, 3]], far: [11, ['mango', 'banyan'], [40, 140]], hill: [16, ['banyan', 'mango'], [140, 400]] },
+  salt: { near: [13, ['casuarina', 'bush'], [1.0, 3]], under: [0.14, ['tuft', 'reeds'], [0.3, 4]], mid: [44, ['tinhouse', 'casuarina'], [22, 60], [1, 2]], far: [20, ['casuarina'], [60, 160]] },
+  milkfish: { near: [10, ['betel', 'palm', 'casuarina'], [1.0, 3]], under: [0.26, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [80, 170]] },
+  tea: { near: [8, ['betel', 'casuarina', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'bush'], [0.3, 4]], mid: [40, ['stonehouse', 'casuarina'], [10, 36], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
+  daylily: { near: [9, ['casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'flowers', 'flowers'], [0.3, 5]], mid: [30, ['stonehouse', 'tinhouse', 'casuarina'], [10, 36], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
+  cabbage: { near: [9, ['casuarina', 'bush', 'rock'], [1.0, 3]], under: [0.3, ['tuft', 'rock'], [0.3, 5]], mid: [34, ['tinhouse', 'farmhouse', 'casuarina'], [10, 36], [1, 2]], far: [8, ['casuarina'], [40, 120]], hill: [8, ['casuarina'], [120, 380]] },
+  highland: { near: [9, ['rock', 'bush', 'casuarina'], [1.0, 3]], under: [0.4, ['tuft', 'rock', 'tuft'], [0.3, 7]], mid: [18, ['rock', 'casuarina', 'bush'], [6, 26], [2, 4]], far: [10, ['casuarina'], [30, 120]], hill: [10, ['casuarina'], [120, 380]] },
   gorge: { near: [10, ['rock', 'rock', 'bush'], [0.8, 2.5]], under: [0.4, ['rock', 'tuft', 'bush'], [0.2, 3]], mid: [22, ['rock', 'rock', 'casuarina'], [4, 12], [2, 4]] },
-  lake: { near: [12, ['casuarina', 'banyan', 'bush'], [0.8, 2.5]], under: [0.2, ['tuft', 'reeds'], [0.3, 3]], far: [16, ['banyan', 'casuarina'], [160, 300]], hill: [12, ['banyan', 'casuarina'], [200, 460]] },
+  lake: { near: [9, ['casuarina', 'banyan', 'bush'], [0.8, 2.5]], under: [0.2, ['tuft', 'reeds'], [0.3, 3]], far: [16, ['banyan', 'casuarina'], [160, 300]], hill: [12, ['banyan', 'casuarina'], [200, 460]] },
   pebble: { near: [12, ['casuarina', 'pandanus', 'palm'], [0.8, 3]], under: [0.2, ['tuft', 'rock'], [0.3, 4]] },
   mudflat: { near: [16, ['casuarina', 'bush', 'pandanus'], [0.8, 3]], under: [0.16, ['tuft', 'reeds', 'rock'], [0.3, 6]] },
-  river: { near: [12, ['banyan', 'casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'reeds', 'rock'], [0.3, 4]], far: [12, ['banyan', 'casuarina'], [130, 260]], hill: [12, ['banyan', 'casuarina'], [260, 460]] },
+  river: { near: [9, ['banyan', 'casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'reeds', 'rock'], [0.3, 4]], far: [12, ['banyan', 'casuarina'], [130, 260]], hill: [12, ['banyan', 'casuarina'], [260, 460]] },
 });
 for (const t of ['paddy', 'cane', 'pineapple', 'salt', 'milkfish', 'tea', 'daylily', 'cabbage', 'river', 'mudflat', 'lake', 'pebble']) { POLE_TYPES.add(t); POST_TYPES.add(t); }
 for (const t of ['highland', 'gorge']) POST_TYPES.add(t);
@@ -4405,7 +4405,7 @@ const TAGS = {
   farmhouse(D, s0, s1) { every(s0, s1, 140, 40, D.rnd, (s) => D.spr(D.rnd() < 0.5 ? 'farmhouse' : 'tinhouse', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(12, 40)))); },
   bridgelamps(D, s0, s1) { lampRow(D, s0, s1, 1, 0.3, 40, 'lamp1'); },
   sandbars(D, s0, s1) { every(s0, s1, 50, 20, D.rnd, (s) => D.spr('reeds', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(30, 200)), { scale: 1.6, collide: false })); },
-  templegate(D, s0, s1) { sightSign(D, s0 + (s1 - s0) * 0.45 - 150, -1, 'donglong'); const s = s0 + (s1 - s0) * 0.45; D.spr('templegate', s, D.lat(s, -1, 9), { flip: false }); for (let k = 0; k < 4; k++) D.spr('lamp2', s - 30 + k * 20, D.lat(s, -1, 1), { flip: false }); },
+  templegate(D, s0, s1) { if (D.p.id === 's3se') sightSign(D, s0 + (s1 - s0) * 0.45 - 150, -1, 'donglong'); const s = s0 + (s1 - s0) * 0.45; D.spr('templegate', s, D.lat(s, -1, 9), { flip: false }); for (let k = 0; k < 4; k++) D.spr('lamp2', s - 30 + k * 20, D.lat(s, -1, 1), { flip: false }); },
   fishboats(D, s0, s1) { every(s0, s1, 20, 6, D.rnd, (s) => D.spr('fishboat', s, D.lat(s, 1, D.rnd.range(32, 70)), { collide: false })); },
   seafood(D, s0, s1) { houseRow(D, s0, s1, -1, 4.8, { kind: 'seafood', noStore: true }); },
   mangrove(D, s0, s1) { every(s0, s1, 12, 5, D.rnd, (s) => D.spr('mangrove', s, D.lat(s, -1, D.rnd.range(6, 60)), { scale: D.rnd.range(1, 1.6), collide: false })); },
@@ -4422,7 +4422,7 @@ const TAGS = {
   liuqiu(D, s0, s1) { sightSign(D, s0 + 60, 1, 'liuqiu'); },
   // ---------------- 山線 ----------------
   temple(D, s0, s1) { const s = (s0 + s1) / 2; D.spr('shrine', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(4, 9)), { flip: false }); },
-  tribalgate(D, s0, s1) { sightSign(D, s0 + (s1 - s0) * 0.4 - 140, 1, 'sandimen'); const s = s0 + (s1 - s0) * 0.4; D.spr('tribalgate', s, D.lat(s, 1, 6), { flip: false }); D.spr('totem', s - 20, D.lat(s, 1, 2)); D.spr('totem', s + 20, D.lat(s, 1, 2)); },
+  tribalgate(D, s0, s1) { if (D.p.id === 's3sm') sightSign(D, s0 + (s1 - s0) * 0.4 - 140, 1, 'sandimen'); const s = s0 + (s1 - s0) * 0.4; D.spr('tribalgate', s, D.lat(s, 1, 6), { flip: false }); D.spr('totem', s - 20, D.lat(s, 1, 2)); D.spr('totem', s + 20, D.lat(s, 1, 2)); },
   totem(D, s0, s1) { every(s0, s1, 70, 20, D.rnd, (s) => D.spr('totem', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(1.5, 4)))); },
   stonehouse(D, s0, s1) { every(s0, s1, 90, 30, D.rnd, (s) => D.spr('stonehouse', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(8, 24)))); },
   coffee(D, s0, s1) { const s = (s0 + s1) / 2; D.spr('coffee', s, D.lat(s, 1, 2), { flip: false }); D.spr('stonehouse', s + 12, D.lat(s, 1, 9)); },
@@ -4444,7 +4444,7 @@ const TAGS = {
   // ---------------- 墾丁 ----------------
   oldgate(D, s0, s1) { sightSign(D, s1 - 230, -1, 'hengchun'); const s = s1 - 80; D.spr('oldgate', s, D.lat(s, -1, 18), { flip: false }); D.spr('shrine', s + 30, D.lat(s, -1, 6), { flip: false }); },
   beachshops(D, s0, s1) {
-    sightSign(D, s0 + 30, 1, 'nanwan');
+    if (D.p.id === 's5j') sightSign(D, s0 + 30, 1, 'nanwan');
     // the strip of shops facing the beach: ice, swimwear, surf, rooms to let; bougainvillea between them
     houseRow(D, s0, s1, -1, 4.6, { kind: 'beachshop', noStore: true });
     every(s0, s1, 14, 4, D.rnd, (s) => D.spr(D.rnd() < 0.6 ? 'bougain' : 'hibiscus', s, D.lat(s, -1, 3.2), { collide: false, scale: 1.2 }));
@@ -4461,7 +4461,7 @@ const TAGS = {
   lighthouse(D, s0) { sightSign(D, s0 + 20, 1, 'eluanbi'); const s = s0 + 160; D.spr('lighthouse', s, D.lat(s, 1, 30), { flip: false }); D.p.lighthouse = { s }; },
   // ---------------- 貓鼻頭 ----------------
   aquarium(D, s0, s1) { sightSign(D, (s0 + s1) / 2 - 200, -1, 'aquarium'); const s = (s0 + s1) / 2; D.spr('aquarium', s, D.lat(s, -1, 60), { flip: false, collide: false }); D.spr('sign_aquarium', s - 120, D.lat(s, -1, 1.5), { flip: false }); },
-  fishvillage(D, s0, s1) { sightSign(D, s0 + 40, -1, 'houbihu'); every(s0, s1, 40, 10, D.rnd, (s) => D.spr(D.rnd() < 0.5 ? 'tinhouse' : 'farmhouse', s, D.lat(s, -1, D.rnd.range(6, 18)))); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('fishboat', s, D.lat(s, 1, D.rnd.range(42, 70)), { collide: false })); },
+  fishvillage(D, s0, s1) { if (D.p.id === 's5i') sightSign(D, s0 + 40, -1, 'houbihu'); every(s0, s1, 40, 10, D.rnd, (s) => D.spr(D.rnd() < 0.5 ? 'tinhouse' : 'farmhouse', s, D.lat(s, -1, D.rnd.range(6, 18)))); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('fishboat', s, D.lat(s, 1, D.rnd.range(42, 70)), { collide: false })); },
   coral(D, s0, s1) { every(s0, s1, 9, 3, D.rnd, (s) => D.spr('coral', s, D.lat(s, 1, D.rnd.range(26, 44)), { scale: D.rnd.range(1, 2.2), collide: false })); },
   catrock(D, s0) { sightSign(D, s0 + 60, 1, 'maobitou'); const s = s0 + 260; D.spr('catrock', s, D.lat(s, 1, 60), { flip: false, collide: false }); },
   pavilion(D, s0) { const s = s0 + 200; D.spr('pavilion', s, D.lat(s, 1, 6), { flip: false }); },
@@ -5862,7 +5862,8 @@ function pcStep(dt, track) {
   // drifting costs a little speed every second, much less than braking would
   if (PC.drift > 0) a -= 2.2 * (PC.driftLossK == null ? 1 : PC.driftLossK);
   // the slipstream card: tucked in behind a car in this lane, the air pulls you along
-  if (PC.slipK && PC.throttle > 0.5) for (const o of TRAFFIC.list) { const d = o.s - PC.s; if (o.p === PC.piece && !o.train && d > 4 && d < 20 && Math.abs(o.x - PC.x) < 1.6 && o.v > 5) { a += 4.5 * PC.slipK; break; } }
+  if (PC.slipK && PC.throttle > 0.5) for (const o of TRAFFIC.list) { const d = o.s - PC.s; if (o.p === PC.piece && !o.train && d > 4 && d < 25 && Math.abs(o.x - PC.x) < 1.8 && o.v > 5) { a += 9 * PC.slipK; PC.slipOn = 2; break; } }
+  if (PC.slipOn) { if (PC.slipOn === 2 && !PC.slipWas) { hudMsg('吸尾流', null, '#7ec8ff', 0.8, false); } PC.slipWas = PC.slipOn === 2; PC.slipOn = 0; } else PC.slipWas = false;
   // off the asphalt: grass, sand and gravel drag you down to a crawl
   if (PC.offroad > 0) { const lim = 24; if (PC.v > lim) a -= 9 + (PC.v - lim) * 0.25; else a -= 1.5; }
   PC.v = Math.max(0, PC.v + a * dt);
@@ -6244,17 +6245,19 @@ function sfxPass(k, pan, type) {
   if (!AU.ctx) return; const t = AU.ctx.currentTime;
   // the air of a car going by: a rush of low noise that opens up as the gap closes and shuts again as it falls
   // behind, the pressure bump as the two bodies pass, nothing tonal — the ear never hears a note in a pass-by
-  const big = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs', dur = (big ? 0.9 : 0.62) / (0.7 + 0.3 * k), peak = (big ? 0.7 : 0.5) * k;
+  const big = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs', dur = (big ? 0.9 : 0.62) / (0.7 + 0.3 * k), peak = (big ? 1.5 : 1.2) * (0.6 + 0.4 * k);
   const s = noiseSrc(false), f1 = AU.ctx.createBiquadFilter(), f2 = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain(), p = AU.ctx.createStereoPanner ? AU.ctx.createStereoPanner() : null;
   f1.type = 'lowpass'; f2.type = 'lowpass'; f1.Q.value = 0.4; f2.Q.value = 0.7;
-  const fc = big ? 900 : 1500;
-  for (const f of [f1, f2]) { f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(fc, t + 0.1); f.frequency.exponentialRampToValueAtTime(140, t + dur); }
+  const fc = big ? 1600 : 3200;
+  for (const f of [f1, f2]) { f.frequency.setValueAtTime(500, t); f.frequency.exponentialRampToValueAtTime(fc, t + 0.08); f.frequency.exponentialRampToValueAtTime(180, t + dur); }
+  // the bright edge of the rush, so it cuts through the engine
+  noiseHit(t + 0.02, 'bandpass', big ? 1800 : 2800, 0.8, 0.55 * (0.6 + 0.4 * k), 0.22, p || AU.sfx);
   s.connect(f1); f1.connect(f2); f2.connect(g);
   if (p) { const side = clamp(pan, -1, 1); p.pan.setValueAtTime(side * 0.9, t); p.pan.linearRampToValueAtTime(side * 0.25, t + dur); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.09); g.gain.setValueAtTime(peak, t + 0.14); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.1);
   // the bump: a soft low pulse as the bodies pass, heavier for a truck
-  tone(t + 0.06, 'sine', big ? 70 : 95, big ? 40 : 55, (big ? 0.34 : 0.22) * k, big ? 0.22 : 0.15, p || AU.sfx);
+  tone(t + 0.06, 'sine', big ? 70 : 95, big ? 40 : 55, (big ? 0.5 : 0.35) * (0.6 + 0.4 * k), big ? 0.22 : 0.15, p || AU.sfx);
 }
 // metal on metal: a crunch, a ring, and the clatter after
 function sfxClang(k) {
@@ -7079,6 +7082,11 @@ function drawPixHud(dt) {
   const label = PC.piece ? (PC.piece.def.label || PC.piece.def.name) : '';
   const L = pixLabel(label, 12, 0xffffff, 0x05081c);
   pixBox(5, 5, L.width + 10, 21); blitC(L, 10, 7);
+  // the run's cards, under the place: what the car is carrying this time
+  if (typeof ROGUE !== 'undefined' && ROGUE.on && ROGUE.picks.length) {
+    const C = pixLabel(ROGUE.picks.map((q) => q.name).join('・') + (PC.shield > 0 ? '　盾×' + PC.shield : ''), 10, 0x7cf26a, 0x05081c);
+    pixBox(5, 28, C.width + 10, 17); blitC(C, 10, 30);
+  }
   // ---- time, top centre ----
   const tl = Math.max(0, R.time), low = tl < 10 && R.state === 'run', blink = low && Math.floor(G.t * 4) % 2;
   blitC(pixText('TIME', { s: 1, fill: 0xffffff, out: 0x1a3a9a, it: 1 }), X0, 3, 'center');
@@ -7086,6 +7094,9 @@ function drawPixHud(dt) {
   // ---- lap time and score, top right ----
   blitC(pixText(fmtTime(R.elapsed), { s: 1, fill: 0xffffff, out: 0x05081c, it: 0 }), RW - 8, 6, 'right');
   blitC(pixText(Math.floor(R.score) + ' PTS', { s: 1, fill: 0xffd23a, out: 0x05081c, it: 0 }), RW - 8, 17, 'right');
+  // online: the running order, big, under the score
+  const rk = typeof netRank === 'function' ? netRank() : null;
+  if (rk) { blitC(pixText(rk[0] + '/' + rk[1], { s: 2, fill: rk[0] === 1 ? 0xffd23a : 0xffffff, fill2: rk[0] === 1 ? 0xffb81a : 0xb0c8ff, out: 0x0a1a6a, out2: 0x05081c, it: 1 }), RW - 8, 30, 'right'); blitC(pixLabel('名次', 10, 0xffffff, 0x05081c), RW - 8 - 44, 34, 'right'); }
   // ---- speed and revs, bottom right ----
   const v = Math.round(kmh(PC.v)), r = clamp(PC.rpm / PC.redline, 0, 1.05);
   const bx = RW - 8, by = RH - 10;
@@ -9047,23 +9058,23 @@ function drawEnding(dt) {
 // changes how you drive.
 const ROGUE = { on: false, seed: 0, rnd: null, picks: [], hand: null, conds: new Map(), applied: null, msgDone: new Set(), kmK: 1, pending: false, runKm: 0, bot: false, lastPick: null };
 const ROGUE_CARS_FREE = 4;                 // the first cars are open; the rest come with mileage
-const ROGUE_CAR_KM = [0, 0, 0, 0, 40, 80, 130, 190, 260, 340];
+const ROGUE_CAR_KM = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];   // every car is open; the mileage opens cards
 function rogueSave() { return SAVE.load('rogue', { km: 0, runs: 0, bestKm: 0, endings: [] }); }
 // ---------- the cards ----------
 // kind: drive (how the car goes) | risk (a gamble) | road (what the next road is like). km: mileage to unlock.
 const ROGUE_CARDS = [
-  { id: 'brakes', kind: 'drive', name: '競技煞車', desc: '煞車力 +35%。進彎可以晚一點踩。', km: 0, apply() { PC.brakeK = (PC.brakeK || 1) * 1.35; } },
-  { id: 'turbo', kind: 'drive', name: '渦輪', desc: '極速 +8%、加速 +10%，煞車距離變長 15%。', km: 0, apply() { rogueStat({ top: 1.08, acc: 1.1 }); PC.brakeK = (PC.brakeK || 1) * 0.85; } },
-  { id: 'slip', kind: 'drive', name: '吸尾流', desc: '貼在前車後面 5～20 公尺會被拉著加速。', km: 0, apply() { PC.slipK = 1; } },
+  { id: 'brakes', kind: 'drive', name: '競技煞車', desc: '煞車力 +80%。進彎可以晚很多再踩。', km: 0, apply() { PC.brakeK = (PC.brakeK || 1) * 1.8; } },
+  { id: 'turbo', kind: 'drive', name: '渦輪', desc: '極速 +18%、加速 +25%；煞車變弱 20%。', km: 0, apply() { rogueStat({ top: 1.18, acc: 1.25 }); PC.brakeK = (PC.brakeK || 1) * 0.8; } },
+  { id: 'slip', kind: 'drive', name: '吸尾流', desc: '貼在前車後面 5～25 公尺會被猛拉加速，超過去就噴出來。', km: 0, apply() { PC.slipK = 1; } },
   { id: 'drift', kind: 'drive', name: '甩尾不掉速', desc: '甩尾過彎不再損失速度。', km: 0, apply() { PC.driftLossK = 0; } },
-  { id: 'steer', kind: 'drive', name: '快轉向', desc: '轉向反應 +25%，換道更快，也更容易過頭。', km: 0, apply() { rogueStat({ steer: 1.25 }); } },
-  { id: 'soft', kind: 'drive', name: '軟胎', desc: '抓地 +25%；撞一次之後磨壞，抓地變 −10%。', km: 20, apply() { rogueStat({ grip: 1.25 }); PC.softTyre = true; } },
-  { id: 'shield', kind: 'risk', name: '護盾', desc: '下一次撞車不算，車不會轉。只有一次。', km: 0, apply() { PC.shield = (PC.shield || 0) + 1; } },
-  { id: 'time8', kind: 'risk', name: '多 8 秒', desc: '現在馬上 +8 秒。', km: 0, apply() { RACE.time += 8; } },
-  { id: 'gamble', kind: 'risk', name: '時間賭注', desc: '每個檢查點多 6 秒，但車流 +40%。', km: 0, apply() { ROGUE.cpBonus = (ROGUE.cpBonus || 0) + 6; ROGUE.densK = (ROGUE.densK || 1) * 1.4; rogueTraffic(); } },
-  { id: 'glass', kind: 'risk', name: '玻璃車', desc: '極速 +12%，但撞車時間損失加倍。', km: 60, apply() { rogueStat({ top: 1.12 }); PC.crashK = (PC.crashK || 1) * 2; } },
+  { id: 'steer', kind: 'drive', name: '快轉向', desc: '轉向反應 +50%，一下就換好道，也更容易過頭。', km: 0, apply() { rogueStat({ steer: 1.5 }); } },
+  { id: 'soft', kind: 'drive', name: '軟胎', desc: '抓地 +40%，彎道幾乎不用煞；撞一次就磨壞，抓地變 −15%。', km: 20, apply() { rogueStat({ grip: 1.4 }); PC.softTyre = true; } },
+  { id: 'shield', kind: 'risk', name: '護盾', desc: '接下來兩次撞車不算，車不會轉。', km: 0, apply() { PC.shield = (PC.shield || 0) + 2; } },
+  { id: 'time8', kind: 'risk', name: '多 15 秒', desc: '現在馬上 +15 秒。', km: 0, apply() { RACE.time += 15; } },
+  { id: 'gamble', kind: 'risk', name: '時間賭注', desc: '之後每個檢查點多 12 秒，但車流 +60%。', km: 0, apply() { ROGUE.cpBonus = (ROGUE.cpBonus || 0) + 12; ROGUE.densK = (ROGUE.densK || 1) * 1.6; rogueTraffic(); } },
+  { id: 'glass', kind: 'risk', name: '玻璃車', desc: '極速 +25%，但撞車躺的時間加倍。', km: 60, apply() { rogueStat({ top: 1.25 }); PC.crashK = (PC.crashK || 1) * 2; } },
   { id: 'mileage', kind: 'risk', name: '里程加倍', desc: '這一局的里程 ×2。只影響解鎖，不影響開法。', km: 0, apply() { ROGUE.kmK *= 2; } },
-  { id: 'quiet', kind: 'road', name: '清場', desc: '接下來的車流減半。', km: 0, apply() { ROGUE.densK = (ROGUE.densK || 1) * 0.5; rogueTraffic(); } },
+  { id: 'quiet', kind: 'road', name: '清場', desc: '接下來的車流只剩三分之一。', km: 0, apply() { ROGUE.densK = (ROGUE.densK || 1) * 0.35; rogueTraffic(); } },
   { id: 'scooters', kind: 'road', name: '機車潮', desc: '接下來的車流都是機車：小、慢、難預測。', km: 30, apply() { ROGUE.mix = { scooter: 8, sedan: 1 }; } },
   { id: 'noon', kind: 'road', name: '大晴天', desc: '濃霧和暮色的路段都變回白天。', km: 0, apply() { ROGUE.clearSky = true; } },
   { id: 'calm', kind: 'road', name: '風平浪靜', desc: '側風路段不再有風。', km: 40, apply() { ROGUE.noWind = true; } },
@@ -9177,7 +9188,7 @@ function roguePick(i) {
 function rogueOnCrash() {
   if (!ROGUE.on) return false;
   if (PC.shield > 0) { PC.shield--; hudMsg('護盾', '這一撞不算', '#7ec8ff', 1.6, false); shake(0.3); return true; }
-  if (PC.softTyre) { PC.softTyre = false; rogueStat({ grip: 0.9 / 1.25 }); hudMsg('軟胎磨壞了', '抓地變差', '#ff8aa0', 2, false); }
+  if (PC.softTyre) { PC.softTyre = false; rogueStat({ grip: 0.85 / 1.4 }); hudMsg('軟胎磨壞了', '抓地變差', '#ff8aa0', 2, false); }
   return false;
 }
 // the run is over: the distance goes into the mileage; what it unlocked
@@ -9335,7 +9346,11 @@ function netLeave() {
   NET.peers.clear(); NET.on = false; NET.host = false; NET.phase = 'idle'; NET.ws = null; NET.err = ''; NET.status = ''; NET.results = []; NET.code = '';
 }
 // ---------- the lobby: who is here ----------
-function netSlot() { const list = netPlayers(); const i = list.findIndex((q) => q.me); return i < 0 ? 0 : i; }
+// the grid: everyone sorts the same ids the same way, so each phone puts itself in its own slot (the host, 'kr-…', first)
+function netSlot() { const ids = [NET.id || 'me', ...NET.peers.keys()].sort(); const i = ids.indexOf(NET.id || 'me'); return i < 0 ? 0 : i; }
+// where everyone is along the whole road: stage depth plus the share of this stage, for the running order
+function netProgress(p, s) { const n = courseLayout().nodes[p.id]; return (n ? n.row : 0) + clamp(s / p.L, 0, 1); }
+function netRank() { if (!NET.on || NET.phase !== 'race') return null; const me = netProgress(PC.piece, PC.s); let r = 1, n = 1; for (const P of NET.peers.values()) { if (!P.name) continue; n++; if (P.fin && P.fin.time != null && !(NET.myFin && NET.myFin.time != null)) { r++; continue; } if (P.dp && netProgress(P.dp, P.ds) > me) r++; } return [r, n]; }
 function netPlayers() {
   const list = [{ id: NET.id || 'me', me: true, name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car, host: NET.host, fin: NET.myFin || null }];
   for (const P of NET.peers.values()) if (P.name) list.push({ id: P.id, me: false, name: P.name, avatar: P.avatar, avatarKind: P.avatarKind, car: P.car, host: P.host, fin: P.fin });
