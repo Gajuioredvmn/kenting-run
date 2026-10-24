@@ -7198,6 +7198,7 @@ function raceUpdate(dt) {
   }
   if (RACE.state === 'run') {
     if (ROGUE.on) rogueUpdate(dt);
+    if (NET.on && NET.phase === 'race' && PC.piece.children.length && NET.forks[PC.piece.id] && PC.piece.L - PC.s < 560 && RACE._forkMsg !== PC.piece) { RACE._forkMsg = PC.piece; const c = STAGES[NET.forks[PC.piece.id]]; hudMsg('跟著走 ' + (c ? c.name : ''), '前面的車已經選了路線', '#ffd23a', 2.6, false); }
     RACE.time -= dt; RACE.elapsed += dt;
     if (RACE.time <= 0) { RACE.time = 0; RACE.state = 'timeup'; RACE.overT = 0; hudMsg('TIME UP', '時間到', '#ff4f6d', 4); }
   }
@@ -7207,9 +7208,12 @@ function raceUpdate(dt) {
   while (PC.s > PC.piece.L) {
     const p = PC.piece;
     if (p.children.length) {
-      const left = PC.x < (p.forkDiv || 0), c = p.children[left ? 0 : 1], off = p.forkOff[left ? 0 : 1];
-      PC.x -= off; CAM.lat -= off; PC.s -= p.L; PC.piece = c;     // the camera's lateral is in road coordinates too: carry it across, or it lurches
-      RACE.route.push(c.id); if (ROGUE.on) rogueEnterPiece(c);
+      let left = PC.x < (p.forkDiv || 0);
+      if (NET.on && NET.phase === 'race' && NET.forks[p.id]) left = NET.forks[p.id] === p.children[0].id;   // the room's road, decided by whoever got here first
+      const c = p.children[left ? 0 : 1], off = p.forkOff[left ? 0 : 1];
+      PC.x -= off; CAM.lat -= off; PC.s -= p.L; PC.piece = c;
+      if (NET.on && NET.phase === 'race') { const hw = c.hw(Math.max(0, PC.s)); PC.x = clamp(PC.x, -hw + 1, hw - 1); }   // steered onto the room's road     // the camera's lateral is in road coordinates too: carry it across, or it lurches
+      RACE.route.push(c.id); if (ROGUE.on) rogueEnterPiece(c); if (NET.on && NET.phase === 'race') netFork(p.id, c.id);
     } else if (p.next) { PC.s -= p.L; PC.piece = p.next; RACE.route.push(p.next.id); if (ROGUE.on) rogueEnterPiece(p.next); }
     else { PC.s = p.L; PC.v = 0; break; }
   }
@@ -7702,7 +7706,7 @@ const _virt = [makeB(), makeB()];
 function buildSlots() {
   const paths = [{ p: CV.p, s: CV.s + 0.6, pid: 1, ppid: 0, off: 0, alive: true }];
   // a fork child shows its sibling peeling away for the first stretch
-  if (CV.p.side && CV.p.parent && CV.s < 1700) {
+  if (CV.p.side && CV.p.parent && CV.s < 1700 && !(NET.on && NET.phase === 'race' && NET.forks[CV.p.parent.id])) {
     const sib = CV.p.parent.children[CV.p.side < 0 ? 1 : 0], q = { p: sib, s: CV.s + 0.6, pid: 2, ppid: 0, off: 0, alive: true };
     if (CV.p.side < 0) paths.push(q); else paths.unshift(q);
   }
@@ -7712,6 +7716,8 @@ function buildSlots() {
     for (let j = 0; j < paths.length; j++) {
       const q = paths[j];
       while (q.alive && q.s > q.p.L) {
+        const decided = NET.on && NET.phase === 'race' && NET.forks[q.p.id] ? q.p.children.findIndex((cc) => cc.id === NET.forks[q.p.id]) : -1;
+        if (q.p.children.length === 2 && decided >= 0) { q.s -= q.p.L; q.off = q.p.forkOff[decided]; q.p = q.p.children[decided]; continue; }   // the room's road: the other way is not there
         if (q.p.children.length === 2 && paths.length === 1) {
           const c = q.p.children, off = q.p.forkOff, s = q.s - q.p.L;
           paths.splice(j, 1, { p: c[0], s, pid: pid++, ppid: q.pid, off: off[0], alive: true }, { p: c[1], s, pid: pid++, ppid: q.pid, off: off[1], alive: true });
@@ -7824,15 +7830,23 @@ function trackRow(cx, rk, R, gs) {
   const W = R.W, oL = R.oL, oR = R.oR, X = (o) => cx + o * rk, stripe = Math.floor(gs / 5) & 1;
   // the way on and off: the rails run in the asphalt first, like a tram street, then the ballast and sleepers take over
   const p = R.p, j = p.secs.indexOf(R.sec), s = gs - p.gS, s0 = j >= 0 ? p.secStartS[j] : 0, s1 = j >= 0 && j + 1 < p.secs.length ? p.secStartS[j + 1] : p.L;
-  const edge = Math.min(s - s0, s1 - s), blend = edge < 36 ? 0 : edge < 80 ? (((gs * 1.7) % 1 + 1) % 1 < (edge - 36) / 44 ? 1 : 0) : 1;
-  fillSpanD(Math.round(X(oL)), Math.round(X(oR)), blend ? BALLAST[stripe] : ASPH[stripe]);
-  if (Math.abs(edge) < 2.4) fillSpan(Math.round(X(oL)), Math.round(X(oR)), fogPx(0x9a9690, _f));   // the crossing slab where the road meets the line
+  // a level crossing where the road meets the line: the concrete slab with the line's rails running ACROSS the road,
+  // then the road is on the line itself — the way a railway meets a road, not a road slowly becoming one
+  const edge = Math.min(s - s0, s1 - s);
+  if (edge < 7) {
+    const x0 = Math.round(X(oL)), x1 = Math.round(X(oR));
+    fillSpan(x0, x1, fogPx(0x9a9690, _f));
+    if (Math.abs(edge - 2.2) < 0.22 || Math.abs(edge - 3.7) < 0.22) fillSpan(x0, x1, fogPx(RAILC, _f));   // the two rails across
+    if (Math.abs(edge - 0.6) < 0.2 || Math.abs(edge - 5.3) < 0.2) fillSpan(x0, x1, fogPx(0x6a6660, _f));   // the slab's edges
+    return;
+  }
+  fillSpanD(Math.round(X(oL)), Math.round(X(oR)), BALLAST[stripe]);
   const tracks = Math.max(1, Math.round((2 * W) / LANE)), lw = Math.max(0.5, 0.09 * rk);
-  const sleeper = blend && ((gs % 0.7) + 0.7) % 0.7 < 0.26;
+  const sleeper = ((gs % 0.7) + 0.7) % 0.7 < 0.26;
   for (let k = 0; k < tracks; k++) {
     const c = -W + LANE * (k + 0.5);
     if (sleeper) fillSpan(Math.round(X(c - 1.3)), Math.round(X(c + 1.3)), fogPx(SLEEPER, _f));
-    lineAt(X(c - 0.72), lw, RAILC, blend ? BALLAST[stripe] : ASPH[stripe]); lineAt(X(c + 0.72), lw, RAILC, blend ? BALLAST[stripe] : ASPH[stripe]);
+    lineAt(X(c - 0.72), lw, RAILC, BALLAST[stripe]); lineAt(X(c + 0.72), lw, RAILC, BALLAST[stripe]);
   }
 }
 function roadRow(cx, rk, R, gs, gsN) {
@@ -9234,7 +9248,7 @@ function rogueCarOpen(i) { return (ROGUE_CAR_KM[i] || 0) <= rogueSave().km; }
 const NET_CFG = Object.assign({ host: '0.peerjs.com', port: 443, path: '/', secure: true, key: 'peerjs' }, window.__krPeerCfg || {});
 const NET_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const NET = {
-  on: false, host: false, code: '', id: '', ws: null, hb: 0, peers: new Map(), phase: 'idle', err: '', status: '',
+  forks: {}, on: false, host: false, code: '', id: '', ws: null, hb: 0, peers: new Map(), phase: 'idle', err: '', status: '',
   me: { name: '', avatar: '', avatarKind: 'face', car: 0, img: null }, results: [], startAt: 0, lastSend: 0, seq: 0, onLobby: null, joinT: 0,
 };
 function netCode() { let c = ''; for (let i = 0; i < 6; i++) c += NET_CODE_CHARS[Math.floor(Math.random() * NET_CODE_CHARS.length)]; return c; }
@@ -9404,12 +9418,14 @@ function netOnMsg(P, m) {
     from.prev = from.state; from.state = m; from.rt = G.t;
     if (NET.host) { const out = Object.assign({}, m, { id: P.id }); for (const Q of NET.peers.values()) if (Q !== P) netSt(Q, out); }
   }
+  // the first through a fork decides it for the room: the others are steered down the same road
+  else if (m.t === 'fork') { if (!NET.forks[m.p]) { NET.forks[m.p] = m.c; if (NET.host) netAll({ t: 'fork', p: m.p, c: m.c }, P); if (PC.piece && PC.piece.id === m.p) hudMsg('路線已定', (m.who || '前面的車') + ' 選了 ' + (STAGES[m.c] ? STAGES[m.c].name : ''), '#ffd23a', 2.6, false); } }
   else if (m.t === 'fin') { const from = NET.host ? P : netPeer(m.id || P.id); from.fin = { time: m.time, route: m.route, car: m.car }; if (NET.host) netLobbyChanged(); else if (NET.onLobby) NET.onLobby(); }
 }
 // ---------- the race ----------
 function netStartRace(delay, late) {
   if (NET.phase === 'race') return;
-  NET.phase = 'race'; NET.myFin = null; for (const P of NET.peers.values()) { P.fin = null; P.state = null; P.prev = null; }
+  NET.phase = 'race'; NET.myFin = null; NET.forks = {}; for (const P of NET.peers.values()) { P.fin = null; P.state = null; P.prev = null; }
   if (NET.host) netAll({ t: 'start', in: delay });
   ROGUE.on = false; startPlay();
   if (late) { RACE.state = 'run'; RACE.countdown = 0; }
@@ -9458,6 +9474,14 @@ function drawRival(P, x, y, k, clip) {
   else VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), x - S.ax * sc, top, w, Math.min(hh, clip - top));
   if (S.heads) { const ph = [0, 1, 0, 2][Math.floor(G.t * 6) & 3], sh = S.shift[si]; for (const h of S.heads) VG.drawImage(h.frames[ph], Math.round(x - S.ax * sc + (h.x + sh) * sc), Math.round(top + h.y * sc), h.frames[0].width * sc, h.frames[0].height * sc); }
   if (top < clip + 10) drawBadge(x, top + 26 * sc, k, P.name || '?', P.img, P.fx);
+}
+
+// we went through a fork first: tell the room which way
+function netFork(pid, cid) {
+  if (!NET.on || NET.phase !== 'race' || NET.forks[pid]) return;
+  NET.forks[pid] = cid; netMe();
+  const m = { t: 'fork', p: pid, c: cid, who: NET.me.name };
+  if (NET.host) netAll(m); else for (const Q of NET.peers.values()) if (Q.host) netCtl(Q, m);
 }
 
 })();
