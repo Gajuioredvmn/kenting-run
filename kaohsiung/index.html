@@ -1233,6 +1233,7 @@ function sedanModel(col, o, view) {
   const cabin = { col, tone: cabinTone, secs: [rectSec(Z(0.0), hw - 0.1, 0.9, 0.93), rectSec(Z(0.55), hw - 0.12, 0.9, 1.44, { r: 0.08 }), rectSec(Z(2.1), hw - 0.12, 0.9, 1.44, { r: 0.08 }), rectSec(Z(2.85), hw - 0.1, 0.9, 0.93)] };
   const parts = [body, cabin];
   if (o.sign) parts.push(boxPart(0.3, 1.44, 1.6, Z(1.1), Z(1.5), 0xf2c21a));
+  if (o.bar) { parts.push(boxPart(0.42, 1.44, 1.62, Z(1.2), Z(1.5), 0xff2020, { r: 0.04 })); parts.push({ col: 0x2040ff, secs: [rectSec(Z(1.2), 0.42, 1.44, 1.62, { r: 0.04 }), rectSec(Z(1.5), 0.42, 1.44, 1.62, { r: 0.04 })].map((q) => ({ z: q.z, pts: q.pts.map((pt) => [pt[0] * 0.5 - 0.21, pt[1]]) })) }); }
   const tyres = [{ x: -0.74, z: Z(0), R: 0.31, w: 0.2 }, { x: 0.74, z: Z(0), R: 0.31, w: 0.2 }, { x: -0.74, z: Z(wb), R: 0.31, w: 0.2 }, { x: 0.74, z: Z(wb), R: 0.31, w: 0.2 }];
   const extras = [(c) => {
     if (view !== 'front') {
@@ -1458,6 +1459,7 @@ function paintTrafficKinds() {
   const reg = (name, type, build, wM, hM, lM, long, o) => { TRF.kinds[name] = Object.assign({ name, type, frames: trafficFrames(build, wM, hM, lM, long), L: lM, W: wM }, o || {}); };
   [0xf2f2ee, 0xc8ccd0, 0x2a2a30, 0xb8242a, 0x2a4a8a, 0x6a6e74, 0xd8d2c4, 0x1a5a3a].forEach((c, i) => reg('sedan' + i, 'car', (v) => sedanModel(c, {}, v), 1.8, 1.5, 4.5));
   reg('taxi', 'car', (v) => sedanModel(0xf2c21a, { sign: true }, v), 1.8, 1.65, 4.5);
+  reg('police', 'car', (v) => sedanModel(0xf4f4f0, { bar: true }, v), 1.8, 1.65, 4.5);
   [0xf2f2ee, 0x8a8e94].forEach((c, i) => reg('pickup' + i, 'car', (v) => pickupModel(c, v), 1.9, 1.8, 5.1));
   [0x6aa848, 0xe8a81a, null].forEach((c, i) => reg('blue' + i, 'truck', (v) => blueTruckModel(c, v), 1.7, 2.1, 4.7));
   [0x1a58b8, 0xd8242a, 0x18884a].forEach((c, i) => reg('bus' + i, 'bus', (v) => busModel(c, v), 2.5, 3.4, 11.5, true));
@@ -1548,6 +1550,7 @@ function vehPose(v) {
 }
 function chooseNext(v, r) {
   const opts = v.lane.next; if (!opts.length) return null;
+  if (v.cop) { let best = null, bd = 1e9; for (const c of opts) { const q = polyAt(c.to.pts, Math.min(40, c.to.len - 1)), d = Math.hypot(q.x - CAR.x, q.z - CAR.z) + (c.turn === 'straight' ? 0 : 10); if (d < bd) { bd = d; best = c; } } return best; }
   const w = opts.map((c) => (c.turn === 'straight' ? 0.62 : c.turn === 'right' ? 0.23 : 0.15) * (c.to.e.K.cls >= 1 ? 1 : 0.5));
   let t = r() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < opts.length; i++) { t -= w[i]; if (t <= 0) return opts[i]; } return opts[opts.length - 1];
 }
@@ -1564,7 +1567,7 @@ function trafficTick(dt) {
   // spawn around the player, retire what is far away
   TR.spawnT -= dt;
   if (TR.veh.length < TR.max && TR.spawnT <= 0) { TR.spawnT = 0.08; trafficSpawn(r); }
-  for (let i = TR.veh.length - 1; i >= 0; i--) { const v = TR.veh[i]; if (Math.hypot(v.x - C.x, v.z - C.z) > TR.far) { retire(v, i); } }
+  for (let i = TR.veh.length - 1; i >= 0; i--) { const v = TR.veh[i]; if (!v.cop && Math.hypot(v.x - C.x, v.z - C.z) > TR.far) { retire(v, i); } }
   // sort each lane by distance so every vehicle knows its leader
   for (const l of TR.lanes) if (l.veh.length > 1) l.veh.sort((p, q) => p.s - q.s);
   for (const c of TR.conns) if (c.veh.length > 1) c.veh.sort((p, q) => p.s - q.s);
@@ -1573,7 +1576,8 @@ function trafficTick(dt) {
     const v = TR.veh[i], path = v.conn || v.lane, list = path.veh, idx = list.indexOf(v);
     let gap = null, dv = 0;
     // the one ahead on this path
-    if (idx >= 0 && idx + 1 < list.length) { const w = list[idx + 1]; gap = w.s - v.s - (w.L + v.L) / 2; dv = v.v - w.v; }
+    if (idx >= 0 && idx + 1 < list.length) { const w = list[idx + 1]; gap = w.s - v.s - (w.L + v.L) / 2; dv = v.v - w.v;
+      if (v.cop && !v.conn && w.v < 4 && gap < 14) { if (copSwitchLane(v)) { gap = null; dv = 0; } else { v.pushT = (v.pushT || 0) + dt; if (v.pushT > 2) { gap = null; dv = 0; } } } else v.pushT = 0; }
     else {
       // or the first one on what comes next
       const nxt = v.conn ? v.conn.to : (v.nextC || (v.nextC = chooseNext(v, r)));
@@ -1588,20 +1592,20 @@ function trafficTick(dt) {
     // the lights, and giving way, at the end of the lane
     if (!v.conn) {
       const n = v.lane.to, rem = v.lane.len - v.s - v.L / 2, stopGap = rem - 1.0;
-      if (n.lit) {
+      if (n.lit && !v.cop) {
         const st = signalState(n, v.lane.phase);
         const must = st === 'red' || (st === 'yellow' && stopGap > v.v * v.v / (2 * 3.5) + 2);
         if (must && stopGap < 60 && (gap == null || stopGap < gap)) { gap = Math.max(0.05, stopGap); dv = v.v; }
         // turning left across the oncoming traffic
         if (!must && v.nextC && v.nextC.turn === 'left' && rem < 12 && oncoming(v, n)) { if (gap == null || stopGap < gap) { gap = Math.max(0.05, stopGap); dv = v.v; } }
-      } else if (rem < 10 && n.edges.length >= 3) {
+      } else if (rem < 10 && n.edges.length >= 3 && !v.cop) {
         // an unlit junction: wait for whoever is already in it, or coming down a bigger road; never for ever
         if (junctionBusy(v, n) && v.wait < 6) { if (gap == null || stopGap < gap) { gap = Math.max(0.05, stopGap); dv = v.v; } v.wait += dt; } else v.wait = Math.max(0, v.wait - dt * 0.5);
       }
     }
     // the player, when on this vehicle's path ahead
     const dpx = C.x - v.x, dpz = C.z - v.z;
-    if (dpx * dpx + dpz * dpz < 70 * 70) {
+    if (!v.cop && dpx * dpx + dpz * dpz < 70 * 70) {
       const n = nearestOnPts(path.pts, C.x, C.z);
       // a player who just sits there is, after a while, nudged past rather than waited on for ever
       const blocked = n.d < v.W / 2 + C.P.W / 2 + 0.5 && n.s > v.s && n.s - v.s < 8 && v.v < 0.3 && pv < 0.5;
@@ -1674,7 +1678,7 @@ function trafficCollide(dt) {
       let lnx, lnz, pen; if (d > 1e-3) { lnx = du / d; lnz = dv / d; pen = rc - d; } else { const toL = lu + hx, toR = hx - lu, toT = lv + hz, toB = hz - lv, m = Math.min(toL, toR, toT, toB); lnx = m === toL ? -1 : m === toR ? 1 : 0; lnz = m === toT ? -1 : m === toB ? 1 : 0; pen = m + rc; }
       const nx = lnx * c + lnz * sn, nz = -lnx * sn + lnz * c;
       C.x += nx * pen; C.z += nz * pen; carBounce(nx, nz);
-      v.v *= 0.6; if (v.horn <= 0) v.horn = 2; if (typeof sfxHornFar === 'function' && Math.random() < 0.3) sfxHornFar(3);
+      v.v *= v.cop ? 0.85 : 0.6; if (v.horn <= 0) v.horn = 2; if (typeof onTrafficHit === 'function') onTrafficHit(v); if (typeof sfxHornFar === 'function' && Math.random() < 0.3) sfxHornFar(3);
     }
   }
 }
@@ -1686,6 +1690,31 @@ function trafficReset() {
   const r = _trr; for (let i = 0; i < TR.max * 0.7; i++) trafficSpawn(r, 60);
   for (let i = 0; i < PEO.max * 0.7; i++) spawnWalker(_pr);
   for (let k = 0; k < 90; k++) { for (const l of TR.lanes) if (l.veh.length > 1) l.veh.sort((p, q) => p.s - q.s); for (const v of TR.veh) { v.s += v.v * 0.1; if (v.s >= (v.conn || v.lane).len - 2) v.s = (v.conn || v.lane).len - 2; vehPose(v); } }
+}
+
+// a police car set loose on a lane some way off, already moving, hunting the player
+function spawnCop(r) {
+  const C = CAR;
+  for (let t = 0; t < 40; t++) {
+    const l = TR.lanes[r.int(0, TR.lanes.length - 1)]; if (l.e.K.cls < 1 || l.len < 30 || l.e.lvl) continue;
+    const s = 5 + r() * (l.len - 10), p = polyAt(l.pts, s), d = Math.hypot(p.x - C.x, p.z - C.z); if (d < 120 || d > 320) continue;
+    if (Math.sin(p.yaw) * (C.x - p.x) + Math.cos(p.yaw) * (C.z - p.z) < 0.3 * d) continue;   // heading our way
+    const K = TRF.kinds.police, v = { kind: 'police', K, type: 'car', L: K.L, W: 1.8, lane: l, conn: null, s, v: 12, x: 0, z: 0, y: 0, yaw: 0, wait: 0, nextC: null, side: 0, brake: 0, horn: 0, id: Math.random(), cop: true, v0: 23, a: 3.8, b: 3, T: 0.6, s0: 1.5 };
+    l.veh.push(v); TR.veh.push(v); vehPose(v); return v;
+  }
+  return null;
+}
+
+// a patrol car moves over to a neighbouring lane of the same road if there is room there
+function copSwitchLane(v) {
+  const l = v.lane, list = TR.byEdge.get(l.e) || [];
+  for (const m of list) {
+    if (m === l || m.dir !== l.dir || Math.abs(m.k - l.k) !== 1) continue;
+    let ok = true; for (const w of m.veh) if (Math.abs(w.s - v.s) < 12) { ok = false; break; }
+    if (!ok) continue;
+    rm(l.veh, v); v.lane = m; m.veh.push(v); v.nextC = null; return true;
+  }
+  return false;
 }
 
 // ===================== people: walkers on the pavements, crossing at the lights, stepping out of the car's way =====================
@@ -3316,6 +3345,14 @@ function sfxUi() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 's
 // another car's horn, quieter with distance, a little lower than ours
 function sfxHornFar(dist) { if (!AU.ctx) return; const t = AU.ctx.currentTime, k = clamp(1 - dist / 60, 0.1, 1) * 0.5; tone(t, 'sawtooth', 349, 0, 0.09 * k, 0.45); tone(t, 'sawtooth', 440, 0, 0.07 * k, 0.45); }
 
+// the siren: two tones wailing, swelling with how near the patrol is
+function sirenUpdate(k, dt) {
+  if (!AU.ctx) return; const ctx = AU.ctx;
+  if (!AU.siren) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'square'; o.frequency.value = 700; g.gain.value = 0; o.connect(g); g.connect(AU.sfx); o.start(); AU.siren = { o, g, ph: 0 }; }
+  const S = AU.siren; S.ph += dt * 1.6; S.o.frequency.setTargetAtTime(640 + 260 * (0.5 + 0.5 * Math.sin(S.ph * TAU)), ctx.currentTime, 0.05);
+  S.g.gain.setTargetAtTime(k * 0.07, ctx.currentTime, 0.1);
+}
+
 // ===================== the car: a planar rigid body on four tyres =====================
 // Metres, kilograms, seconds. The body has mass, yaw inertia, a centre of gravity at some height between the axles;
 // the four tyres each carry a load that shifts with braking, acceleration and cornering, and each gives a force from
@@ -4084,9 +4121,46 @@ function arrowTo(W, H, tx, tz) {
   hud.save(); hud.translate(x, y); hud.rotate(-a); hud.fillStyle = '#ffd23a'; hud.strokeStyle = '#0a1028'; hud.lineWidth = 2; hud.beginPath(); hud.moveTo(0, -11); hud.lineTo(8, 7); hud.lineTo(0, 3); hud.lineTo(-8, 7); hud.closePath(); hud.fill(); hud.stroke(); hud.restore();
 }
 
+// ===================== the law: heat from bad driving, stars, and the police cars that come after you =====================
+// Hitting cars and people, running the lights and racing along the pavement all raise the heat; the heat decays when
+// you behave. Stars come with heat; each star puts a patrol car on your tail. They drive fast, ignore the lights and
+// ram. Lose them (far away for a while, or the heat gone) and the stars go. Get wrecked and you are stopped: a fine.
+const WANT = { heat: 0, stars: 0, cops: [], calm: 0, farT: 0, siren: 0, lastRed: null };
+function heatUp(k, why) { if (!SET.police) return; WANT.heat = Math.min(200, WANT.heat + k); WANT.calm = 0; const st = WANT.heat > 130 ? 3 : WANT.heat > 70 ? 2 : WANT.heat > 30 ? 1 : 0; if (st > WANT.stars) { WANT.stars = st; hudMsg('通緝 ' + '★'.repeat(st), why, '#ff4f6d', 2); sfxWarn(); } }
+function onTrafficHit(v) { if (v.cop) return; const into = Math.hypot(CAR.vx, CAR.vy); if (into > 4) heatUp(6 + into * 0.8, '撞到車'); }
+function wantedTick(dt) {
+  const C = CAR;
+  if (!SET.police) { if (WANT.stars || WANT.cops.length) { WANT.stars = 0; WANT.heat = 0; for (const c of WANT.cops) { const i = TR.veh.indexOf(c); if (i >= 0) retire(c, i); } WANT.cops.length = 0; sirenUpdate(0, 1); } return; }
+  // the sins of the moment
+  if (C.surface === GK.walk && C.kmh > 30) heatUp(2.5 * dt, '在人行道上飆車');
+  const n = nearestRoad(C.x, C.z, C.y);
+  if (n && n.e && C.kmh > 25) {
+    // through a red light: crossing into a lit junction's box while the light for our approach is red
+    for (const nd of [n.e.a, n.e.b]) if (nd.lit && Math.hypot(nd.x - C.x, nd.z - C.z) < 14) {
+      if (WANT.lastRed !== nd) { const o = nd.out.find((q) => q.e === n.e); const a0 = nd.out[0].ang, dAng = Math.abs(angWrap(o.ang - a0)), phase = (dAng < Math.PI / 4 || dAng > 3 * Math.PI / 4) ? 0 : 1; WANT.lastRed = nd; if (signalState(nd, phase) === 'red') heatUp(10, '闖紅燈'); }
+    }
+  }
+  WANT.calm += dt; if (WANT.calm > 6) WANT.heat = Math.max(0, WANT.heat - (WANT.stars ? 2.5 : 6) * dt);
+  // the patrols
+  const want = WANT.stars, r = _trr;
+  WANT.cops = WANT.cops.filter((c) => TR.veh.includes(c));
+  while (WANT.cops.length < want) { const c = spawnCop(r); if (!c) break; WANT.cops.push(c); }
+  if (want === 0 && WANT.cops.length) { for (const c of WANT.cops) { const i = TR.veh.indexOf(c); if (i >= 0) retire(c, i); } WANT.cops.length = 0; }
+  // losing them, or the heat running out
+  let near = 1e9; for (const c of WANT.cops) near = Math.min(near, Math.hypot(c.x - C.x, c.z - C.z));
+  if (WANT.stars) { if (near > 330) WANT.farT += dt; else WANT.farT = 0; if (WANT.farT > 12 || WANT.heat <= 0) { WANT.stars = 0; WANT.heat = 0; WANT.farT = 0; hudMsg('甩掉警察了', null, '#7cf26a', 2); sfxChime(); } }
+  const st = WANT.heat > 130 ? 3 : WANT.heat > 70 ? 2 : WANT.heat > 30 ? 1 : 0; if (st < WANT.stars && WANT.heat <= 0) WANT.stars = 0;
+  // the siren, louder the nearer
+  sirenUpdate(WANT.cops.length ? clamp(1 - near / 260, 0, 1) : 0, dt);
+  // wrecked under pursuit: pulled over
+  if (WANT.stars && C.damage >= 1) bust();
+}
+function bust() { const fine = Math.min(PRO.money, Math.max(300, Math.round(PRO.money * 0.1 / 100) * 100)); PRO.money -= fine; saveProgress(); hudMsg('被警察攔下來了', '罰款 $' + fine.toLocaleString() + '，車子拖去修', '#ff4f6d', 4); WANT.stars = 0; WANT.heat = 0; for (const c of WANT.cops) { const i = TR.veh.indexOf(c); if (i >= 0) retire(c, i); } WANT.cops.length = 0; CAR.damage = 0; cancelJob(); carToRoad(); sirenUpdate(0, 1); }
+function wantedHud(W, H) { if (!WANT.stars) return; const s = '★'.repeat(WANT.stars) + '☆'.repeat(3 - WANT.stars); otext(s, W - 14, 122, 22, Math.floor(G.t * 4) % 2 ? '#ff4f6d' : '#ffd23a', null, 'right', '#0a1028', 3); }
+
 // ===================== the game: boot, the loop, the HUD =====================
 const G = { mode: 'title', paused: false, t: 0, speed: 1, halt: false, bootMs: null, fps: 60 };
-const SET = Object.assign({ quality: 'high', ctrl: 'tilt', auto: true, sfx: 0.9, music: 0.5, sens: 22 }, (() => { try { return JSON.parse(localStorage.getItem('kh.settings') || '{}'); } catch (e) { return {}; } })());
+const SET = Object.assign({ quality: 'high', ctrl: 'tilt', auto: true, sfx: 0.9, music: 0.5, sens: 22, police: false, jobs: true }, (() => { try { return JSON.parse(localStorage.getItem('kh.settings') || '{}'); } catch (e) { return {}; } })());
 function saveSettings() { try { localStorage.setItem('kh.settings', JSON.stringify(SET)); } catch (e) { /* no storage */ } }
 const hudCanvas = $('hud'), hud = hudCanvas.getContext('2d');
 // anything that goes wrong is written on the screen, so a phone can tell us what happened
@@ -4125,6 +4199,7 @@ function startDrive(carIdx) {
   hudMsg('高雄・港都', '自由行駛・停住時按住煞車就倒車・右上切換視角', '#ffd23a', 3);
 }
 function onPausePressed() { if (G.mode !== 'drive') return; G.paused = !G.paused; if (G.paused) { show('pause'); if (AU.ctx) AU.ctx.suspend(); } else { show(null); if (AU.ctx) AU.ctx.resume(); } }
+function driveEnd() { sirenUpdate(0, 1); WANT.stars = 0; WANT.heat = 0; for (const c of WANT.cops) { const i = TR.veh.indexOf(c); if (i >= 0) retire(c, i); } WANT.cops.length = 0; }
 let lastT = performance.now(), fpsAcc = 0, fpsN = 0;
 function frame(now) {
   requestAnimationFrame(frame);
@@ -4140,7 +4215,7 @@ function tick(dt) {
   controlsUpdate(dt);
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), h = dt / n;
   for (let i = 0; i < n; i++) carStep(h);
-  trafficTick(dt); peopleTick(dt); missionsTick(dt);
+  trafficTick(dt); peopleTick(dt); if (SET.jobs) missionsTick(dt); else if (MIS.active || MIS.avail.length) { MIS.active = null; MIS.avail.length = 0; } wantedTick(dt);
   if (CAR.crashT > 0) CAR.crashT -= dt;
   if (CAR.slipK > 1.05 && Math.abs(CAR.vx) > 3 && Math.random() < 0.6) { r3AddMark(CAR.x - Math.sin(CAR.yaw) * CAR.P.b, CAR.z - Math.cos(CAR.yaw) * CAR.P.b, CAR.yaw, 1); r3AddMark(CAR.x - Math.sin(CAR.yaw) * CAR.P.b, CAR.z - Math.cos(CAR.yaw) * CAR.P.b, CAR.yaw, -1); }
   camUpdate(dt); signalsUpdate();
@@ -4152,7 +4227,7 @@ function tick(dt) {
 }
 function onCarHit(into) { CAMV.shake = Math.min(1, into / 10); if (into > 2.5) sfxCrash(clamp(into / 20, 0.3, 1)); else sfxThud(0.5); }
 function onKerb() { CAMV.shake = Math.max(CAMV.shake, 0.3); sfxThud(0.4); }
-function onPersonHit() { CAMV.shake = Math.max(CAMV.shake, 0.4); sfxThud(0.7); hudMsg('撞到人了！', null, '#ff4f6d', 1.5); }
+function onPersonHit() { CAMV.shake = Math.max(CAMV.shake, 0.4); sfxThud(0.7); hudMsg('撞到人了！', null, '#ff4f6d', 1.5); heatUp(25, '撞到行人'); }
 function render(dt) {
   if (G.mode === 'drive') { r3Update(CAMV.az); r3Frame(CAMV.fp ? 24 : CAMV.view === 'high' ? 10 : 16); drawHud(); }
 }
@@ -4185,7 +4260,7 @@ function drawHud() {
   // the pads
   if (IS_TOUCH) { const P = CTL.pads, T = [...CTL.touches.values()]; pad(P.gas, '油門', T.some((t) => t.kind === 'gas')); pad(P.brake, '煞車', T.some((t) => t.kind === 'brake')); pad(P.hand, '手煞車', T.some((t) => t.kind === 'hand')); if (!C.auto) { pad(P.up, '▲ 升檔', false); pad(P.dn, '▼ 降檔', false); } if (P.steer) { pad(P.steer, CTL.mode === 'tilt' ? '← 滑動也能轉 →' : '← 滑動轉向 →', T.some((t) => t.kind === 'steer')); } }
   pad(CTL.pads.view, { chase: '肩後', cockpit: '座艙', high: '俯視' }[CAMV.view], false); pad(CTL.pads.pause, '∥', false); pad(CTL.pads.horn, '喇叭', false); if (CTL.pads.zero) pad(CTL.pads.zero, '歸零', false);
-  missionsHud(W, H);
+  if (SET.jobs) missionsHud(W, H); wantedHud(W, H);
   // the wheel, so the player sees what the tilt is doing
   { const sx = W * 0.5, sy = H - 92; hud.fillStyle = 'rgba(0,0,0,.35)'; hud.fillRect(sx - 60, sy, 120, 6); hud.fillStyle = '#ffd23a'; hud.fillRect(sx + C.steerIn * 56 - 4, sy - 3, 8, 12); }
   if (CAMV.fp) drawCockpit();
@@ -4203,7 +4278,7 @@ function drawCockpit() {
 }
 // ---------- test hooks ----------
 window.__kh = {
-  G, CAR, CAMV, CTL, MAP, PROPS, R3, SET, CARS, CITY, ATLAS, startDrive, carToRoad, show, carPhysics, groundH, solidsNear, solidAt, nearestRoad, SOL, r3Cull, TR, TRF, PEO, MIS, PRO, turn(ci, i) { return carTurnFrame(CARS[ci], i).toDataURL(); },
+  G, CAR, CAMV, CTL, MAP, PROPS, R3, SET, CARS, CITY, ATLAS, startDrive, carToRoad, show, carPhysics, groundH, solidsNear, solidAt, nearestRoad, SOL, r3Cull, TR, TRF, PEO, MIS, PRO, WANT, heatUp, turn(ci, i) { return carTurnFrame(CARS[ci], i).toDataURL(); },
   halt(on) { G.halt = !!on; }, sim(sec, h) { h = h || 1 / 120; const n = Math.round(sec / h); for (let i = 0; i < n; i++) tick(h); return this.state(); },
   step(dt) { tick(dt); render(dt); return $('gl').toDataURL('image/png'); },
   state() { const C = CAR; return { x: +C.x.toFixed(1), z: +C.z.toFixed(1), yaw: +C.yaw.toFixed(2), kmh: Math.round(C.kmh), vy: +C.vy.toFixed(2), r: +C.r.toFixed(2), rpm: Math.round(C.rpm), gear: C.gear, surf: C.surface, slip: +C.slipK.toFixed(2), dmg: +C.damage.toFixed(2), fps: G.fps }; },
@@ -4252,7 +4327,7 @@ function onUiClick(e) {
   const b = e.target.closest('button'); if (!b) return;
   if (!UI.unlocked) unlock();
   sfxUi();
-  if (b.dataset.go) { if (b.dataset.go === 'title' && G.mode === 'drive') { G.mode = 'title'; engineStop(); } show(b.dataset.go); return; }
+  if (b.dataset.go) { if (b.dataset.go === 'title' && G.mode === 'drive') { G.mode = 'title'; engineStop(); driveEnd(); } show(b.dataset.go); return; }
   switch (b.dataset.act) {
     case 'prev': UI.sel = (UI.sel + CARS.length - 1) % CARS.length; openSelect(); break;
     case 'next': UI.sel = (UI.sel + 1) % CARS.length; openSelect(); break;
@@ -4262,7 +4337,7 @@ function onUiClick(e) {
     case 'resume': onPausePressed(); break;
     case 'road': carToRoad(); onPausePressed(); break;
     case 'recenter': tiltRecenter(); onPausePressed(); break;
-    case 'title': G.mode = 'title'; G.paused = false; engineStop(); show('title'); break;
+    case 'title': G.mode = 'title'; G.paused = false; engineStop(); driveEnd(); show('title'); break;
   }
 }
 // ---------- the showroom ----------
@@ -4299,11 +4374,13 @@ function openSettings() {
     <div class="row"><span class="lbl">方向盤</span><div class="seg" id="seg-ctrl"><button class="btn" data-v="tilt">陀螺儀</button><button class="btn" data-v="touch">觸控滑桿</button></div></div>
     <div class="row"><span class="lbl">變速箱</span><div class="seg" id="seg-auto"><button class="btn" data-v="1">AT 自排</button><button class="btn" data-v="0">MT 手排</button></div></div>
     <div class="row"><span class="lbl">畫質</span><div class="seg" id="seg-q"><button class="btn" data-v="high">高（景深、泛光）</button><button class="btn" data-v="low">省電</button><button class="btn" data-v="off">不要後製</button></div></div>
+    <div class="row"><span class="lbl">任務招牌</span><div class="seg" id="seg-jobs"><button class="btn" data-v="1">顯示</button><button class="btn" data-v="0">關閉（純閒晃）</button></div></div>
+    <div class="row"><span class="lbl">警察</span><div class="seg" id="seg-police"><button class="btn" data-v="1">會來抓</button><button class="btn" data-v="0">不管你</button></div></div>
     <div class="row"><span class="lbl">轉向靈敏</span><div><input class="rng" type="range" min="10" max="40" step="1" value="${SET.sens}" id="rng-sens"><div class="note">傾斜 <span id="v-sens">${SET.sens}</span>° 打滿</div></div></div>
     <div class="actions"><button class="btn" data-act="back">完成</button></div>`;
-  const mark = () => { for (const [id, key] of [['seg-ctrl', 'ctrl'], ['seg-auto', 'auto'], ['seg-q', 'quality']]) for (const b of document.querySelectorAll('#' + id + ' .btn')) b.setAttribute('aria-pressed', String(b.dataset.v) === String(key === 'auto' ? (SET.auto ? 1 : 0) : SET[key]) ? 'true' : 'false'); };
+  const mark = () => { for (const [id, key] of [['seg-ctrl', 'ctrl'], ['seg-auto', 'auto'], ['seg-q', 'quality'], ['seg-jobs', 'jobs'], ['seg-police', 'police']]) for (const b of document.querySelectorAll('#' + id + ' .btn')) b.setAttribute('aria-pressed', String(b.dataset.v) === String(key === 'auto' || key === 'jobs' || key === 'police' ? (SET[key] ? 1 : 0) : SET[key]) ? 'true' : 'false'); };
   mark();
-  $('settings').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'back') { show(G.mode === 'drive' ? 'pause' : 'title'); return; } const seg = b.parentElement.id; if (seg === 'seg-ctrl') SET.ctrl = b.dataset.v; if (seg === 'seg-auto') { SET.auto = b.dataset.v === '1'; CAR.auto = SET.auto; } if (seg === 'seg-q') { SET.quality = b.dataset.v; r3Resize(); } saveSettings(); mark(); CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads(); };
+  $('settings').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'back') { show(G.mode === 'drive' ? 'pause' : 'title'); return; } const seg = b.parentElement.id; if (seg === 'seg-ctrl') SET.ctrl = b.dataset.v; if (seg === 'seg-auto') { SET.auto = b.dataset.v === '1'; CAR.auto = SET.auto; } if (seg === 'seg-q') { SET.quality = b.dataset.v; r3Resize(); } if (seg === 'seg-jobs') SET.jobs = b.dataset.v === '1'; if (seg === 'seg-police') SET.police = b.dataset.v === '1'; saveSettings(); mark(); CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads(); };
   $('rng-sens').oninput = (e) => { SET.sens = +e.target.value; CTL.sens = SET.sens; $('v-sens').textContent = SET.sens; saveSettings(); };
 }
 // the Android app's back button
