@@ -1647,12 +1647,12 @@ function junctionBusy(v, n) {
   if (v.lane.e.K.cls === 0) for (const l of n.lanesIn || []) if (l.e !== v.lane.e && l.e.K.cls > 0) for (const w of l.veh) if (l.len - w.s < 25 && w.v > 2) return true;
   return false;
 }
-function trafficSpawn(r) {
+function trafficSpawn(r, minD) {
   const C = CAR; let tries = 0;
   while (tries++ < 12) {
     const l = TR.lanes[r.int(0, TR.lanes.length - 1)]; if (l.len < 30) continue;
     const s = 8 + r() * (l.len - 16), p = polyAt(l.pts, s), d = Math.hypot(p.x - C.x, p.z - C.z);
-    if (d < 40 || d > TR.near) continue;
+    if (d < (minD || 40) || d > TR.near) continue;
     // not on top of another, and not too dense for the road
     const want = l.e.K.cls >= 3 ? 1 / 45 : l.e.K.cls === 2 ? 1 / 55 : l.e.K.cls === 1 ? 1 / 80 : 1 / 160;
     if (l.veh.length >= Math.max(1, Math.floor(l.len * want))) continue;
@@ -1677,6 +1677,15 @@ function trafficCollide(dt) {
       v.v *= 0.6; if (v.horn <= 0) v.horn = 2; if (typeof sfxHornFar === 'function' && Math.random() < 0.3) sfxHornFar(3);
     }
   }
+}
+
+// at the start of a drive: the traffic already out and about, none of it within sixty metres of the car
+function trafficReset() {
+  for (const v of TR.veh) rm((v.conn || v.lane).veh, v); TR.veh.length = 0;
+  for (const w of PEO.list) w.loop.people--; PEO.list.length = 0;
+  const r = _trr; for (let i = 0; i < TR.max * 0.7; i++) trafficSpawn(r, 60);
+  for (let i = 0; i < PEO.max * 0.7; i++) spawnWalker(_pr);
+  for (let k = 0; k < 90; k++) { for (const l of TR.lanes) if (l.veh.length > 1) l.veh.sort((p, q) => p.s - q.s); for (const v of TR.veh) { v.s += v.v * 0.1; if (v.s >= (v.conn || v.lane).len - 2) v.s = (v.conn || v.lane).len - 2; vehPose(v); } }
 }
 
 // ===================== people: walkers on the pavements, crossing at the lights, stepping out of the car's way =====================
@@ -3867,7 +3876,8 @@ function layoutPads() {
   CTL.pads.brake = { x: W - pw * 2 - 30, y: H - ph * 0.72 - 18, w: pw, h: ph * 0.72 };
   CTL.pads.hand = { x: W - pw * 2 - 30, y: H - ph - 18 - 62, w: pw * 2 + 14, h: 52 };
   CTL.pads.view = { x: W - 64, y: 36, w: 52, h: 40 }; CTL.pads.pause = { x: W - 126, y: 36, w: 52, h: 40 }; CTL.pads.horn = { x: W - 188, y: 36, w: 52, h: 40 }; CTL.pads.zero = CTL.mode === 'tilt' ? { x: W - 262, y: 36, w: 64, h: 40 } : null;
-  CTL.pads.steer = CTL.mode === 'tilt' ? null : { x: 0, y: H * 0.5, w: W * 0.42, h: H * 0.5 };
+  // the slider for the wheel: the left half in touch mode; a smaller strip in tilt mode, as a stand-in when the sensor misbehaves
+  CTL.pads.steer = CTL.mode === 'tilt' ? { x: 14, y: H - 96, w: Math.min(260, W * 0.3), h: 82 } : { x: 0, y: H * 0.5, w: W * 0.42, h: H * 0.5 };
   CTL.pads.up = { x: 18, y: H * 0.2, w: 110, h: 70 }; CTL.pads.dn = { x: 18, y: H * 0.2 + 82, w: 110, h: 70 };
 }
 const inR = (r, x, y) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
@@ -3883,9 +3893,11 @@ function touchDown(id, x, y) {
   if (inR(P.hand, x, y)) { CTL.touches.set(id, { kind: 'hand' }); return; }
   if (!CAR.auto) { if (inR(P.up, x, y)) { carShift(CAR.gear + 1); return; } if (inR(P.dn, x, y)) { carShift(CAR.gear - 1); return; } }
   if (inR(P.steer, x, y)) { CTL.touches.set(id, { kind: 'steer', x0: x }); return; }
-  CTL.touches.set(id, { kind: 'cam', x0: x, last: x }); CAMV.dragging = true;
+  // the camera swings only for a deliberate drag across the top of the screen; a thumb resting lower down does nothing
+  if (y < innerHeight * 0.42) { CTL.touches.set(id, { kind: 'cam', x0: x, last: x, moved: 0 }); return; }
+  CTL.touches.set(id, { kind: 'rest' });
 }
-function touchMove(id, x, y) { const t = CTL.touches.get(id); if (!t) return; if (t.kind === 'steer') t.x = x; if (t.kind === 'cam') { CAMV.off += (x - t.last) * 0.008; t.last = x; } }
+function touchMove(id, x, y) { const t = CTL.touches.get(id); if (!t) return; if (t.kind === 'steer') t.x = x; if (t.kind === 'cam') { t.moved += Math.abs(x - t.last); if (t.moved > 24) { CAMV.off = clamp(CAMV.off + (x - t.last) * 0.0045, -2.6, 2.6); CAMV.dragging = true; } t.last = x; } }
 function touchUp(id) { const t = CTL.touches.get(id); CTL.touches.delete(id); if (t && t.kind === 'cam' && ![...CTL.touches.values()].some((q) => q.kind === 'cam')) CAMV.dragging = false; }
 const glEl = $('gl');
 glEl.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; glEl.setPointerCapture && glEl.setPointerCapture(e.pointerId); touchDown(e.pointerId, e.clientX, e.clientY); e.preventDefault(); });
@@ -3931,7 +3943,10 @@ function controlsUpdate(dt) {
   if (K.ArrowLeft || K.KeyA) steer -= 1; if (K.ArrowRight || K.KeyD) steer += 1;
   if (K.ArrowUp || K.KeyW || K.KeyZ) gas = 1; if (K.ArrowDown || K.KeyS || K.KeyX) brake = 1; if (K.Space) hand = 1;
   for (const t of CTL.touches.values()) { if (t.kind === 'gas') gas = 1; if (t.kind === 'brake') brake = 1; if (t.kind === 'hand') hand = 1; if (t.kind === 'steer' && t.x != null) steer = clamp((t.x - t.x0) / 90, -1, 1); }
-  if (CTL.mode === 'tilt' && CTL.tilt.ok && performance.now() - CTL.tilt.last < 600 && ![...CTL.touches.values()].some((t) => t.kind === 'steer')) { const d = -(CTL.tilt.theta - CTL.tilt.zero); steer = Math.abs(d) < 1.2 ? 0 : clamp((d - Math.sign(d) * 1.2) / CTL.sens, -1, 1); }
+  const tiltLive = CTL.mode === 'tilt' && CTL.tilt.ok && performance.now() - CTL.tilt.last < 600;
+  if (tiltLive && ![...CTL.touches.values()].some((t) => t.kind === 'steer')) { const d = -(CTL.tilt.theta - CTL.tilt.zero); steer = Math.abs(d) < 1.2 ? 0 : clamp((d - Math.sign(d) * 1.2) / CTL.sens, -1, 1); }
+  // the sensor has gone quiet: say so once, and point at the slider
+  if (CTL.mode === 'tilt' && !tiltLive && G.mode === 'drive' && G.t > 2) { CTL.tiltDead = (CTL.tiltDead || 0) + dt; if (CTL.tiltDead > 1.5 && !CTL.tiltWarned) { CTL.tiltWarned = true; hudMsg('陀螺儀沒有訊號', '請用左下角的滑桿轉向，或到設定改成觸控', '#ffd23a', 4); } } else CTL.tiltDead = 0;
   // the wheel on a keyboard moves at a finite rate, so a tap is a nudge and a hold is full lock
   const analog = CTL.mode === 'tilt' && CTL.tilt.ok || [...CTL.touches.values()].some((t) => t.kind === 'steer');
   if (analog) CTL.steerT = steer; else { const rate = (K.ArrowLeft || K.ArrowRight || K.KeyA || K.KeyD) ? 3.5 : 8; CTL.steerT += clamp(steer - CTL.steerT, -rate * dt, rate * dt); }
@@ -3974,7 +3989,9 @@ function boot() {
 function startDrive(carIdx) {
   carSetup(CARS[carIdx], SET.auto);
   // 中山路 just south of 美麗島, in the northbound lanes
-  const L = MAP.landmarks.美麗島; CAR.x = L[0] + 5; CAR.z = L[1] + 90; CAR.yaw = Math.PI; CAR.y = groundH(CAR.x, CAR.z); CAR.vyv = 0;
+  const L = MAP.landmarks.美麗島; CAR.x = L[0] + 5.95; CAR.z = L[1] + 90; CAR.yaw = Math.PI; CAR.y = groundH(CAR.x, CAR.z); CAR.vyv = 0;
+  // the streets are already busy when we set off, but nothing right beside us
+  trafficReset();
   r3CarSet(CARS[carIdx]); camReset();
   CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads(); setTimeout(tiltRecenter, 300);
   G.mode = 'drive'; G.paused = false; show(null);
@@ -4033,12 +4050,12 @@ function drawHud() {
   // the road we are on
   { const n = nearestRoad(C.x, C.z, C.y); if (n && n.d < n.e.w / 2 + 6 && n.e.rd.name) otext(n.e.rd.name, 14, 74, 16, '#fff3dc', { family: '"Noto Sans TC",sans-serif' }, 'left', '#0a1028', 3); }
   // the minimap, bottom left
-  const ms = Math.min(150, H * 0.32), mx = 14, my = H - ms - 14; hud.save(); rrect(mx, my, ms, ms, 10); hud.clip(); hud.globalAlpha = 0.85; hud.drawImage(HUD.minimap, mx, my, ms, ms); hud.globalAlpha = 1;
+  const ms = Math.min(150, H * 0.3), mx = 14, my = H - ms - (CTL.mode === 'tilt' ? 104 : 14); hud.save(); rrect(mx, my, ms, ms, 10); hud.clip(); hud.globalAlpha = 0.85; hud.drawImage(HUD.minimap, mx, my, ms, ms); hud.globalAlpha = 1;
   const k = ms / MAP.W, cx = mx + C.x * k, cz = my + C.z * k; hud.fillStyle = '#ff4f6d'; hud.beginPath(); hud.arc(cx, cz, 4, 0, TAU); hud.fill(); hud.strokeStyle = '#fff'; hud.lineWidth = 1.5; hud.beginPath(); hud.moveTo(cx, cz); hud.lineTo(cx + Math.sin(C.yaw) * 10, cz + Math.cos(C.yaw) * 10); hud.stroke(); hud.restore();
   // messages
   let y = H * 0.3; for (const m of HUD.msgs) { hud.globalAlpha = m.t < 0.15 ? m.t / 0.15 : m.t > m.dur - 0.3 ? (m.dur - m.t) / 0.3 : 1; otext(m.text, W / 2, y, 30, m.col, { family: '"Noto Sans TC",sans-serif' }, 'center', '#0a1028', 4); if (m.sub) otext(m.sub, W / 2, y + 24, 15, '#fff3dc', { family: '"Noto Sans TC",sans-serif' }, 'center', '#0a1028', 2); hud.globalAlpha = 1; y += 60; }
   // the pads
-  if (IS_TOUCH) { const P = CTL.pads, T = [...CTL.touches.values()]; pad(P.gas, '油門', T.some((t) => t.kind === 'gas')); pad(P.brake, '煞車', T.some((t) => t.kind === 'brake')); pad(P.hand, '手煞車', T.some((t) => t.kind === 'hand')); if (!C.auto) { pad(P.up, '▲ 升檔', false); pad(P.dn, '▼ 降檔', false); } if (P.steer) { pad(P.steer, '← 滑動轉向 →', false); } }
+  if (IS_TOUCH) { const P = CTL.pads, T = [...CTL.touches.values()]; pad(P.gas, '油門', T.some((t) => t.kind === 'gas')); pad(P.brake, '煞車', T.some((t) => t.kind === 'brake')); pad(P.hand, '手煞車', T.some((t) => t.kind === 'hand')); if (!C.auto) { pad(P.up, '▲ 升檔', false); pad(P.dn, '▼ 降檔', false); } if (P.steer) { pad(P.steer, CTL.mode === 'tilt' ? '← 滑動也能轉 →' : '← 滑動轉向 →', T.some((t) => t.kind === 'steer')); } }
   pad(CTL.pads.view, { chase: '肩後', cockpit: '座艙', high: '俯視' }[CAMV.view], false); pad(CTL.pads.pause, '∥', false); pad(CTL.pads.horn, '喇叭', false); if (CTL.pads.zero) pad(CTL.pads.zero, '歸零', false);
   // the wheel, so the player sees what the tilt is doing
   { const sx = W * 0.5, sy = H - 92; hud.fillStyle = 'rgba(0,0,0,.35)'; hud.fillRect(sx - 60, sy, 120, 6); hud.fillStyle = '#ffd23a'; hud.fillRect(sx + C.steerIn * 56 - 4, sy - 3, 8, 12); }
