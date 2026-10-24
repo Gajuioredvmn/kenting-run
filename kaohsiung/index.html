@@ -1910,7 +1910,7 @@ function layoutPads() {
   CTL.pads.gas = { x: W - pw - 18, y: H - ph - 22, w: pw, h: ph };
   CTL.pads.brake = { x: W - pw * 2 - 34, y: H - ph * 0.72 - 22, w: pw, h: ph * 0.72 };
   CTL.pads.hand = { x: W - pw * 2 - 34, y: H - ph - 22 - 60, w: pw * 2 + 16, h: 48 };
-  CTL.pads.view = { x: W - 64, y: 36, w: 52, h: 40 }; CTL.pads.pause = { x: W - 126, y: 36, w: 52, h: 40 }; CTL.pads.horn = { x: W - 188, y: 36, w: 52, h: 40 };
+  CTL.pads.view = { x: W - 64, y: 36, w: 52, h: 40 }; CTL.pads.pause = { x: W - 126, y: 36, w: 52, h: 40 }; CTL.pads.horn = { x: W - 188, y: 36, w: 52, h: 40 }; CTL.pads.zero = CTL.mode === 'tilt' ? { x: W - 262, y: 36, w: 64, h: 40 } : null;
   CTL.pads.steer = CTL.mode === 'tilt' ? null : { x: 0, y: H * 0.5, w: W * 0.42, h: H * 0.5 };
   CTL.pads.up = { x: 18, y: H * 0.2, w: 110, h: 70 }; CTL.pads.dn = { x: 18, y: H * 0.2 + 82, w: 110, h: 70 };
 }
@@ -1921,6 +1921,7 @@ function touchDown(id, x, y) {
   if (inR(P.pause, x, y)) { onPausePressed(); return; }
   if (inR(P.view, x, y)) { CAMV.fp = !CAMV.fp; return; }
   if (inR(P.horn, x, y)) { CTL.touches.set(id, { kind: 'horn' }); sfxHorn(); return; }
+  if (inR(P.zero, x, y)) { tiltRecenter(); hudMsg('方向盤歸零', null, '#7cf26a', 1); return; }
   if (inR(P.gas, x, y)) { CTL.touches.set(id, { kind: 'gas' }); return; }
   if (inR(P.brake, x, y)) { CTL.touches.set(id, { kind: 'brake' }); return; }
   if (inR(P.hand, x, y)) { CTL.touches.set(id, { kind: 'hand' }); return; }
@@ -1948,7 +1949,9 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => { CTL.keys[e.code] = false; });
 // ---------- tilt: the phone held in landscape and turned like a steering wheel (gravity from the motion sensor) ----------
 function tiltAngle(ax, ay) {
-  const ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+  let ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (typeof window.orientation === 'number' ? window.orientation : null);
+  // no orientation API (some WebViews): in landscape the gravity runs along the phone's long axis, and its sign says which way round
+  if (ang == null || (innerWidth > innerHeight && ang === 0)) ang = innerWidth > innerHeight ? (ax < 0 ? 90 : 270) : 0;
   let r, u; if (ang === 90) { r = -ay; u = ax; } else if (ang === 270 || ang === -90) { r = ay; u = -ax; } else { r = ax; u = ay; }
   return Math.atan2(r, u) / D2R;
 }
@@ -1963,7 +1966,8 @@ async function tiltInit() {
   try { if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') { const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted') return; } } catch (e) { return; }
   addEventListener('devicemotion', onMotion);
 }
-function tiltRecenter() { CTL.tilt.zero = CTL.tilt.raw; }
+function tiltRecenter() { CTL.tilt.zero = CTL.tilt.raw; CTL.tilt.theta = CTL.tilt.raw; }
+addEventListener('orientationchange', () => setTimeout(tiltRecenter, 600));
 function controlsUpdate(dt) {
   const K = CTL.keys, C = CAR;
   let steer = 0, gas = 0, brake = 0, hand = 0;
@@ -2009,7 +2013,7 @@ function startDrive(carIdx) {
   carSetup(CARS[carIdx], SET.auto);
   const n = nearestRoad(1180, 1370); CAR.x = n.x; CAR.z = n.z; CAR.yaw = n.yaw; CAR.y = terrainH(CAR.x, CAR.z);
   r3CarSet(CARS[carIdx]); camReset();
-  CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads();
+  CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads(); setTimeout(tiltRecenter, 300);
   G.mode = 'drive'; G.paused = false; show(null);
   if (AU.ctx) engineStart(CARS[carIdx].engine);
   hudMsg('高雄・港都', '自由行駛・停住時按住煞車就倒車', '#ffd23a', 3);
@@ -2064,7 +2068,9 @@ function drawHud() {
   let y = H * 0.3; for (const m of HUD.msgs) { hud.globalAlpha = m.t < 0.15 ? m.t / 0.15 : m.t > m.dur - 0.3 ? (m.dur - m.t) / 0.3 : 1; otext(m.text, W / 2, y, 30, m.col, { family: '"Noto Sans TC",sans-serif' }, 'center', '#0a1028', 4); if (m.sub) otext(m.sub, W / 2, y + 24, 15, '#fff3dc', { family: '"Noto Sans TC",sans-serif' }, 'center', '#0a1028', 2); hud.globalAlpha = 1; y += 60; }
   // the pads
   if (IS_TOUCH) { const P = CTL.pads, T = [...CTL.touches.values()]; pad(P.gas, '油門', T.some((t) => t.kind === 'gas')); pad(P.brake, '煞車', T.some((t) => t.kind === 'brake')); pad(P.hand, '手煞車', T.some((t) => t.kind === 'hand')); if (!C.auto) { pad(P.up, '▲ 升檔', false); pad(P.dn, '▼ 降檔', false); } if (P.steer) { pad(P.steer, '← 滑動轉向 →', false); } }
-  pad(CTL.pads.view, CAMV.fp ? '座艙' : '車後', false); pad(CTL.pads.pause, '∥', false); pad(CTL.pads.horn, '喇叭', false);
+  pad(CTL.pads.view, CAMV.fp ? '座艙' : '車後', false); pad(CTL.pads.pause, '∥', false); pad(CTL.pads.horn, '喇叭', false); if (CTL.pads.zero) pad(CTL.pads.zero, '歸零', false);
+  // the wheel, so the player sees what the tilt is doing
+  { const sx = W * 0.5, sy = H - 92; hud.fillStyle = 'rgba(0,0,0,.35)'; hud.fillRect(sx - 60, sy, 120, 6); hud.fillStyle = '#ffd23a'; hud.fillRect(sx + C.steerIn * 56 - 4, sy - 3, 8, 12); }
   if (CAMV.fp) drawCockpit();
 }
 // the driver's seat: the dash across the bottom, the wheel turning with the steering, the gauges
