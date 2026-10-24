@@ -1168,7 +1168,7 @@ function lampBox(ctx, q) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (co
 // World units are metres, y up. The square runs x 0..W (west→east), z 0..W (north→south). The harbour and the sea lie to
 // the west and south-west, 柴山 rises in the north-west, the grid of the old city fills the middle, 愛河 cuts down
 // through it to the harbour. Roads are polylines with a width and a kind; the ground is one big pixel picture.
-const MAP = { W: 2400, px: 0.6, roads: [], water: [], sand: [], parks: [], props: [], ground: null, kind: null, kindW: 0, name: '高雄・港都' };
+const MAP = { W: 2400, px: 0.75, roads: [], water: [], sand: [], parks: [], props: [], ground: null, kind: null, kindW: 0, name: '高雄・港都' };
 const RK = { boulevard: { w: 22, lanes: 6, kerb: true }, street: { w: 12, lanes: 2, kerb: true }, lane: { w: 7, lanes: 2, kerb: false }, highway: { w: 20, lanes: 4, kerb: false, barrier: true }, hill: { w: 8, lanes: 2, kerb: false }, quay: { w: 14, lanes: 2, kerb: false } };
 // ground kinds, one byte per metre, for the tyres: what the car is rolling on
 const GK = { asphalt: 0, grass: 1, sand: 2, water: 3, gravel: 4, concrete: 5, kerb: 6 };
@@ -1612,17 +1612,22 @@ function carStep(dt) {
   const vfwd = Math.max(0, C.vx), lockK = 1 / (1 + vfwd * vfwd / 900);
   const target = C.steerIn * P.steerMax * (0.35 + 0.65 * lockK);
   C.steer += clamp(target - C.steer, -P.steerRate * dt, P.steerRate * dt);
+  // ---- reverse: standing still, the brake pedal held with no throttle puts it in R; the throttle takes it back to 1 ----
+  if (Math.abs(C.vx) < 0.4) { if (C.brake > 0.3 && C.throttle < 0.05) { C.revT = (C.revT || 0) + dt; if (C.revT > 0.35) C.rev = true; } else C.revT = 0; if (C.throttle > 0.3 && C.brake < 0.05) C.rev = false; }
+  let th = C.throttle, br = C.brake;
+  if (C.rev) { th = C.brake; br = C.throttle; }   // in reverse the pedals swap roles: the brake pedal is the reverse throttle
   // ---- gearbox ----
   if (C.shiftT > 0) C.shiftT -= dt;
-  const ratio = P.ratios[C.gear - 1] * P.final;
-  const wheelRpm = (C.vx / P.rw) * 60 / TAU, rpmFromWheels = wheelRpm * ratio;
+  const ratio = (C.rev ? -P.ratios[0] * 1.1 : P.ratios[C.gear - 1]) * P.final;
+  const wheelRpm = (Math.abs(C.vx) / P.rw) * 60 / TAU, rpmFromWheels = wheelRpm * Math.abs(ratio);
   // the clutch is out except during a shift; pulling away the engine sits near the idle until the wheels catch up
   const clutchIn = C.shiftT > 0;
-  if (clutchIn) C.rpm = lerp(C.rpm, P.idle + C.throttle * (P.red * 0.8 - P.idle), clamp(dt * 7, 0, 1));
-  else C.rpm = lerp(C.rpm, Math.max(P.idle + C.throttle * 900 * clamp(1 - C.vx / 4, 0, 1), rpmFromWheels), clamp(dt * 30, 0, 1));
+  if (clutchIn) C.rpm = lerp(C.rpm, P.idle + th * (P.red * 0.8 - P.idle), clamp(dt * 7, 0, 1));
+  else C.rpm = lerp(C.rpm, Math.max(P.idle + th * 900 * clamp(1 - Math.abs(C.vx) / 4, 0, 1), rpmFromWheels), clamp(dt * 30, 0, 1));
   C.rpm = clamp(C.rpm, P.idle * 0.6, P.red * 1.03);
-  if (C.auto && C.shiftT <= 0 && C.vx > 2) { if (C.rpm > P.red * 0.96 && C.gear < P.ratios.length) carShift(C.gear + 1); else if (C.rpm < P.red * 0.42 && C.gear > 1 && C.throttle < 0.95) carShift(C.gear - 1); else if (C.rpm < P.red * 0.3 && C.gear > 1) carShift(C.gear - 1); }
-  const Teng = clutchIn ? 0 : engineTorque(P, C.rpm, C.throttle);
+  if (C.auto && !C.rev && C.shiftT <= 0 && C.vx > 2) { if (C.rpm > P.red * 0.96 && C.gear < P.ratios.length) carShift(C.gear + 1); else if (C.rpm < P.red * 0.42 && C.gear > 1 && th < 0.95) carShift(C.gear - 1); else if (C.rpm < P.red * 0.3 && C.gear > 1) carShift(C.gear - 1); }
+  if (C.rev && C.gear !== 1) C.gear = 1;
+  const Teng = clutchIn ? 0 : engineTorque(P, C.rpm, th);
   const Fdrive = (Teng * ratio) / P.rw;
   // ---- loads: static split, then the transfer from acceleration (last step's) ----
   const g = 9.81, Wt = P.m * g, FzF0 = Wt * P.b / P.L, FzR0 = Wt * P.a / P.L;
@@ -1632,10 +1637,10 @@ function carStep(dt) {
   const vxs = Math.max(Math.abs(C.vx), 1.5) * Math.sign(C.vx || 1);
   const aF = Math.atan2(C.vy + P.a * C.r, vxs) - C.steer, aR = Math.atan2(C.vy - P.b * C.r, vxs);
   // ---- longitudinal demand per axle: drive on the driven axle, brakes on both (60/40), handbrake locks the rear ----
-  const Fb = P.brakeF * C.brake;
+  const Fb = P.brakeF * br * (C.vx < 0 ? -1 : 1);
   let FxF = -Fb * 0.62, FxR = -Fb * 0.38;
   if (P.drive === 'rwd') FxR += Fdrive; else if (P.drive === 'fwd') FxF += Fdrive; else { FxF += Fdrive * 0.4; FxR += Fdrive * 0.6; }
-  if (C.vx < 0.3 && FxF + FxR < 0 && C.throttle < 0.05) { FxF = FxR = 0; }   // brakes hold a standing car, they do not pull it backwards
+  if (Math.abs(C.vx) < 0.3 && th < 0.05 && br > 0) { FxF = FxR = 0; }   // brakes hold a standing car, they do not pull it the other way
   // the demand becomes a slip ratio the tyre curve answers: a saturated tyre spins or locks, and gives less
   const muF = P.mu * C.mu, muR = P.mu * C.mu;
   const kF = clamp(FxF / Math.max(1, muF * FzF * P.cs * 2.2), -1.2, 1.2), kR = C.hand > 0.5 ? -1.5 : clamp(FxR / Math.max(1, muR * FzR * P.cs * 2.2), -1.2, 1.2);
@@ -1655,13 +1660,14 @@ function carStep(dt) {
   // at a crawl the slip model loses meaning: blend toward the kinematic bicycle (the rear axle rolls without slip)
   const slow = clamp(1 - Math.abs(C.vx) / 4, 0, 1);
   if (slow > 0) { const rk = (C.vx * Math.tan(C.steer)) / P.L, vyk = rk * P.b; C.r = lerp(C.r, rk, slow); C.vy = lerp(C.vy, vyk, slow); }
-  if (Math.abs(C.vx) < 0.15 && C.throttle < 0.05) { C.vx = 0; C.vy = 0; C.r = 0; }
+  if (Math.abs(C.vx) < 0.15 && th < 0.05) { C.vx = 0; C.vy = 0; C.r = 0; }
   // ---- integrate the pose ----
   C.yaw += C.r * dt;
   const sy = Math.sin(C.yaw), cy = Math.cos(C.yaw);
   C.x += (C.vx * sy + C.vy * cy) * dt; C.z += (C.vx * cy - C.vy * sy) * dt;
   C.y = terrainH(C.x, C.z);
   C.kmh = Math.abs(C.vx) * 3.6;
+  if (C.rev && C.vx > 1) C.rev = false;
   // a smear of the tyre marks the renderer lays down
   if (C.slipK > 1.05 && Math.abs(C.vx) > 3) { C.trail.push([C.x, C.z, C.yaw, 1]); if (C.trail.length > 400) C.trail.shift(); }
   // the world's edges and the water: a hard stop at the map's rim, a drowning drag in the water
@@ -1730,7 +1736,8 @@ function r3Init() {
   scene.fog = new THREE.Fog(R3.tod.fog, 260, 1100); scene.background = new THREE.Color(R3.tod.sky);
   R3.cam = new THREE.PerspectiveCamera(42, 16 / 9, 0.5, 2200);
   r3Ground(); r3Props(); r3Shadow(); r3Marks();
-  r3Post();
+  // the finish needs a depth texture: WebGL2 (every modern phone); otherwise the plain picture
+  if (rd.capabilities.isWebGL2) { try { r3Post(); } catch (e) { R3.post = null; reportErr('post: ' + e.message); } } else R3.postOff = 'WebGL1';
   r3Resize();
   addEventListener('resize', r3Resize);
 }
@@ -1838,7 +1845,11 @@ function r3PostResize() {
 function r3Pass(mat, from, to, dir, w, h) { const P = R3.post; mat.uniforms.tex.value = from.texture; if (dir) mat.uniforms.dir.value.set(dir[0] / w, dir[1] / h); P.quad.material = mat; R3.renderer.setRenderTarget(to); R3.renderer.render(P.scene, P.cam); }
 function r3Frame(focusDist) {
   const rd = R3.renderer, P = R3.post;
-  if (!P || SET.quality === 'off') { rd.setRenderTarget(null); rd.render(R3.scene, R3.cam); return; }
+  if (!P || SET.quality === 'off' || R3.postFail) { rd.setRenderTarget(null); rd.render(R3.scene, R3.cam); return; }
+  try { r3FrameFX(focusDist); } catch (e) { R3.postFail = true; reportErr('fx: ' + e.message); rd.setRenderTarget(null); rd.render(R3.scene, R3.cam); }
+}
+function r3FrameFX(focusDist) {
+  const rd = R3.renderer, P = R3.post;
   rd.setRenderTarget(P.rt); rd.render(R3.scene, R3.cam);
   const w2 = R3.w >> 1, h2 = R3.h >> 1, w4 = R3.w >> 2, h4 = R3.h >> 2;
   r3Pass(P.blur, P.rt, P.a, [1.0, 0], w2, h2); r3Pass(P.blur, P.a, P.b, [0, 1.0], w2, h2); r3Pass(P.blur, P.b, P.a, [1.6, 0], w2, h2); r3Pass(P.blur, P.a, P.b, [0, 1.6], w2, h2);
@@ -1893,7 +1904,7 @@ function camUpdate(dt) {
 
 // ===================== controls: tilt or a slider for the wheel, pedals on the right, a drag to swing the camera =====================
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-const CTL = { keys: {}, touches: new Map(), mode: 'touch', tilt: { ok: false, g: 0, zero: 0 }, pads: {}, steerT: 0, sens: 22, hand: 0, horn: 0 };
+const CTL = { keys: {}, touches: new Map(), mode: 'touch', tilt: { ok: false, asked: false, theta: 0, zero: 0, last: 0, raw: 0 }, pads: {}, steerT: 0, sens: 22, hand: 0, horn: 0 };
 function layoutPads() {
   const W = innerWidth, H = innerHeight, pw = Math.min(118, W * 0.11), ph = Math.min(H * 0.5, 220);
   CTL.pads.gas = { x: W - pw - 18, y: H - ph - 22, w: pw, h: ph };
@@ -1935,21 +1946,34 @@ addEventListener('keydown', (e) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
 });
 addEventListener('keyup', (e) => { CTL.keys[e.code] = false; });
-// tilt: the phone's roll becomes the wheel; asked for on the first tap (iOS wants a gesture)
-function tiltInit() {
-  const on = () => { addEventListener('deviceorientation', (e) => { const land = Math.abs(innerWidth > innerHeight ? 1 : 0); let g = e.beta == null ? 0 : (land ? e.beta : e.gamma); if (land && (screen.orientation && /secondary/.test(screen.orientation.type))) g = -g; CTL.tilt.g = g; CTL.tilt.ok = true; }); };
-  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then((r) => { if (r === 'granted') on(); }).catch(() => {}); else on();
+// ---------- tilt: the phone held in landscape and turned like a steering wheel (gravity from the motion sensor) ----------
+function tiltAngle(ax, ay) {
+  const ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+  let r, u; if (ang === 90) { r = -ay; u = ax; } else if (ang === 270 || ang === -90) { r = ay; u = -ax; } else { r = ax; u = ay; }
+  return Math.atan2(r, u) / D2R;
 }
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+  const th = tiltAngle(a.x, a.y);
+  CTL.tilt.raw = th; CTL.tilt.theta = lerp(CTL.tilt.theta || th, th, 0.35); CTL.tilt.last = performance.now();
+  if (!CTL.tilt.ok) { CTL.tilt.ok = true; CTL.tilt.zero = th; if (SET.ctrl === 'tilt') { CTL.mode = 'tilt'; layoutPads(); } }
+}
+async function tiltInit() {
+  if (CTL.tilt.asked) return; CTL.tilt.asked = true;
+  try { if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') { const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted') return; } } catch (e) { return; }
+  addEventListener('devicemotion', onMotion);
+}
+function tiltRecenter() { CTL.tilt.zero = CTL.tilt.raw; }
 function controlsUpdate(dt) {
   const K = CTL.keys, C = CAR;
   let steer = 0, gas = 0, brake = 0, hand = 0;
   if (K.ArrowLeft || K.KeyA) steer -= 1; if (K.ArrowRight || K.KeyD) steer += 1;
   if (K.ArrowUp || K.KeyW || K.KeyZ) gas = 1; if (K.ArrowDown || K.KeyS || K.KeyX) brake = 1; if (K.Space) hand = 1;
   for (const t of CTL.touches.values()) { if (t.kind === 'gas') gas = 1; if (t.kind === 'brake') brake = 1; if (t.kind === 'hand') hand = 1; if (t.kind === 'steer' && t.x != null) steer = clamp((t.x - t.x0) / 90, -1, 1); }
-  if (CTL.mode === 'tilt' && CTL.tilt.ok && ![...CTL.touches.values()].some((t) => t.kind === 'steer')) steer = clamp((CTL.tilt.g - CTL.tilt.zero) / CTL.sens, -1, 1);
+  if (CTL.mode === 'tilt' && CTL.tilt.ok && performance.now() - CTL.tilt.last < 600 && ![...CTL.touches.values()].some((t) => t.kind === 'steer')) { const d = -(CTL.tilt.theta - CTL.tilt.zero); steer = Math.abs(d) < 1.2 ? 0 : clamp((d - Math.sign(d) * 1.2) / CTL.sens, -1, 1); }
   // the wheel on a keyboard moves at a finite rate, so a tap is a nudge and a hold is full lock
-  const rate = (K.ArrowLeft || K.ArrowRight || K.KeyA || K.KeyD) ? 3.5 : 8;
-  CTL.steerT += clamp(steer - CTL.steerT, -rate * dt, rate * dt);
+  const analog = CTL.mode === 'tilt' && CTL.tilt.ok || [...CTL.touches.values()].some((t) => t.kind === 'steer');
+  if (analog) CTL.steerT = steer; else { const rate = (K.ArrowLeft || K.ArrowRight || K.KeyA || K.KeyD) ? 3.5 : 8; CTL.steerT += clamp(steer - CTL.steerT, -rate * dt, rate * dt); }
   C.steerIn = CTL.steerT; C.throttle = gas; C.brake = brake; C.hand = hand;
 }
 // back onto the nearest road, facing along it: for when the car ends up in the harbour or wedged somewhere
@@ -1960,6 +1984,10 @@ const G = { mode: 'title', paused: false, t: 0, speed: 1, halt: false, bootMs: n
 const SET = Object.assign({ quality: 'high', ctrl: 'tilt', auto: true, sfx: 0.9, music: 0.5, sens: 22 }, (() => { try { return JSON.parse(localStorage.getItem('kh.settings') || '{}'); } catch (e) { return {}; } })());
 function saveSettings() { try { localStorage.setItem('kh.settings', JSON.stringify(SET)); } catch (e) { /* no storage */ } }
 const hudCanvas = $('hud'), hud = hudCanvas.getContext('2d');
+// anything that goes wrong is written on the screen, so a phone can tell us what happened
+const ERRS = [];
+function reportErr(m) { ERRS.push(String(m).slice(0, 160)); if (ERRS.length > 6) ERRS.shift(); const el = $('errbox') || document.body.appendChild(h('<div id="errbox" style="position:fixed;left:8px;top:60px;z-index:50;max-width:70vw;font:12px monospace;color:#ff8aa0;background:rgba(0,0,0,.6);padding:6px;border-radius:6px;pointer-events:none;white-space:pre-wrap"></div>')); el.textContent = ERRS.join('\n'); }
+addEventListener('error', (e) => reportErr(e.message + ' @' + (e.lineno || ''))); addEventListener('unhandledrejection', (e) => reportErr('promise: ' + (e.reason && e.reason.message || e.reason)));
 const HUD = { show: true, msgs: [], minimap: null };
 function hudMsg(text, sub, col, dur) { HUD.msgs.push({ text, sub, col: col || '#ffd23a', t: 0, dur: dur || 2 }); if (HUD.msgs.length > 3) HUD.msgs.shift(); }
 function hudResize() { const r = Math.min(2, devicePixelRatio || 1); hudCanvas.width = Math.round(innerWidth * r); hudCanvas.height = Math.round(innerHeight * r); hud.setTransform(r, 0, 0, r, 0, 0); layoutPads(); }
@@ -1969,7 +1997,8 @@ function boot() {
   const t0 = performance.now();
   paintProps(); buildMap(); placeProps();
   const t1 = performance.now();
-  r3Init(); hudResize();
+  try { r3Init(); } catch (e) { reportErr('WebGL: ' + e.message); }
+  hudResize();
   G.bootMs = { paint: Math.round(t1 - t0), gl: Math.round(performance.now() - t1) };
   HUD.minimap = canvas(200, 200); const g = HUD.minimap.getContext('2d'); g.drawImage(MAP.ground, 0, 0, 200, 200);
   uiInit();
@@ -1983,7 +2012,7 @@ function startDrive(carIdx) {
   CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads();
   G.mode = 'drive'; G.paused = false; show(null);
   if (AU.ctx) engineStart(CARS[carIdx].engine);
-  hudMsg('高雄・港都', '自由行駛　按 R 回到路上', '#ffd23a', 3);
+  hudMsg('高雄・港都', '自由行駛・停住時按住煞車就倒車', '#ffd23a', 3);
 }
 function onPausePressed() { if (G.mode !== 'drive') return; G.paused = !G.paused; if (G.paused) { show('pause'); if (AU.ctx) AU.ctx.suspend(); } else { show(null); if (AU.ctx) AU.ctx.resume(); } }
 let lastT = performance.now(), fpsAcc = 0, fpsN = 0;
@@ -2020,7 +2049,7 @@ function drawHud() {
   if (!HUD.show) return;
   // speed and gear, bottom centre-right
   otext(String(Math.round(C.kmh)), W * 0.5 + 60, H - 28, 44, '#ffffff', null, 'right', '#0a1028', 4); otext('km/h', W * 0.5 + 66, H - 28, 14, '#ffd23a', null, 'left', '#0a1028', 2);
-  otext((C.auto ? 'AT ' : 'MT ') + C.gear, W * 0.5 - 70, H - 28, 22, '#9ad0ff', null, 'right', '#0a1028', 3);
+  otext((C.auto ? 'AT ' : 'MT ') + (C.rev ? 'R' : C.gear), W * 0.5 - 70, H - 28, 22, '#9ad0ff', null, 'right', '#0a1028', 3);
   // the rev bar
   const r = clamp(C.rpm / C.P.red, 0, 1.05), bx = W * 0.5 - 70, by = H - 18, bw = 136; hud.fillStyle = 'rgba(0,0,0,.4)'; hud.fillRect(bx, by, bw, 6); hud.fillStyle = r > 0.92 ? '#ff4f6d' : '#7cf26a'; hud.fillRect(bx, by, bw * Math.min(1, r), 6);
   // what the tyres are doing
@@ -2082,7 +2111,7 @@ function uiInit() {
     </div>
   </section>
   <section class="scr dim" id="s-settings" hidden><div class="panel card" id="settings"></div></section>
-  <section class="scr dim" id="s-pause" hidden><div class="panel vmenu"><h2 class="ttl" style="text-align:center">暫停</h2><button class="btn big" data-act="resume">繼續</button><button class="btn" data-act="road">回到路上</button><button class="btn" data-go="settings">設定</button><button class="btn ghost" data-act="title">回標題</button></div></section>`;
+  <section class="scr dim" id="s-pause" hidden><div class="panel vmenu"><h2 class="ttl" style="text-align:center">暫停</h2><button class="btn big" data-act="resume">繼續</button><button class="btn" data-act="road">回到路上</button><button class="btn" data-act="recenter">方向盤歸零</button><button class="btn" data-go="settings">設定</button><button class="btn ghost" data-act="title">回標題</button></div></section>`;
   document.body.appendChild(h('<div id="rot" class="need"><div style="font-size:44px">⟲</div>請把手機轉成橫向</div>'));
   root.addEventListener('click', onUiClick);
   $('s-title').addEventListener('pointerdown', unlock);
@@ -2107,6 +2136,7 @@ function onUiClick(e) {
     case 'go': startDrive(UI.sel); break;
     case 'resume': onPausePressed(); break;
     case 'road': carToRoad(); onPausePressed(); break;
+    case 'recenter': tiltRecenter(); onPausePressed(); break;
     case 'title': G.mode = 'title'; G.paused = false; engineStop(); show('title'); break;
   }
 }
