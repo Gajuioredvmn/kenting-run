@@ -2,3 +2,8 @@ android/app/src/main/assets/
 android/app/build/
 android/.gradle/
 android/build/
+
+android-kh/app/src/main/assets/
+android-kh/app/build/
+android-kh/.gradle/
+android-kh/build/
