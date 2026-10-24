@@ -1520,6 +1520,8 @@ function buildLanes() {
   }
   // which signal phase each lane's end belongs to, as the lights were laid out
   for (const l of TR.lanes) { const n = l.to; if (!n.lit) continue; const o = n.out.find((q) => q.e === l.e); const a0 = n.out[0].ang, dAng = Math.abs(angWrap(o.ang - a0)); l.phase = (dAng < Math.PI / 4 || dAng > 3 * Math.PI / 4) ? 0 : 1; }
+  // the bus stops beside the kerb-side lanes
+  for (const b of BUSSTOPS) for (const l of TR.lanes) { if (l.k !== l.nPer - 1) continue; const n = nearestOnPts(l.pts, b.x, b.z); if (n.d < 6 && n.s > 10 && n.s < l.len - 10) { const rx_ = Math.cos(n.yaw), rz_ = -Math.sin(n.yaw); if ((b.x - n.x) * rx_ + (b.z - n.z) * rz_ > 0) (l.stops = l.stops || []).push(n.s); } }
   TR.stats.lanes = TR.lanes.length; TR.stats.conns = TR.conns.length;
 }
 // ---------- vehicles ----------
@@ -1578,6 +1580,11 @@ function trafficTick(dt) {
       if (nxt && nxt.veh.length) { const w = nxt.veh[0]; const g = (path.len - v.s) + w.s - (w.L + v.L) / 2; if (g < 60) { gap = g; dv = v.v - w.v; } }
       if (!v.conn && v.nextC && v.nextC.to.veh.length && gap == null) { const w = v.nextC.to.veh[0]; const g = (path.len - v.s) + v.nextC.len + w.s - (w.L + v.L) / 2; if (g < 60) { gap = g; dv = v.v - w.v; } }
     }
+    // a bus pulls in at its stops for a while
+    if (v.type === 'bus' && !v.conn && v.lane.stops) {
+      if (v.dwell > 0) { v.dwell -= dt; gap = 0.05; dv = v.v; }
+      else for (const ss of v.lane.stops) { const g = ss - v.s - v.L / 2; if (g > -1 && g < 40 && v.lastStop !== ss) { if (g < 0.6) { v.dwell = 5 + r() * 4; v.lastStop = ss; } else if (gap == null || g < gap) { gap = Math.max(0.05, g); dv = v.v; } break; } }
+    }
     // the lights, and giving way, at the end of the lane
     if (!v.conn) {
       const n = v.lane.to, rem = v.lane.len - v.s - v.L / 2, stopGap = rem - 1.0;
@@ -1604,6 +1611,8 @@ function trafficTick(dt) {
       if (gap != null && gap < 3 && v.v < 1 && pv < 1) { if (v.horn <= 0 && r() < dt * 0.3) { v.horn = 1.5; sfxHornFar(Math.hypot(dpx, dpz)); } }
     }
     if (v.horn > 0) v.horn -= dt;
+    // the whoosh of something passing close by at speed
+    { const rel = Math.abs(v.v - (phx * Math.sin(v.yaw) + phz * Math.cos(v.yaw))), dd = Math.sqrt(dpx * dpx + dpz * dpz); if (dd < 6 && rel > 8 && !v.passed) { v.passed = true; const side = Math.sign(dpx * (-Math.cos(C.yaw)) * -1 + dpz * Math.sin(C.yaw)); if (typeof sfxPass === 'function') sfxPass(clamp(rel / 30, 0.3, 1), -side, v.type === 'bus' ? 'bus' : v.type === 'truck' ? 'gravel' : 'car'); } else if (dd > 12) v.passed = false; }
     const acc = idm(v, gap, dv);
     v.v = Math.max(0, v.v + clamp(acc, -6, 3) * dt); v.brake = acc < -0.8 ? 1 : 0;
     const vmaxHere = v.conn ? v.conn.vmax : v.lane.vmax; if (v.v > vmaxHere * 1.1) v.v = vmaxHere * 1.1;
@@ -2765,7 +2774,8 @@ function buildFurniture() {
   // the betel-nut stalls on some corners
   for (const n of MAP.nodes) if (n.lit && r() < 0.12) { const o = n.out[r.int(0, n.out.length - 1)], e = o.e, d = o.dir > 0 ? [e.pts[1][0] - e.pts[0][0], e.pts[1][1] - e.pts[0][1]] : [e.pts[e.pts.length - 2][0] - e.pts[e.pts.length - 1][0], e.pts[e.pts.length - 2][1] - e.pts[e.pts.length - 1][1]], L = Math.hypot(d[0], d[1]) || 1, ux = d[0] / L, uz = d[1] / L, x = n.x + ux * (o.trim + 9) + uz * (e.w / 2 + 1.8), z = n.z + uz * (o.trim + 9) - ux * (e.w / 2 + 1.8); if (!inLot(x, z)) betelStall(x, z, Math.atan2(-uz, ux), r); }
 }
-function busStop(x, z, yaw) { const y0 = terrainH(x, z) + 0.14, st = T('steel'), wh = T('white'); box(x, y0, z, yaw, 4, 0.1, 1.6, st, st, st); box(x, y0 + 2.4, z, yaw, 4.2, 0.2, 1.8, wh, wh, T('blue')); for (const s of [-1.9, 1.9]) { const ax = Math.cos(yaw), az = -Math.sin(yaw); box(x + ax * s, y0, z + az * s, yaw, 0.12, 2.4, 0.12, st, st, st); } box(x, y0 + 0.4, z, yaw, 3.6, 0.5, 0.5, T('green'), T('green'), T('green')); addSolid({ x, z, r: 1.4, h: 2.6 }); }
+const BUSSTOPS = [];
+function busStop(x, z, yaw) { BUSSTOPS.push({ x, z, yaw }); const y0 = terrainH(x, z) + 0.14, st = T('steel'), wh = T('white'); box(x, y0, z, yaw, 4, 0.1, 1.6, st, st, st); box(x, y0 + 2.4, z, yaw, 4.2, 0.2, 1.8, wh, wh, T('blue')); for (const s of [-1.9, 1.9]) { const ax = Math.cos(yaw), az = -Math.sin(yaw); box(x + ax * s, y0, z + az * s, yaw, 0.12, 2.4, 0.12, st, st, st); } box(x, y0 + 0.4, z, yaw, 3.6, 0.5, 0.5, T('green'), T('green'), T('green')); addSolid({ x, z, r: 1.4, h: 2.6 }); }
 function betelStall(x, z, yaw, r) { const y0 = terrainH(x, z) + 0.14, t = T('betel' + r.int(0, 2)); box(x, y0, z, yaw, 2.6, 2.6, 2.0, t, T('steel'), T('tin1')); addSolid({ x, z, r: 1.6, h: 2.8 }); }
 function signal(n, o) {
   const e = o.e, d = o.dir > 0 ? [e.pts[1][0] - e.pts[0][0], e.pts[1][1] - e.pts[0][1]] : [e.pts[e.pts.length - 2][0] - e.pts[e.pts.length - 1][0], e.pts[e.pts.length - 2][1] - e.pts[e.pts.length - 1][1]], L = Math.hypot(d[0], d[1]) || 1;
@@ -2778,13 +2788,15 @@ function signal(n, o) {
   const hx = px - rx_ * (armL - 0.6), hz = pz - rz_ * (armL - 0.6), yawHead = Math.atan2(-ux, -uz);   // the head faces the approaching driver
   box(hx, y0 + 5.0, hz, yawHead, 1.15, 0.4, 0.3, dark, dark, dark);
   // the lamps: red on the driver's left, then yellow, then green; billboards a little in front of the head
-  const lamps = []; for (let k = 0; k < 3; k++) { const off = (k - 1) * 0.36; lamps.push(addProp('lamp_off', hx + rx_ * off - ux * 0.17, hz + rz_ * off - uz * 0.17, { y: y0 + 5.2, solid: false })); }
+  const lamps = []; for (let k = 0; k < 3; k++) { const off = (k - 1) * 0.36; lamps.push(addProp('lamp_off', hx + rx_ * off - ux * 0.17, hz + rz_ * off - uz * 0.17, { y: y0 + 5.03, solid: false })); }
+  // the countdown display under the head
+  box(hx, y0 + 4.45, hz, yawHead, 0.7, 0.5, 0.25, dark, dark, dark);
   // the road's name on the pole
   if (e.rd.name && ATLAS.tiles['rn_' + e.rd.name]) box(px + rx_ * 0.2, y0 + 3.0, pz + rz_ * 0.2, yawHead, 1.6, 0.4, 0.06, T('rn_' + e.rd.name), T('green'), T('green'), null, 0, 0);
   addSolid({ x: px, z: pz, r: 0.3, h: 0.6 });
   // which phase this approach belongs to: edges within 45° of the node's first out are phase 0
   const a0 = n.out[0].ang, dAng = Math.abs(angWrap(o.ang - a0)), phase = (dAng < Math.PI / 4 || dAng > 3 * Math.PI / 4) ? 0 : 1;
-  CITY.signals.push({ node: n, edge: e, dir: o.dir, phase, lamps, x: hx, z: hz });
+  CITY.signals.push({ node: n, edge: e, dir: o.dir, phase, lamps, x: hx, z: hz, y: y0 + 4.45, rx: rx_, rz: rz_, ux, uz });
 }
 // ---------- build it all ----------
 function buildCity() {
@@ -2799,6 +2811,11 @@ const SIG_CYCLE = 64, SIG_GREEN = 27, SIG_YELLOW = 3, SIG_RED = 2;
 function signalState(n, phase) {
   const t = (G.t + (n.id % 17) * 3.7) % SIG_CYCLE, half = SIG_CYCLE / 2, u = phase === 0 ? t : (t + half) % SIG_CYCLE;
   if (u < SIG_GREEN) return 'green'; if (u < SIG_GREEN + SIG_YELLOW) return 'yellow'; return 'red';
+}
+// seconds left in the present state of a signal
+function signalRemain(n, phase) {
+  const t = (G.t + (n.id % 17) * 3.7) % SIG_CYCLE, half = SIG_CYCLE / 2, u = phase === 0 ? t : (t + half) % SIG_CYCLE;
+  if (u < SIG_GREEN) return SIG_GREEN - u; if (u < SIG_GREEN + SIG_YELLOW) return SIG_GREEN + SIG_YELLOW - u; return SIG_CYCLE - u;
 }
 function signalsUpdate() {
   for (const s of CITY.signals) {
@@ -2876,7 +2893,11 @@ function paintPerson(seed, step, down) {
   if (bag) px.rect(12, 15, 3, 5, bag);
   px.outline(0x101014); return px;
 }
+function paintDigit(d, col) { const px = new Pix(14, 22); px.rect(0, 0, 14, 22, 0x141418); px.text(String(d), 7, 1, 19, col, { align: 'center', weight: 900, font: '"Russo One","Noto Sans TC",monospace' }); return px; }
+function paintGlow(col) { const px = new Pix(24, 12); for (let y = 0; y < 12; y++) for (let x = 0; x < 24; x++) { const dx = (x + 0.5 - 12) / 12, dy = (y + 0.5 - 6) / 6, d = dx * dx + dy * dy; if (d < 1) px.dset(x, y, col, shadeHex(col, 1.6), 1 - d); } return px; }
 function paintProps() {
+  for (let d = 0; d < 10; d++) { propKind('dr' + d, paintDigit(d, 0xff3a3a), 0.44); propKind('dg' + d, paintDigit(d, 0x40f070), 0.44); }
+  propKind('glow_red', paintGlow(0xff2020), 0.3); propKind('glow_head', paintGlow(0xfff0c0), 0.3);
   for (let i = 0; i < 3; i++) propKind('tree' + i, paintTree(300 + i * 7, i === 2 ? 'flame' : 'banyan'), 9 + i, { r: 0.8, solid: true });
   for (let i = 0; i < 2; i++) propKind('palm' + i, paintTree(400 + i * 7, 'palm'), 10 + i * 2, { r: 0.5, solid: true });
   propKind('tall', paintTree(410, 'tall'), 14, { r: 0.6, solid: true });
@@ -3382,6 +3403,8 @@ function carStep(dt) {
   const ax = (Fx + Fdrag) / P.m + C.vy * C.r, ay = Fy / P.m - C.vx * C.r;
   C.aLon = (Fx + Fdrag) / P.m; C.aLat = Fy / P.m;
   C.vx += ax * dt; C.vy += ay * dt; C.r += (Mz / P.Iz) * dt;
+  // the drift assist: once the tail is well out, the yaw is damped so a slide can be held and gathered up, not spun
+  if (C.assist !== false) { const beta = Math.abs(Math.atan2(C.vy, Math.max(2, Math.abs(C.vx)))); if (beta > 0.25) { const k = clamp((beta - 0.25) / 0.5, 0, 1); C.r -= C.r * k * 2.2 * dt; if (Math.sign(C.steer) === -Math.sign(C.r) && Math.abs(C.steer) > 0.05) C.vy -= C.vy * k * 1.5 * dt; } }
   // at a crawl the slip model loses meaning: blend toward the kinematic bicycle (the rear axle rolls without slip)
   const slow = clamp(1 - Math.abs(C.vx) / 4, 0, 1);
   if (slow > 0) { const rk = (C.vx * Math.tan(C.steer)) / P.L, vyk = rk * P.b; C.r = lerp(C.r, rk, slow); C.vy = lerp(C.vy, vyk, slow); }
@@ -3634,6 +3657,31 @@ function r3Props() {
   for (const a of Object.values(A)) a.setUsage(THREE.DynamicDrawUsage);
   g2.setAttribute('iPos', A.pos); g2.setAttribute('iSize', A.size); g2.setAttribute('iUV', A.uv); g2.setAttribute('iFlip', A.flip);
   const m2 = new THREE.Mesh(g2, mat); m2.frustumCulled = false; scene3Add(m2); R3.peopleMesh = m2; R3.peopleA = A;
+  // and the little things that change: the countdown digits on the signals, the brake lamps of the traffic
+  const N3 = 900, g3 = new THREE.InstancedBufferGeometry().copy(new THREE.PlaneGeometry(1, 1)); g3.instanceCount = 0;
+  const B = { pos: new THREE.InstancedBufferAttribute(new Float32Array(N3 * 3), 3), size: new THREE.InstancedBufferAttribute(new Float32Array(N3 * 2), 2), uv: new THREE.InstancedBufferAttribute(new Float32Array(N3 * 4), 4), flip: new THREE.InstancedBufferAttribute(new Float32Array(N3), 1) };
+  for (const a of Object.values(B)) a.setUsage(THREE.DynamicDrawUsage);
+  g3.setAttribute('iPos', B.pos); g3.setAttribute('iSize', B.size); g3.setAttribute('iUV', B.uv); g3.setAttribute('iFlip', B.flip);
+  const m3 = new THREE.Mesh(g3, mat); m3.frustumCulled = false; scene3Add(m3); R3.fxMesh = m3; R3.fxA = B; R3.fxMax = N3;
+}
+function r3FxUpdate() {
+  const m = R3.fxMesh; if (!m) return; const A = R3.fxA, cam = R3.cam.position; let k = 0;
+  const put = (name, x, y, z) => { if (k >= R3.fxMax) return; const K = PROPS.kinds[name]; if (!K) return; A.pos.array[k * 3] = x; A.pos.array[k * 3 + 1] = y; A.pos.array[k * 3 + 2] = z; A.size.array[k * 2] = K.wM; A.size.array[k * 2 + 1] = K.hM; A.uv.array.set(K.uv, k * 4); A.flip.array[k] = 0; k++; };
+  for (const s of CITY.signals) {
+    const dx = s.x - cam.x, dz = s.z - cam.z; if (dx * dx + dz * dz > 160 * 160) continue;
+    // only the side facing the driver shows: the camera must be on the approach side
+    if (dx * s.ux + dz * s.uz > 0) continue;
+    const st = s.state || 'red'; if (st === 'yellow') continue;
+    const n = Math.min(99, Math.ceil(signalRemain(s.node, s.phase))), tens = Math.floor(n / 10), ones = n % 10, pre = st === 'red' ? 'dr' : 'dg';
+    put(pre + tens, s.x - s.rx * 0.15 - s.ux * 0.14, s.y + 0.03, s.z - s.rz * 0.15 - s.uz * 0.14); put(pre + ones, s.x + s.rx * 0.15 - s.ux * 0.14, s.y + 0.03, s.z + s.rz * 0.15 - s.uz * 0.14);
+  }
+  for (const v of TR.veh) {
+    if (!v.brake) continue; const dx = v.x - cam.x, dz = v.z - cam.z; if (dx * dx + dz * dz > 120 * 120) continue;
+    const hx = Math.sin(v.yaw), hz = Math.cos(v.yaw); if (dx * hx + dz * hz < 0) continue;   // its tail toward us
+    const rx_ = Math.cos(v.yaw), rz_ = -Math.sin(v.yaw), bx = v.x - hx * (v.L / 2 + 0.05), bz = v.z - hz * (v.L / 2 + 0.05), w = v.type === 'scooter' ? 0 : v.W * 0.32, y = v.y + (v.type === 'bus' ? 0.9 : v.type === 'truck' ? 0.8 : v.type === 'scooter' ? 0.55 : 0.55);
+    if (w) { put('glow_red', bx + rx_ * w, y, bz + rz_ * w); put('glow_red', bx - rx_ * w, y, bz - rz_ * w); } else put('glow_red', bx, y, bz);
+  }
+  m.geometry.instanceCount = k; for (const a of Object.values(A)) a.needsUpdate = true;
 }
 function r3PeopleUpdate() {
   const m = R3.peopleMesh; if (!m) return; const A = R3.peopleA, cam = R3.cam.position; let k = 0;
@@ -3767,7 +3815,7 @@ function r3Update(camYaw) {
   }
   R3.propMesh.material.uniforms.camPos.value.copy(R3.cam.position);
   if (R3.sky) R3.sky.position.copy(R3.cam.position);
-  r3TrafficUpdate(); r3PeopleUpdate();
+  r3TrafficUpdate(); r3PeopleUpdate(); r3FxUpdate();
   if (CITY.wheel) CITY.wheel.rotation.z += 0.0025;
 }
 
@@ -3955,6 +4003,9 @@ function tick(dt) {
   camUpdate(dt); signalsUpdate();
   engineUpdate(CAR.rpm, CAR.P.red, CAR.throttle, Math.abs(CAR.vx), clamp(CAR.slipK - 0.9, 0, 1), CAR.surface !== GK.asphalt && CAR.surface !== GK.concrete ? 1 : 0, false, CAR.hand > 0.5 && Math.abs(CAR.vx) > 5);
   for (const m of HUD.msgs) m.t += dt; HUD.msgs = HUD.msgs.filter((m) => m.t < m.dur);
+  // in the water, or wedged: back to the road after a moment
+  if (CAR.surface === GK.water) { G.wetT = (G.wetT || 0) + dt; if (G.wetT > 0.6 && !G.wetMsg) { G.wetMsg = true; hudMsg('掉進水裡了', '3 秒後回到路上', '#7cd0ff', 3); } if (G.wetT > 3.5) { carToRoad(); G.wetT = 0; G.wetMsg = false; } } else { G.wetT = 0; G.wetMsg = false; }
+  if (CAR.throttle > 0.5 && CAR.kmh < 1.5 && !CAR.rev) { G.stuckT = (G.stuckT || 0) + dt; if (G.stuckT > 4 && !G.stuckMsg) { G.stuckMsg = true; hudMsg('卡住了？', '按住煞車可倒車，或暫停→回到路上', '#ffd23a', 3); } } else { G.stuckT = 0; G.stuckMsg = false; }
 }
 function onCarHit(into) { CAMV.shake = Math.min(1, into / 10); if (into > 2.5) sfxCrash(clamp(into / 20, 0.3, 1)); else sfxThud(0.5); }
 function onKerb() { CAMV.shake = Math.max(CAMV.shake, 0.3); sfxThud(0.4); }
