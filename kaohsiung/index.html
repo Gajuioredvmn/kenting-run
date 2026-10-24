@@ -1872,14 +1872,15 @@ function r3Update(camYaw) {
 }
 
 // ===================== the camera: a chase view that can be swung round the car, and the driver's seat =====================
-const CAMV = { az: 0, off: 0, offV: 0, el: 26 * D2R, dist: 8.5, fp: false, dragging: false, lookX: 0, lookZ: 0, yawS: 0, shake: 0 };
+// view: 'chase' over the shoulder, 'cockpit' from the seat, 'high' the HD-2D bird's angle
+const CAMV = { az: 0, off: 0, offV: 0, el: 26 * D2R, dist: 8.5, fp: false, view: 'chase', dragging: false, lookX: 0, lookZ: 0, yawS: 0, shake: 0 };
 function camReset() { CAMV.az = CAR.yaw; CAMV.off = 0; CAMV.yawS = CAR.yaw; CAMV.lookX = CAR.x; CAMV.lookZ = CAR.z; }
 function camUpdate(dt) {
   const C = CAR, cam = R3.cam;
   // the view swings to follow the car's heading, lagging a touch, plus whatever the player has dragged it round by
   const vel = Math.hypot(C.vx, C.vy), movingYaw = vel > 2 ? Math.atan2(C.vx * Math.sin(C.yaw) + C.vy * Math.cos(C.yaw), C.vx * Math.cos(C.yaw) - C.vy * Math.sin(C.yaw)) : C.yaw;
   const want = lerp(C.yaw, movingYaw, 0.35);
-  CAMV.yawS += angWrap(want - CAMV.yawS) * clamp(dt * 3.2, 0, 1);
+  CAMV.yawS += angWrap(want - CAMV.yawS) * clamp(dt * (CAMV.view === 'high' ? 3.2 : 6), 0, 1);
   if (!CAMV.dragging) { CAMV.off += (0 - CAMV.off) * clamp(dt * 1.2, 0, 1); }
   const az = CAMV.yawS + CAMV.off; CAMV.az = az;
   if (CAMV.shake > 0) CAMV.shake -= dt * 2;
@@ -1894,13 +1895,14 @@ function camUpdate(dt) {
     cam.fov = 60; cam.updateProjectionMatrix();
     return;
   }
-  const dist = CAMV.dist + vel * 0.05, el = CAMV.el - clamp(vel / 60, 0, 1) * 3 * D2R;
+  const high = CAMV.view === 'high';
+  const dist = (high ? 8.5 : 6.2) + vel * (high ? 0.05 : 0.04), el = (high ? 26 : 13) * D2R - clamp(vel / 60, 0, 1) * 3 * D2R;
   const px = C.x - Math.sin(az) * dist * Math.cos(el), pz = C.z - Math.cos(az) * dist * Math.cos(el), py = C.y + dist * Math.sin(el);
   cam.position.set(px + (Math.random() - 0.5) * sh * 0.3, py + (Math.random() - 0.5) * sh * 0.3, pz);
   const lx = C.x + Math.sin(az) * 2.5, lz = C.z + Math.cos(az) * 2.5;
   CAMV.lookX = lx; CAMV.lookZ = lz;
-  cam.lookAt(lx, C.y + 1.0, lz);
-  cam.fov = 46 + clamp(vel / 60, 0, 1) * 8; cam.updateProjectionMatrix();
+  cam.lookAt(lx, C.y + (high ? 1.0 : 1.3), lz);
+  cam.fov = (high ? 46 : 52) + clamp(vel / 60, 0, 1) * 8; cam.updateProjectionMatrix();
 }
 
 // ===================== controls: tilt or a slider for the wheel, pedals on the right, a drag to swing the camera =====================
@@ -1920,7 +1922,7 @@ function touchDown(id, x, y) {
   if (G.mode !== 'drive' || G.paused) return;
   const P = CTL.pads;
   if (inR(P.pause, x, y)) { onPausePressed(); return; }
-  if (inR(P.view, x, y)) { CAMV.fp = !CAMV.fp; return; }
+  if (inR(P.view, x, y)) { camCycle(); return; }
   if (inR(P.horn, x, y)) { CTL.touches.set(id, { kind: 'horn' }); sfxHorn(); return; }
   if (inR(P.zero, x, y)) { tiltRecenter(); hudMsg('方向盤歸零', null, '#7cf26a', 1); return; }
   if (inR(P.gas, x, y)) { CTL.touches.set(id, { kind: 'gas' }); return; }
@@ -1939,7 +1941,7 @@ glEl.addEventListener('pointerup', (e) => touchUp(e.pointerId)); glEl.addEventLi
 addEventListener('keydown', (e) => {
   CTL.keys[e.code] = true;
   if (G.mode === 'drive') {
-    if (e.code === 'KeyC' || e.code === 'KeyV') CAMV.fp = !CAMV.fp;
+    if (e.code === 'KeyC' || e.code === 'KeyV') camCycle();
     if (e.code === 'KeyH') sfxHorn();
     if (e.code === 'KeyR') carToRoad();
     if (!CAR.auto) { if (e.code === 'KeyE' || e.code === 'ShiftLeft') carShift(CAR.gear + 1); if (e.code === 'KeyQ' || e.code === 'ControlLeft') carShift(CAR.gear - 1); }
@@ -1984,6 +1986,9 @@ function controlsUpdate(dt) {
 }
 // back onto the nearest road, facing along it: for when the car ends up in the harbour or wedged somewhere
 function carToRoad() { const n = nearestRoad(CAR.x, CAR.z); if (!n) return; CAR.x = n.x; CAR.z = n.z; CAR.yaw = n.yaw; CAR.vx = CAR.vy = CAR.r = 0; camReset(); }
+
+// the three views in turn: over the shoulder → the seat → the high HD-2D angle
+function camCycle() { const order = ['chase', 'cockpit', 'high']; CAMV.view = order[(order.indexOf(CAMV.view) + 1) % 3]; CAMV.fp = CAMV.view === 'cockpit'; }
 
 // ===================== the game: boot, the loop, the HUD =====================
 const G = { mode: 'title', paused: false, t: 0, speed: 1, halt: false, bootMs: null, fps: 60 };
@@ -2044,7 +2049,7 @@ function tick(dt) {
 }
 function onCarHit(into) { CAMV.shake = Math.min(1, into / 10); if (into > 2.5) sfxCrash(clamp(into / 20, 0.3, 1)); else sfxThud(0.5); }
 function render(dt) {
-  if (G.mode === 'drive') { r3Update(CAMV.az); r3Frame(CAMV.fp ? 24 : 10); drawHud(); }
+  if (G.mode === 'drive') { r3Update(CAMV.az); r3Frame(CAMV.fp ? 24 : CAMV.view === 'high' ? 10 : 16); drawHud(); }
 }
 // ---------- the HUD: speed, gear, revs, the minimap, the pads ----------
 function otext(str, x, y, size, fill, font, align, stroke, lw) { hud.font = (font && font.weight ? font.weight : '700') + ' ' + size + 'px ' + (font && font.family ? font.family : '"Russo One","Noto Sans TC",sans-serif'); hud.textAlign = align || 'left'; hud.textBaseline = 'alphabetic'; hud.lineJoin = 'round'; hud.lineWidth = lw || Math.max(2, size * 0.14); hud.strokeStyle = stroke || '#140c2a'; hud.strokeText(str, x, y); hud.fillStyle = fill; hud.fillText(str, x, y); }
@@ -2070,7 +2075,7 @@ function drawHud() {
   let y = H * 0.3; for (const m of HUD.msgs) { hud.globalAlpha = m.t < 0.15 ? m.t / 0.15 : m.t > m.dur - 0.3 ? (m.dur - m.t) / 0.3 : 1; otext(m.text, W / 2, y, 30, m.col, { family: '"Noto Sans TC",sans-serif' }, 'center', '#0a1028', 4); if (m.sub) otext(m.sub, W / 2, y + 24, 15, '#fff3dc', { family: '"Noto Sans TC",sans-serif' }, 'center', '#0a1028', 2); hud.globalAlpha = 1; y += 60; }
   // the pads
   if (IS_TOUCH) { const P = CTL.pads, T = [...CTL.touches.values()]; pad(P.gas, '油門', T.some((t) => t.kind === 'gas')); pad(P.brake, '煞車', T.some((t) => t.kind === 'brake')); pad(P.hand, '手煞車', T.some((t) => t.kind === 'hand')); if (!C.auto) { pad(P.up, '▲ 升檔', false); pad(P.dn, '▼ 降檔', false); } if (P.steer) { pad(P.steer, '← 滑動轉向 →', false); } }
-  pad(CTL.pads.view, CAMV.fp ? '座艙' : '車後', false); pad(CTL.pads.pause, '∥', false); pad(CTL.pads.horn, '喇叭', false); if (CTL.pads.zero) pad(CTL.pads.zero, '歸零', false);
+  pad(CTL.pads.view, { chase: '肩後', cockpit: '座艙', high: '俯視' }[CAMV.view], false); pad(CTL.pads.pause, '∥', false); pad(CTL.pads.horn, '喇叭', false); if (CTL.pads.zero) pad(CTL.pads.zero, '歸零', false);
   // the wheel, so the player sees what the tilt is doing
   { const sx = W * 0.5, sy = H - 92; hud.fillStyle = 'rgba(0,0,0,.35)'; hud.fillRect(sx - 60, sy, 120, 6); hud.fillStyle = '#ffd23a'; hud.fillRect(sx + C.steerIn * 56 - 4, sy - 3, 8, 12); }
   if (CAMV.fp) drawCockpit();
