@@ -116,6 +116,8 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .res-banner{font:400 clamp(30px,8vh,64px)/1 var(--font-num);text-align:center;transform:skewX(-10deg);letter-spacing:.08em;margin:0 0 .2em;filter:drop-shadow(0 4px 0 #140c2a)}
 .res-body{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:center;justify-content:center}.res-body>table.sp{flex:1 1 260px;min-width:0}
 .cmap-box{flex:1 1 250px;max-width:400px;margin:0 auto}.cmap{display:block;width:100%;height:auto;font-family:var(--font-ui)}
+.unl{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 8px;font:700 clamp(12px,2vh,14px)/1.3 var(--font-ui)}.unl li{padding:2px 8px;border-radius:8px;background:rgba(255,243,220,.12)}.unl li.lock{opacity:.45}.unl li small{margin-left:4px;font-weight:500}
+.hand{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.cardb{flex:1 1 150px;max-width:220px;min-height:120px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:12px 14px;border-radius:12px;border:2px solid var(--sun);background:linear-gradient(180deg,rgba(40,24,90,.95),rgba(16,10,40,.95));color:var(--cream);font:700 clamp(13px,2.2vh,16px)/1.3 var(--font-ui);cursor:pointer}.cardb .k{font-size:.75em;letter-spacing:.1em;opacity:.8}.cardb b{font-size:1.25em;color:#fff}.cardb .d{font-weight:500;font-size:.85em;opacity:.9}.cardb.drive{border-color:#7ec8ff}.cardb.risk{border-color:#ff8aa0}.cardb.road{border-color:#7cf26a}.cardb:active{transform:scale(.97)}
 .res-sub{text-align:center;font:700 clamp(13px,2.2vh,16px)/1.4 var(--font-ui);color:var(--cream);margin:0 0 .8em}
 table.sp{width:100%;border-collapse:collapse;font:700 clamp(12px,2vh,15px)/1.5 var(--font-ui)}
 table.sp td{padding:3px 6px;border-bottom:1px solid rgba(255,243,220,.12)}
@@ -5853,9 +5855,11 @@ function pcStep(dt, track) {
   // the hill: gravity along the slope, so a climb bleeds speed and a descent gives it back; a sharp crest at speed lifts the car
   { const p = PC.piece, gr = (p.at(p.Y, Math.min(p.L, PC.s + 3)) - p.at(p.Y, Math.max(0, PC.s - 3))) / 6; a -= 9.8 * gr * 0.9;
     if (PC.lastGr > 0.035 && gr < 0.005 && PC.v > 38 && typeof FX !== 'undefined') { FX.hopV = Math.min(FX.hopV, -(30 + (PC.v - 38) * 1.4)); } PC.lastGr = gr; }
-  a -= PC.brake * 26;
+  a -= PC.brake * 26 * (PC.brakeK || 1);
   // drifting costs a little speed every second, much less than braking would
-  if (PC.drift > 0) a -= 2.2;
+  if (PC.drift > 0) a -= 2.2 * (PC.driftLossK == null ? 1 : PC.driftLossK);
+  // the slipstream card: tucked in behind a car in this lane, the air pulls you along
+  if (PC.slipK && PC.throttle > 0.5) for (const o of TRAFFIC.list) { const d = o.s - PC.s; if (o.p === PC.piece && !o.train && d > 4 && d < 20 && Math.abs(o.x - PC.x) < 1.6 && o.v > 5) { a += 4.5 * PC.slipK; break; } }
   // off the asphalt: grass, sand and gravel drag you down to a crawl
   if (PC.offroad > 0) { const lim = 24; if (PC.v > lim) a -= 9 + (PC.v - lim) * 0.25; else a -= 1.5; }
   PC.v = Math.max(0, PC.v + a * dt);
@@ -5934,9 +5938,10 @@ function tyreLimit(sp, drift, offroad) { return (11 + 5 * sp.grip) * (drift ? 1.
 function holdSpeed(sp, k, drift) { return k > 1e-6 ? Math.sqrt(tyreLimit(sp, drift, false) / Math.abs(k)) : 999; }
 function pcCrash(k) {
   if (PC.crash) return;
+  if (typeof rogueOnCrash === 'function' && rogueOnCrash()) return;
   const v = PC.v;
   const hard = k > 0.75;
-  PC.crash = { t: 0, dur: hard ? 2.3 : 1.6, gear: PC.neutral ? 1 : PC.gear, v0: v, vy: hard ? 4 + v * 0.07 : 1.5, spin: (Math.random() < 0.5 ? -1 : 1) * (hard ? 6 + v * 0.06 : 4 + v * 0.03), rollK: (Math.random() < 0.5 ? -1 : 1) * (hard ? 1.2 + v * 0.02 : 0.25) };
+  PC.crash = { t: 0, dur: (hard ? 2.3 : 1.6) * (PC.crashK || 1), gear: PC.neutral ? 1 : PC.gear, v0: v, vy: hard ? 4 + v * 0.07 : 1.5, spin: (Math.random() < 0.5 ? -1 : 1) * (hard ? 6 + v * 0.06 : 4 + v * 0.03), rollK: (Math.random() < 0.5 ? -1 : 1) * (hard ? 1.2 + v * 0.02 : 0.25) };
   PC.drift = 0; sfxSkid(false); sfxCrash(clamp(v / 60, 0.3, 1));
   onCrash();
 }
@@ -6430,7 +6435,7 @@ function gapLeft(p, s, iv, x, wid) {
   return hi - cur >= GAP_CAR;
 }
 function spawnVehicle(p, s) {
-  const mix = p.def.traffic ? p.def.traffic.mix : { sedan: 1 };
+  const mix = (typeof rogueMix === 'function' && rogueMix()) || (p.def.traffic ? p.def.traffic.mix : { sedan: 1 });
   const type = pickType(mix);
   const T = VTYPES[type] || VTYPES.sedan, set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan;
   const vi = Math.floor(Math.random() * set.rear.length), spr = SPR[set.rear[vi]], turn = set.turn ? set.turn[vi] : null;
@@ -7139,7 +7144,8 @@ function raceStart(carIdx, auto, seq) {
   layoutPads();
   engineStart(spec.engine);
   trafficReset(); fxReset(); hazardsReset();
-  GHOST.rec = []; GHOST.recT = 0; if (G.mode === 'play') GHOST.load(); else GHOST.on = false;
+  if (ROGUE.on) rogueStart();
+  GHOST.rec = []; GHOST.recT = 0; if (G.mode === 'play' && !ROGUE.on) GHOST.load(); else GHOST.on = false;
   // from the driver's seat first: the key, the starter, the catch — not online, where everyone starts together
   if (G.mode === 'play' && !(NET.on && NET.phase === 'race') && !G.noIgnite) { RACE.state = 'ignition'; igniteStart(); }
 }
@@ -7156,6 +7162,7 @@ function raceUpdate(dt) {
     return;
   }
   if (RACE.state === 'run') {
+    if (ROGUE.on) rogueUpdate(dt);
     RACE.time -= dt; RACE.elapsed += dt;
     if (RACE.time <= 0) { RACE.time = 0; RACE.state = 'timeup'; RACE.overT = 0; hudMsg('TIME UP', '時間到', '#ff4f6d', 4); }
   }
@@ -7167,18 +7174,19 @@ function raceUpdate(dt) {
     if (p.children.length) {
       const left = PC.x < (p.forkDiv || 0), c = p.children[left ? 0 : 1], off = p.forkOff[left ? 0 : 1];
       PC.x -= off; CAM.lat -= off; PC.s -= p.L; PC.piece = c;     // the camera's lateral is in road coordinates too: carry it across, or it lurches
-      RACE.route.push(c.id);
-    } else if (p.next) { PC.s -= p.L; PC.piece = p.next; RACE.route.push(p.next.id); }
+      RACE.route.push(c.id); if (ROGUE.on) rogueEnterPiece(c);
+    } else if (p.next) { PC.s -= p.L; PC.piece = p.next; RACE.route.push(p.next.id); if (ROGUE.on) rogueEnterPiece(p.next); }
     else { PC.s = p.L; PC.v = 0; break; }
   }
   const p = PC.piece;
   // ---- checkpoints add time ----
   if (p.checkS && !RACE.checked.has(p) && PC.s >= p.checkS && RACE.state === 'run') {
     RACE.checked.add(p); RACE.stageNo++;
-    const bonus = p.def.time; RACE.time += bonus;
+    const bonus = ROGUE.on ? rogueCheckBonus(p) : p.def.time; RACE.time += bonus;
     RACE.splits.push({ id: p.id, t: RACE.elapsed });
     hudMsg('CHECKPOINT', '時間延長 +' + bonus + ' 秒　' + p.def.name, '#ffd23a', 2.6);
     sfxChime(); RACE.score += 10000;
+    if (ROGUE.on) rogueCheckpoint();
   }
   // ---- the goal ----
   if (p.goalS && PC.s >= p.goalS && RACE.state === 'run') {
@@ -8223,7 +8231,7 @@ function postFX() {
 }
 function render() {
   if (!CV.p) return;
-  const T = stageTod(CV.p, CV.s);
+  const T = ROGUE.on ? rogueTod(stageTod(CV.p, CV.s)) : stageTod(CV.p, CV.s);
   renderFrame(T);
   const a = performance.now();
   if (HUD.carVisible !== false) { drawPlayerCar(PC.spr); fxDraw(); }
@@ -8291,7 +8299,7 @@ async function boot() {
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
   G, ROUTE, SPR, SPRL, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, gapLeft, nearIntervals,
-  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); }, showResult, openRecords, courseLayout, startEnding,
+  get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); }, showResult, openRecords, courseLayout, startEnding, get ROGUE() { return ROGUE; }, roguePick, rogueCheckpoint,
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
   speed(k) { G.speed = k; },
@@ -8334,6 +8342,7 @@ function uiInit() {
       <div class="tap" id="tap">點一下開始　TAP TO START</div>
       <div class="menu" id="menu" hidden>
         <button class="btn big" data-go="select">開始遊戲</button>
+        <button class="btn" data-go="rogue" style="background:linear-gradient(180deg,#9a6cff,#5a3ad0);color:#fff">環島挑戰</button>
         <button class="btn sea" data-go="online">連線對戰</button>
         <button class="btn" data-go="records">紀錄</button>
         <button class="btn" data-go="settings">設定</button>
@@ -8369,7 +8378,9 @@ function uiInit() {
   <section class="scr dim" id="s-result" hidden><div class="panel card" id="result"></div></section>
   <section class="scr dim" id="s-records" hidden><div class="panel card" id="records"></div></section>
   <section class="scr dim" id="s-settings" hidden><div class="panel card" id="settings"></div></section>
-  <section class="scr dim" id="s-online" hidden><div class="panel card" id="online"></div></section>`;
+  <section class="scr dim" id="s-online" hidden><div class="panel card" id="online"></div></section>
+  <section class="scr dim" id="s-rogue" hidden><div class="panel card" id="rogue"></div></section>
+  <section class="scr dim" id="s-cards" hidden><div class="panel card" id="cards"></div></section>`;
   document.body.appendChild(h('<div id="rot" class="need"><div style="font-size:44px">⟲</div>請把手機轉成橫向<br><small style="font-weight:500;font-size:14px;opacity:.8">這個遊戲要橫著玩</small></div>'));
   root.addEventListener('click', onUiClick);
   // the first touch anywhere on the title unlocks sound and asks for the tilt sensor
@@ -8395,6 +8406,7 @@ function show(name) {
   if (name === 'records') openRecords();
   if (name === 'settings') openSettings();
   if (name === 'online') openOnline();
+  if (name === 'rogue') openRogue();
 }
 function onUiClick(e) {
   const b = e.target.closest('button'); if (!b) return;
@@ -8419,8 +8431,11 @@ function onUiClick(e) {
   switch (b.dataset.act) {
     case 'prev': UI.sel = (UI.sel + CARS.length - 1) % CARS.length; openSelect(); break;
     case 'next': UI.sel = (UI.sel + 1) % CARS.length; openSelect(); break;
-    case 'pick': if (UI.from === 'online' && NET.on) { netSetCar(UI.sel); show('online'); } else show('setup'); break;
-    case 'go': startPlay(); break;
+    case 'pick': if (UI.from === 'online' && NET.on) { netSetCar(UI.sel); show('online'); } else if (UI.from === 'rogue') { if (rogueCarOpen(UI.sel)) show('rogue'); } else show('setup'); break;
+    case 'rogue-go': ROGUE.on = true; startPlay(); break;
+    case 'rogue-car': UI.from = 'rogue'; show('select'); break;
+    case 'card': roguePick(+b.dataset.i); break;
+    case 'go': ROGUE.on = false; startPlay(); break;
     case 'resume': resume(); break;
     case 'restart': G.paused = false; startPlay(); break;
     case 'recenter': tiltRecenter(); resume(); break;
@@ -8533,7 +8548,7 @@ function startPlay() {
   GHOST.rec = []; GHOST.recT = 0;
 }
 function toTitle() { show('title'); musicPlay(3); startAttract(); }
-function onPausePressed() { if (G.mode !== 'play' || UI.resultShown) return; G.paused = !G.paused; if (G.paused) { show('pause'); if (AU.ctx) AU.ctx.suspend(); } else resume(); }
+function onPausePressed() { if (G.mode !== 'play' || UI.resultShown || ROGUE.pending) return; G.paused = !G.paused; if (G.paused) { show('pause'); if (AU.ctx) AU.ctx.suspend(); } else resume(); }
 function resume() { G.paused = false; show(null); if (AU.ctx) AU.ctx.resume(); }
 // called every frame: the attract mode loops; a finished race brings up the results
 function uiFrame() {
@@ -8592,13 +8607,12 @@ function showResult() {
   const goal = RACE.state === 'goal', c = CARS[UI.sel], key = routeKey();
   const rec = SAVE.load('records', { routes: {}, scores: [] });
   let newBest = false;
-  if (goal) {
+  const rg = rogueFinish(goal);
+  if (goal && !rg) {
     const prev = rec.routes[key];
     if (!prev || RACE.elapsed < prev.t) { rec.routes[key] = { t: RACE.elapsed, car: c.id, auto: UI.auto, box: UI.gearbox, d: Date.now() }; newBest = true; GHOST.save(key); }
   }
-  rec.scores.push({ s: Math.floor(RACE.score), car: c.id, route: key, goal, t: RACE.elapsed, d: Date.now() });
-  rec.scores.sort((a, b) => b.s - a.s); rec.scores.length = Math.min(rec.scores.length, 10);
-  SAVE.save('records', rec);
+  if (!rg) { rec.scores.push({ s: Math.floor(RACE.score), car: c.id, route: key, goal, t: RACE.elapsed, d: Date.now() }); rec.scores.sort((a, b) => b.s - a.s); rec.scores.length = Math.min(rec.scores.length, 10); SAVE.save('records', rec); }
   const rank = rec.scores.findIndex((r) => r.d && Math.abs(r.d - Date.now()) < 2000) + 1;
   const splits = RACE.splits.map((q, i) => `<tr><td>${ROUTE_NAMES[RACE.route[i + 1]] || ROUTE_NAMES[q.id] || q.id}</td><td class="t">${fmtTime(q.t)}</td></tr>`).join('');
   $('result').innerHTML = `
@@ -8608,9 +8622,10 @@ function showResult() {
     <table class="sp"><tr><td>檢查點</td><td class="t">時間</td></tr>${splits}
       <tr><td><b>${goal ? '總時間' : '行駛時間'}</b>${newBest ? '<span class="new">NEW RECORD</span>' : ''}</td><td class="t"><b>${fmtTime(RACE.elapsed)}</b></td></tr>
       <tr><td>分數${rank ? '（第 ' + rank + ' 名）' : ''}</td><td class="t">${Math.floor(RACE.score).toLocaleString('en-US')}</td></tr>
-      <tr><td>撞車</td><td class="t">${RACE.crashes} 次</td></tr></table></div>
+      <tr><td>撞車</td><td class="t">${RACE.crashes} 次</td></tr>${rg ? `<tr><td>本局里程${ROGUE.kmK > 1 ? '（×' + ROGUE.kmK + '）' : ''}</td><td class="t">${rg.km.toFixed(1)} km</td></tr><tr><td>累積里程</td><td class="t">${rg.total.toFixed(1)} km</td></tr>` : ''}</table></div>
+    ${rg ? `<p class="res-sub" style="margin:6px 0 0">${ROGUE.picks.length ? '這局的卡：' + ROGUE.picks.map((q) => q.name).join('・') : ''}${rg.unlocked.length ? '<br><span style="color:var(--sun)">解鎖：' + rg.unlocked.join('・') + '</span>' : ''}</p>` : ''}
     ${NET.on ? '<div id="net-rank"></div>' : ''}
-    <div class="actions">${goal ? '<button class="btn big" data-act="ending">看結局</button>' : ''}${NET.on ? '<button class="btn" data-net="lobby">回房間</button>' : '<button class="btn" data-act="again">再跑一次</button>'}<button class="btn ghost" data-act="title">回標題</button></div>`;
+    <div class="actions">${goal ? '<button class="btn big" data-act="ending">看結局</button>' : ''}${NET.on ? '<button class="btn" data-net="lobby">回房間</button>' : '<button class="btn" data-act="again">再跑一次</button>'}${rg ? '<button class="btn" data-go="rogue">挑戰選單</button>' : ''}<button class="btn ghost" data-act="title">回標題</button></div>`;
   show('result');
   if (NET.on) { NET.onLobby = renderRank; renderRank(); }
   musicPlay(3);
@@ -8631,6 +8646,26 @@ function openRecords() {
     <h2 class="ttl" style="margin-top:14px;font-size:18px">高分榜</h2>
     <table class="sp">${rec.scores.length ? rec.scores.map((s, i) => `<tr><td>${i + 1}</td><td>${carName(s.car)}</td><td>${s.goal ? '完走' : '時間到'}</td><td class="t">${s.s.toLocaleString('en-US')}</td></tr>`).join('') : '<tr><td>還沒有紀錄，跑一場吧！</td></tr>'}</table>
     <div class="actions"><button class="btn" data-act="back">返回</button></div>`;
+}
+// ---------- 環島挑戰: the run mode's front door, and the cards at a checkpoint ----------
+function openRogue() {
+  const sv = rogueSave(), c = CARS[UI.sel];
+  if (!rogueCarOpen(UI.sel)) UI.sel = 0;
+  const cars = CARS.map((q, i) => `<li class="${rogueCarOpen(i) ? 'ok' : 'lock'}">${q.name}${rogueCarOpen(i) ? '' : `<small>${ROGUE_CAR_KM[i]} km</small>`}</li>`).join('');
+  const cards = ROGUE_CARDS.map((q) => `<li class="${sv.km >= q.km ? 'ok' : 'lock'}" title="${q.desc}">${q.name}${sv.km >= q.km ? '' : `<small>${q.km} km</small>`}</li>`).join('');
+  $('rogue').innerHTML = `<h2 class="ttl">環島挑戰</h2>
+    <p class="desc" style="margin:0 0 8px">每個路口的告示牌會先寫兩邊的路況：濃霧、砂石車隊、側風、時間多少……選路就是選風險。每個檢查點發三張改裝卡，留一張到這局結束。時間到也沒關係，跑過的里程都算，用來解鎖車和卡。沒有幽靈車、不計入紀錄榜。</p>
+    <div class="row"><span class="lbl">累積里程</span><div><b style="font-family:var(--font-num);font-size:1.3em">${sv.km.toFixed(1)} km</b><span class="note" style="margin-left:10px">跑了 ${sv.runs} 局・最遠一局 ${(sv.bestKm || 0).toFixed(1)} km・看過 ${sv.endings.length}／10 個結局</span></div></div>
+    <div class="row"><span class="lbl">車</span><div><ul class="unl">${cars}</ul></div></div>
+    <div class="row"><span class="lbl">卡池</span><div><ul class="unl">${cards}</ul></div></div>
+    <div class="actions"><button class="btn ghost" data-go="title">返回</button><button class="btn" data-act="rogue-car">選車（${CARS[UI.sel].name}）</button><button class="btn big" data-act="rogue-go">出發！</button></div>`;
+}
+function rogueShowCards() {
+  const kindName = { drive: '開法', risk: '賭注', road: '路況' };
+  $('cards').innerHTML = `<h2 class="ttl">檢查點　留一張</h2>
+    <div class="hand">${ROGUE.hand.map((c, i) => `<button class="cardb ${c.kind}" data-act="card" data-i="${i}"><span class="k">${kindName[c.kind]}</span><b>${c.name}</b><span class="d">${c.desc}</span></button>`).join('')}</div>
+    <p class="note" style="text-align:center;margin:6px 0 0">已拿：${ROGUE.picks.length ? ROGUE.picks.map((c) => c.name).join('・') : '還沒有'}</p>`;
+  show('cards');
 }
 // ---------- settings ----------
 function applySettings() {
@@ -8699,6 +8734,16 @@ function renderOnline() {
       ${NET.host ? `<button class="btn big" data-net="start" ${players.length < 1 ? 'disabled' : ''}>${racing ? '再跑一次' : '開始！'}</button>` : ''}
     </div>`;
 }
+// the Android app's back button: one step back through the menus, pause in a race, out only from the title
+window.__krBack = () => {
+  if (G.mode === 'ending') { endingTap(); return 'stay'; }
+  if (G.mode === 'play' && !UI.resultShown) { if (ROGUE.pending) return 'stay'; if (G.paused) resume(); else onPausePressed(); return 'stay'; }
+  if (!UI.scr || UI.scr === 'title') return 'exit';
+  if (UI.scr === 'result') { toTitle(); return 'stay'; }
+  const to = UI.from && UI.from !== UI.scr ? UI.from : 'title'; UI.from = 'title';
+  if (to === 'title') toTitle(); else show(to);
+  return 'stay';
+};
 
 // ===================== the ghost: your best run on a route, replayed as a see-through car =====================
 const GHOST = {
@@ -8984,6 +9029,159 @@ function drawEnding(dt) {
   }
 }
 
+// ===================== 環島挑戰: the run mode — cards at the checkpoints, a condition on every road, mileage that stays =====================
+// The arcade game is untouched. In a run: every road out of a fork carries a condition the sign tells you about before
+// you choose (fog, a truck convoy, extra time...); every checkpoint deals three cards and you keep one for the rest of
+// the run — how the car drives, what risk you take, what the next road is like. Time up or the ending, the distance
+// goes into the mileage that stays between runs and unlocks cars and cards. Nothing is a bigger number; every card
+// changes how you drive.
+const ROGUE = { on: false, seed: 0, rnd: null, picks: [], hand: null, conds: new Map(), applied: null, msgDone: new Set(), kmK: 1, pending: false, runKm: 0, bot: false, lastPick: null };
+const ROGUE_CARS_FREE = 4;                 // the first cars are open; the rest come with mileage
+const ROGUE_CAR_KM = [0, 0, 0, 0, 40, 80, 130, 190, 260, 340];
+function rogueSave() { return SAVE.load('rogue', { km: 0, runs: 0, bestKm: 0, endings: [] }); }
+// ---------- the cards ----------
+// kind: drive (how the car goes) | risk (a gamble) | road (what the next road is like). km: mileage to unlock.
+const ROGUE_CARDS = [
+  { id: 'brakes', kind: 'drive', name: '競技煞車', desc: '煞車力 +35%。進彎可以晚一點踩。', km: 0, apply() { PC.brakeK = (PC.brakeK || 1) * 1.35; } },
+  { id: 'turbo', kind: 'drive', name: '渦輪', desc: '極速 +8%、加速 +10%，煞車距離變長 15%。', km: 0, apply() { rogueStat({ top: 1.08, acc: 1.1 }); PC.brakeK = (PC.brakeK || 1) * 0.85; } },
+  { id: 'slip', kind: 'drive', name: '吸尾流', desc: '貼在前車後面 5～20 公尺會被拉著加速。', km: 0, apply() { PC.slipK = 1; } },
+  { id: 'drift', kind: 'drive', name: '甩尾不掉速', desc: '甩尾過彎不再損失速度。', km: 0, apply() { PC.driftLossK = 0; } },
+  { id: 'steer', kind: 'drive', name: '快轉向', desc: '轉向反應 +25%，換道更快，也更容易過頭。', km: 0, apply() { rogueStat({ steer: 1.25 }); } },
+  { id: 'soft', kind: 'drive', name: '軟胎', desc: '抓地 +25%；撞一次之後磨壞，抓地變 −10%。', km: 20, apply() { rogueStat({ grip: 1.25 }); PC.softTyre = true; } },
+  { id: 'shield', kind: 'risk', name: '護盾', desc: '下一次撞車不算，車不會轉。只有一次。', km: 0, apply() { PC.shield = (PC.shield || 0) + 1; } },
+  { id: 'time8', kind: 'risk', name: '多 8 秒', desc: '現在馬上 +8 秒。', km: 0, apply() { RACE.time += 8; } },
+  { id: 'gamble', kind: 'risk', name: '時間賭注', desc: '每個檢查點多 6 秒，但車流 +40%。', km: 0, apply() { ROGUE.cpBonus = (ROGUE.cpBonus || 0) + 6; ROGUE.densK = (ROGUE.densK || 1) * 1.4; rogueTraffic(); } },
+  { id: 'glass', kind: 'risk', name: '玻璃車', desc: '極速 +12%，但撞車時間損失加倍。', km: 60, apply() { rogueStat({ top: 1.12 }); PC.crashK = (PC.crashK || 1) * 2; } },
+  { id: 'mileage', kind: 'risk', name: '里程加倍', desc: '這一局的里程 ×2。只影響解鎖，不影響開法。', km: 0, apply() { ROGUE.kmK *= 2; } },
+  { id: 'quiet', kind: 'road', name: '清場', desc: '接下來的車流減半。', km: 0, apply() { ROGUE.densK = (ROGUE.densK || 1) * 0.5; rogueTraffic(); } },
+  { id: 'scooters', kind: 'road', name: '機車潮', desc: '接下來的車流都是機車：小、慢、難預測。', km: 30, apply() { ROGUE.mix = { scooter: 8, sedan: 1 }; } },
+  { id: 'noon', kind: 'road', name: '大晴天', desc: '濃霧和暮色的路段都變回白天。', km: 0, apply() { ROGUE.clearSky = true; } },
+  { id: 'calm', kind: 'road', name: '風平浪靜', desc: '側風路段不再有風。', km: 40, apply() { ROGUE.noWind = true; } },
+];
+// ---------- the conditions on the roads ----------
+const ROGUE_CONDS = [
+  { id: 'fog', name: '濃霧', desc: '看不遠', w: 3 },
+  { id: 'trucks', name: '砂石車隊', desc: '車流全是大車', w: 3 },
+  { id: 'heavy', name: '車流密', desc: '車多 40%', w: 3 },
+  { id: 'light', name: '車流稀', desc: '車少一半', w: 2 },
+  { id: 'time10', name: '時間 +10', desc: '檢查點多 10 秒', w: 2 },
+  { id: 'time-8', name: '時間 −8', desc: '檢查點少 8 秒', w: 2 },
+  { id: 'wind', name: '側風', desc: '車會被吹偏', w: 2 },
+  { id: 'dusk', name: '暮色', desc: '天快黑了，看不清', w: 2 },
+  { id: 'none', name: '一般', desc: '', w: 3 },
+];
+// ---------- a run ----------
+function rogueStart() {
+  const sv = rogueSave();
+  ROGUE.seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0; ROGUE.rnd = mulberry(ROGUE.seed);
+  ROGUE.picks = []; ROGUE.hand = null; ROGUE.conds = new Map(); ROGUE.applied = null; ROGUE.msgDone = new Set(); ROGUE.kmK = 1; ROGUE.pending = false; ROGUE.runKm = 0;
+  ROGUE.cpBonus = 0; ROGUE.densK = 1; ROGUE.mix = null; ROGUE.clearSky = false; ROGUE.noWind = false; ROGUE.lastPick = null;
+  PC.brakeK = 1; PC.slipK = 0; PC.driftLossK = 1; PC.shield = 0; PC.crashK = 1; PC.softTyre = false; PC.statK = null;
+  // a condition on every road but the first, drawn by weight; a plain road is as likely as fog
+  const tot = ROGUE_CONDS.reduce((a, c) => a + c.w, 0);
+  for (const p of ROUTE.pieces) {
+    if (p === ROUTE.root) continue;
+    let r = ROGUE.rnd() * tot, pick = ROGUE_CONDS[ROGUE_CONDS.length - 1];
+    for (const c of ROGUE_CONDS) { r -= c.w; if (r <= 0) { pick = c; break; } }
+    ROGUE.conds.set(p, pick);
+  }
+  sv.runs++; SAVE.save('rogue', sv);
+  rogueTraffic();
+}
+// the car's numbers, bent by the cards: the physics is set up again with a copy of the spec, the speed kept
+function rogueStat(k) {
+  const st = PC.statK || (PC.statK = { top: 1, acc: 1, grip: 1, steer: 1 });
+  for (const key in k) st[key] *= k[key];
+  const base = CARS[RACE.carIdx], spec = Object.assign({}, base, { top: base.top * st.top, acc: Math.min(1.2, base.acc * st.acc), grip: Math.min(1.2, base.grip * st.grip), steer: Math.min(1.2, base.steer * st.steer) });
+  const keep = { v: PC.v, gear: PC.gear, rpm: PC.rpm, vx: PC.vx, drift: PC.drift, crash: PC.crash, neutral: PC.neutral, shiftT: PC.shiftT };
+  pcSetup(spec, PC.auto, PC.seq);
+  Object.assign(PC, keep);
+}
+function rogueTraffic() {
+  const c = ROGUE.applied;
+  let k = ROGUE.densK || 1;
+  if (c && c.id === 'heavy') k *= 1.4; if (c && c.id === 'light') k *= 0.5;
+  TRAFFIC.density = k;
+}
+// the traffic mix on this road, if a card or the road's condition changes it
+function rogueMix() {
+  if (!ROGUE.on) return null;
+  if (ROGUE.applied && ROGUE.applied.id === 'trucks') return { gravel: 4, bluetruck: 3, logs: 2, rebar: 1 };
+  return ROGUE.mix;
+}
+// entering a road: its condition takes effect; the sign before a fork names what each way holds
+function rogueEnterPiece(p) {
+  ROGUE.applied = ROGUE.conds.get(p) || null;
+  rogueTraffic();
+  if (ROGUE.applied && ROGUE.applied.id !== 'none') hudMsg(ROGUE.applied.name, ROGUE.applied.desc, '#7ec8ff', 2.4, false);
+}
+function rogueCondName(p) { const c = ROGUE.conds.get(p); return c && c.id !== 'none' ? c.name : '一般'; }
+function rogueUpdate(dt) {
+  if (!ROGUE.on || RACE.state !== 'run') return;
+  const p = PC.piece;
+  if (p.children.length === 2 && p.L - PC.s < 720 && !ROGUE.msgDone.has(p)) {
+    ROGUE.msgDone.add(p);
+    hudMsg('◀ ' + rogueCondName(p.children[0]) + '　　' + rogueCondName(p.children[1]) + ' ▶', '前方路口：兩邊的路況', '#ffd23a', 3.2, false);
+  }
+  // the crosswind: it leans on the car, swinging, unless a card calmed it
+  const c = ROGUE.applied;
+  PC.wind = c && c.id === 'wind' && !ROGUE.noWind ? Math.sin(G.t * 0.9) * 1.6 + Math.sin(G.t * 2.3) * 0.5 : 0;
+}
+// the time-of-day as the road's condition has it: fog closes in, or night falls
+function rogueTod(T) {
+  const c = ROGUE.applied; if (!c || ROGUE.clearSky) return T;
+  if (c.id === 'fog') { T.fogN = 25; T.fogF = 250; T.fogMax = 1.8; T.haze = 0xd8dde2; T.top = 0xb4bcc6; T.hor = 0xd8dde2; T.low = 0xcdd3d8; T.cl = 0xe4e8ec; T.cs = 0xc0c6cc; }
+  else if (c.id === 'dusk') todMix(TOD.dusk, TOD.dusk, 0, T);
+  return T;
+}
+// the checkpoint: its time, bent by the road and the cards, then the cards to choose from
+function rogueCheckBonus(p) {
+  const c = ROGUE.conds.get(p); let b = p.def.time + (ROGUE.cpBonus || 0);
+  if (c && c.id === 'time10') b += 10; if (c && c.id === 'time-8') b -= 8;
+  return b;
+}
+function rogueDeal() {
+  const sv = rogueSave(), taken = new Set(ROGUE.picks.map((c) => c.id));
+  const pool = ROGUE_CARDS.filter((c) => sv.km >= c.km && !taken.has(c.id));
+  const hand = [];
+  for (const kind of ['drive', 'risk', 'road']) { const of = pool.filter((c) => c.kind === kind && !hand.includes(c)); if (of.length) hand.push(of[Math.floor(ROGUE.rnd() * of.length)]); }
+  while (hand.length < 3 && pool.length > hand.length) { const c = pool[Math.floor(ROGUE.rnd() * pool.length)]; if (!hand.includes(c)) hand.push(c); }
+  return hand;
+}
+function rogueCheckpoint() {
+  if (!ROGUE.on) return;
+  ROGUE.hand = rogueDeal(); if (!ROGUE.hand.length) return;
+  if (BOT.on || ROGUE.bot) { roguePick(0); return; }
+  ROGUE.pending = true; G.paused = true; if (AU.ctx) AU.ctx.suspend();
+  rogueShowCards();
+}
+function roguePick(i) {
+  const c = ROGUE.hand && ROGUE.hand[i]; if (!c) return;
+  ROGUE.picks.push(c); c.apply(); ROGUE.lastPick = c; ROGUE.hand = null;
+  hudMsg(c.name, c.desc, '#7cf26a', 2.4, false);
+  if (ROGUE.pending) { ROGUE.pending = false; G.paused = false; show(null); if (AU.ctx) AU.ctx.resume(); }
+}
+// a crash with a card that cares: the shield takes it, the glass car pays double, the soft tyres wear
+function rogueOnCrash() {
+  if (!ROGUE.on) return false;
+  if (PC.shield > 0) { PC.shield--; hudMsg('護盾', '這一撞不算', '#7ec8ff', 1.6, false); shake(0.3); return true; }
+  if (PC.softTyre) { PC.softTyre = false; rogueStat({ grip: 0.9 / 1.25 }); hudMsg('軟胎磨壞了', '抓地變差', '#ff8aa0', 2, false); }
+  return false;
+}
+// the run is over: the distance goes into the mileage; what it unlocked
+function rogueFinish(goal) {
+  if (!ROGUE.on) return null;
+  const sv = rogueSave(), km = (PC.dist / 1000) * ROGUE.kmK, before = sv.km;
+  ROGUE.runKm = km; sv.km += km; sv.bestKm = Math.max(sv.bestKm || 0, PC.dist / 1000);
+  if (goal && RACE.goal && !sv.endings.includes(RACE.goal)) sv.endings.push(RACE.goal);
+  SAVE.save('rogue', sv);
+  const unl = [];
+  CARS.forEach((c, i) => { if (ROGUE_CAR_KM[i] > before && ROGUE_CAR_KM[i] <= sv.km) unl.push(c.name); });
+  for (const c of ROGUE_CARDS) if (c.km > before && c.km <= sv.km) unl.push('卡：' + c.name);
+  return { km, total: sv.km, unlocked: unl };
+}
+function rogueCarOpen(i) { return (ROGUE_CAR_KM[i] || 0) <= rogueSave().km; }
+
 // ===================== online: up to 8 cars on the same road, over WebRTC, met through the PeerJS cloud =====================
 // One player opens a room and gets a six-letter code; the others join with it. The host's browser relays everyone's
 // position to everyone else a dozen times a second over unreliable data channels; the lobby, the start and the
@@ -9165,7 +9363,7 @@ function netStartRace(delay, late) {
   if (NET.phase === 'race') return;
   NET.phase = 'race'; NET.myFin = null; for (const P of NET.peers.values()) { P.fin = null; P.state = null; P.prev = null; }
   if (NET.host) netAll({ t: 'start', in: delay });
-  startPlay();
+  ROGUE.on = false; startPlay();
   if (late) { RACE.state = 'run'; RACE.countdown = 0; }
 }
 function netHostStart() { if (NET.host && NET.phase === 'lobby') netStartRace(0, false); }
