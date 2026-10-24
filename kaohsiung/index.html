@@ -1647,7 +1647,8 @@ function carStep(dt) {
   const tf = tyreForce(FzF, kF, aF, muF, P.cs), FxFt = tf[0], FyFt = tf[1];
   const tr = tyreForce(FzR, kR, aR, C.hand > 0.5 ? muR * 0.72 : muR, P.cs), FxRt = tr[0], FyRt = tr[1];
   // wheelspin and lock-up for the sound and the smoke
-  C.slipF = clamp(Math.abs(aF) / 0.2 + Math.abs(kF), 0, 2); C.slipR = clamp(Math.abs(aR) / 0.2 + Math.abs(kR), 0, 2); C.slipK = Math.max(C.slipF, C.slipR);
+  const spd = clamp((Math.abs(C.vx) - 3) / 4, 0, 1);   // a crawling car is not sliding, whatever the angles say
+  C.slipF = clamp(Math.abs(aF) / 0.2 + Math.abs(kF), 0, 2) * spd; C.slipR = clamp(Math.abs(aR) / 0.2 + Math.abs(kR), 0, 2) * spd; C.slipK = Math.max(C.slipF, C.slipR);
   // ---- sum in the body frame; the front tyre's force turns with the wheel ----
   const cs = Math.cos(C.steer), sn = Math.sin(C.steer);
   const Fx = FxFt * cs - FyFt * sn + FxRt, Fy = FxFt * sn + FyFt * cs + FyRt;
@@ -1823,8 +1824,8 @@ const COMP_FS = `precision mediump float; uniform sampler2D tex, blur, bloom, de
   void main() {
     vec4 sharp = texture2D(tex, vUv); vec4 soft = texture2D(blur, vUv); float d = lin(texture2D(depthTex, vUv).r);
     float coc = clamp((d - focus) / (focus * 4.0), 0.0, 1.0) * 0.8 + clamp((focus * 0.5 - d) / (focus * 0.5), 0.0, 1.0) * 0.6;
-    float tilt = smoothstep(0.3, 0.5, abs(vUv.y - 0.5));
-    float k = clamp(coc + tilt * 0.45, 0.0, 1.0);
+    float tilt = smoothstep(0.38, 0.5, abs(vUv.y - 0.5));
+    float k = clamp(coc * 0.7 + tilt * 0.35, 0.0, 1.0);
     vec3 c = mix(sharp.rgb, soft.rgb, k) + texture2D(bloom, vUv).rgb * 0.55;
     c *= grade; vec2 q = (vUv - 0.5) * vec2(aspect, 1.0); c *= 1.0 - dot(q, q) * 0.55;
     gl_FragColor = vec4(pow(max(c, 0.0), vec3(1.0 / 2.2)), 1.0); }`;
@@ -1953,6 +1954,7 @@ function tiltAngle(ax, ay) {
   // no orientation API (some WebViews): in landscape the gravity runs along the phone's long axis, and its sign says which way round
   if (ang == null || (innerWidth > innerHeight && ang === 0)) ang = innerWidth > innerHeight ? (ax < 0 ? 90 : 270) : 0;
   let r, u; if (ang === 90) { r = -ay; u = ax; } else if (ang === 270 || ang === -90) { r = ay; u = -ax; } else { r = ax; u = ay; }
+  if (u < 0) { u = -u; r = -r; }   // the phone the other way up than the mapping expects: never let the angle sit at ±180 where it flips
   return Math.atan2(r, u) / D2R;
 }
 function onMotion(e) {
