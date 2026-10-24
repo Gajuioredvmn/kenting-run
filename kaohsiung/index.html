@@ -86,7 +86,7 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .bar{height:clamp(8px,1.4vh,11px);border-radius:3px;background:rgba(255,243,220,.12);overflow:hidden}
 .bar i{transition:width .5s cubic-bezier(.2,.8,.2,1);display:block;height:100%;background:linear-gradient(90deg,var(--sea),var(--lime),var(--sun),var(--hot));background-size:200px 100%}
 .thumbs{grid-column:1/2;display:flex;gap:6px;overflow-x:auto;align-items:center;padding:2px}
-.thumbs button{flex:0 0 auto;width:clamp(56px,9vw,82px);aspect-ratio:2/1;border-radius:8px;background:rgba(10,6,24,.6);border:2px solid transparent;padding:0}
+.thumbs button{background:var(--c,#444);} .thumbs button.lock{opacity:.35} .thumbs button.on{border-color:var(--sun)} .thumbs button{flex:0 0 auto;width:clamp(56px,9vw,82px);aspect-ratio:2/1;border-radius:8px;background:rgba(10,6,24,.6);border:2px solid transparent;padding:0}
 .thumbs button[aria-current="true"]{border-color:var(--sun);background:rgba(255,178,62,.18)}
 .thumbs canvas{width:100%;height:100%;image-rendering:pixelated;object-fit:contain}
 .sel .actions{grid-column:2/3;display:flex;gap:10px;justify-content:flex-end;align-items:center}
@@ -126,7 +126,7 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 .via{font-size:.78em;font-weight:400;opacity:.72;line-height:1.3}
 .new{color:var(--lime);font:400 11px var(--font-pix);margin-left:8px;animation:blink .6s steps(2,end) infinite}
 .rng{width:100%;accent-color:var(--sun)}
-@media (max-height:430px){.sel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}.desc{display:none}.thumbs button{width:52px}}
+@media (max-height:430px){.sel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}.desc{display:none}.thumbs button{background:var(--c,#444);} .thumbs button.lock{opacity:.35} .thumbs button.on{border-color:var(--sun)} .thumbs button{width:52px}}
 @media (orientation:portrait){.sel{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto auto auto}.sel .actions,.thumbs{grid-column:1}}
 #rot{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:var(--night);color:var(--cream);font:900 20px var(--font-ui);text-align:center;padding:24px}
 @media (orientation:portrait) and (pointer:coarse){#rot.need{display:flex}}
@@ -458,6 +458,41 @@ const CREW = {
   oro: [{ name: '新郎', hair: 0x1a1410, shirt: 0x1a1a1a, style: 'short' }, { name: '新娘', hair: 0x1a1410, shirt: 0xffffff, style: 'long', veil: true }],
 };
 
+// ---- the ordinary cars everyone starts with: a roof, a small engine, nothing to boast about ----
+const STARTERS = [
+  { id: 'duck', name: '小鴨 DUCK', en: 'City hatchback', color: 0xf2e24a, interior: 0x3a3a3e, top: 158, acc: 0.18, grip: 0.5, steer: 0.62, mass: 0.32, gears: 5, engine: 'i4', drive: 'fwd', roof: true, roofH: 0.5, starter: true,
+    desc: '1.2 升掀背小車，省油好停，上坡會哀。', L: 3.7, W: 1.68, clear: 0.17, rs: 0.1, tuck: 0.05, pw: 1.0, wheels: [0.18, 0.8], cockpit: [0.3, 0.75], rim: 'steel', rimCol: 0xb0b4b8,
+    a: KY([[0, 0.9], [0.1, 0.97], [0.9, 0.98], [1, 0.92]]),
+    yF: KY([[0, 0.78], [0.08, 0.9], [0.3, 0.94], [0.75, 0.94], [0.92, 0.88], [1, 0.76]]),
+    yC: KY([[0, 0.76], [0.08, 0.88], [0.29, 0.94], [0.3, 0.42], [0.75, 0.42], [0.76, 0.9], [1, 0.74]]),
+    xp: KY([[0, 0.84], [1, 0.86]]), tails: 'round', screen: 0.4 },
+  { id: 'uncle', name: '阿伯的房車 UNCLE', en: 'Family sedan', color: 0xc8ccd0, interior: 0x8a7a66, top: 176, acc: 0.26, grip: 0.52, steer: 0.5, mass: 0.58, gears: 5, engine: 'i4', drive: 'fwd', roof: true, roofH: 0.46, starter: true,
+    desc: '國民房車，坐得舒服，開起來像船。', L: 4.6, W: 1.76, clear: 0.16, rs: 0.09, tuck: 0.04, pw: 1.0, wheels: [0.17, 0.81], cockpit: [0.33, 0.68], rim: 'steel', rimCol: 0xb0b4b8,
+    a: KY([[0, 0.9], [0.08, 0.97], [0.92, 0.98], [1, 0.9]]),
+    yF: KY([[0, 0.7], [0.1, 0.86], [0.32, 0.9], [0.7, 0.9], [0.95, 0.84], [1, 0.7]]),
+    yC: KY([[0, 0.68], [0.1, 0.84], [0.32, 0.9], [0.33, 0.42], [0.68, 0.42], [0.69, 0.88], [1, 0.7]]),
+    xp: KY([[0, 0.82], [1, 0.84]]), tails: 'quad', screen: 0.42 },
+  { id: 'wagon', name: '旅行車 WAGGY', en: 'Station wagon', color: 0x3a6a9a, interior: 0x4a4a50, top: 184, acc: 0.3, grip: 0.56, steer: 0.52, mass: 0.66, gears: 5, engine: 'i4', drive: 'fwd', roof: true, roofH: 0.5, starter: true,
+    desc: '後面載得下一家人和一隻狗，彎道要慢。', L: 4.7, W: 1.78, clear: 0.17, rs: 0.09, tuck: 0.04, pw: 1.0, wheels: [0.17, 0.82], cockpit: [0.08, 0.68], rim: 'steel', rimCol: 0xb0b4b8,
+    a: KY([[0, 0.92], [0.06, 0.97], [0.94, 0.98], [1, 0.9]]),
+    yF: KY([[0, 0.86], [0.06, 0.92], [0.7, 0.92], [0.95, 0.84], [1, 0.7]]),
+    yC: KY([[0, 0.84], [0.06, 0.92], [0.07, 0.42], [0.68, 0.42], [0.69, 0.9], [1, 0.7]]),
+    xp: KY([[0, 0.84], [1, 0.84]]), tails: 'strip', screen: 0.42 },
+  { id: 'suv', name: '都市休旅 TAKE', en: 'Compact SUV', color: 0x8a3a2a, interior: 0x2a2a2e, top: 172, acc: 0.3, grip: 0.5, steer: 0.46, mass: 0.74, gears: 6, engine: 'i4', drive: 'awd', roof: true, roofH: 0.55, starter: true,
+    desc: '底盤高、視野好，草地和沙灘比較不怕。', L: 4.5, W: 1.84, clear: 0.26, rs: 0.1, tuck: 0.05, pw: 1.0, wheels: [0.18, 0.8], cockpit: [0.1, 0.68], rim: 'steel', rimCol: 0xb0b4b8,
+    a: KY([[0, 0.92], [0.06, 0.98], [0.94, 0.98], [1, 0.9]]),
+    yF: KY([[0, 0.9], [0.06, 1.0], [0.7, 1.0], [0.95, 0.92], [1, 0.8]]),
+    yC: KY([[0, 0.88], [0.06, 1.0], [0.09, 0.5], [0.68, 0.5], [0.69, 0.98], [1, 0.8]]),
+    xp: KY([[0, 0.86], [1, 0.86]]), tails: 'strip', screen: 0.42 },
+  { id: 'cab', name: '小黃 TAXI', en: 'Taxi', color: 0xf2c21a, interior: 0x3a3a3e, top: 170, acc: 0.24, grip: 0.52, steer: 0.5, mass: 0.6, gears: 5, engine: 'i4', drive: 'fwd', roof: true, roofH: 0.46, starter: true,
+    desc: '跑了三十萬公里的小黃，引擎還很硬朗。', L: 4.6, W: 1.76, clear: 0.16, rs: 0.09, tuck: 0.04, pw: 1.0, wheels: [0.17, 0.81], cockpit: [0.33, 0.68], rim: 'steel', rimCol: 0xb0b4b8,
+    a: KY([[0, 0.9], [0.08, 0.97], [0.92, 0.98], [1, 0.9]]),
+    yF: KY([[0, 0.7], [0.1, 0.86], [0.32, 0.9], [0.7, 0.9], [0.95, 0.84], [1, 0.7]]),
+    yC: KY([[0, 0.68], [0.1, 0.84], [0.32, 0.9], [0.33, 0.42], [0.68, 0.42], [0.69, 0.88], [1, 0.7]]),
+    xp: KY([[0, 0.82], [1, 0.84]]), tails: 'quad', screen: 0.42 },
+];
+CARS.unshift(...STARTERS);
+
 // ===================== the cars, pixel by pixel =====================
 // Each car is painted from behind (the race view) and from the side (showroom and endings) straight from its numbers:
 // width, tail height, the shape of the deck, its tail lights, its extras and its two passengers.
@@ -615,6 +650,25 @@ function paintCarRear(spec, steer, brake, phase, opt) {
       face(q, col);
       // a dithered sheen down the flank, where it is a flank
       if (Math.abs(ny) < 0.3 && Math.abs(nx) > 0.6) { const hi = nx < 0 ? P[3] : P[2]; const qq = q.map((p) => [p[0], p[1], p[2]]); const top = Math.max(qq[0][1], qq[1][1], qq[2][1], qq[3][1]), bot = Math.min(qq[0][1], qq[1][1], qq[2][1], qq[3][1]); const mid = bot + (top - bot) * 0.55; const up = qq.map((p) => [p[0], p[1] > mid ? p[1] : mid, p[2]]); const pq = up.map((p) => pr(p[0], p[1], p[2])); let dd = 0; for (const p of pq) dd += p[2]; dd /= 4; if (area(pq) > 0.01) items.push({ d: dd - 0.001, L: layer, draw: () => px.polyD(flat(pq), col, hi, 0.5) }); }
+    }
+  }
+  // ---- a roof: ordinary cars have one — a greenhouse lofted over the cockpit, glass on its sides and ends, paint on top ----
+  if (spec.roof && zR != null && zF != null) {
+    const rh = spec.roofH || 0.42, glass = 0x2e4e6e, glassHi = 0x6a9ac0, tint = (z) => (zR != null && z < zR + (zF - zR) * 0.3 ? glass : glass);
+    const cab = (z, kw, kh) => { const t = clamp(spec.wheels[1] - z / G.L, 0, 1), A = G.at(t), hw = A.hw * kw, belt = A.top, top = belt + rh * kh; return { z, pts: [[-hw, belt], [hw, belt], [hw * 0.94, top], [-hw * 0.94, top]] }; };
+    const C = [cab(zR + 0.02, 0.9, 0.08), cab(zR + (zF - zR) * 0.22, 0.88, 1), cab(zF - (zF - zR) * 0.2, 0.88, 1), cab(zF - 0.02, 0.9, 0.1)];
+    for (let k = 0; k + 1 < C.length; k++) {
+      const a = C[k], b = C[k + 1], mid = k === 1;
+      // top
+      face([[a.pts[3][0], a.pts[3][1], a.z], [a.pts[2][0], a.pts[2][1], a.z], [b.pts[2][0], b.pts[2][1], b.z], [b.pts[3][0], b.pts[3][1], b.z]], mid ? P[4] : glass, false, 0.001);   // the sloped ends are the rear window and the windscreen
+      // sides: glass, with a pale band near the top
+      for (const sx of [-1, 1]) {
+        const i0 = sx < 0 ? 0 : 1, i1 = sx < 0 ? 3 : 2;
+        const q = [[a.pts[i0][0], a.pts[i0][1], a.z], [a.pts[i1][0], a.pts[i1][1], a.z], [b.pts[i1][0], b.pts[i1][1], b.z], [b.pts[i0][0], b.pts[i0][1], b.z]];
+        const toward = sx * (camX - a.pts[i0][0]) > 0; if (!toward) continue;   // only the side the camera sees
+        face(q, mid ? tint(a.z) : shadeHex(glass, 0.8), false, 0.0005);
+        if (mid) { const hq = q.map((p, i) => [p[0], i === 0 || i === 3 ? p[1] + (q[1][1] - q[0][1]) * 0.55 : p[1] - (q[1][1] - q[0][1]) * 0.15, p[2]]); face(hq, glassHi, false, 0.0004); }
+      }
     }
   }
   // ---- the tail: the body colour in two bands, the lamps in their black band, the plate, the bumper and pipes ----
@@ -2023,7 +2077,7 @@ function startDrive(carIdx) {
   CTL.mode = SET.ctrl === 'tilt' && CTL.tilt.ok ? 'tilt' : 'touch'; layoutPads(); setTimeout(tiltRecenter, 300);
   G.mode = 'drive'; G.paused = false; show(null);
   if (AU.ctx) engineStart(CARS[carIdx].engine);
-  hudMsg('高雄・港都', '自由行駛・停住時按住煞車就倒車', '#ffd23a', 3);
+  hudMsg('高雄・港都', '自由行駛・停住時按住煞車就倒車・右上切換視角', '#ffd23a', 3);
 }
 function onPausePressed() { if (G.mode !== 'drive') return; G.paused = !G.paused; if (G.paused) { show('pause'); if (AU.ctx) AU.ctx.suspend(); } else { show(null); if (AU.ctx) AU.ctx.resume(); } }
 let lastT = performance.now(), fpsAcc = 0, fpsN = 0;
@@ -2093,7 +2147,7 @@ function drawCockpit() {
 }
 // ---------- test hooks ----------
 window.__kh = {
-  G, CAR, CAMV, CTL, MAP, PROPS, R3, SET, CARS, startDrive, carToRoad, show, carPhysics,
+  G, CAR, CAMV, CTL, MAP, PROPS, R3, SET, CARS, startDrive, carToRoad, show, carPhysics, turn(ci, i) { return carTurnFrame(CARS[ci], i).toDataURL(); },
   halt(on) { G.halt = !!on; }, sim(sec, h) { h = h || 1 / 120; const n = Math.round(sec / h); for (let i = 0; i < n; i++) tick(h); return this.state(); },
   step(dt) { tick(dt); render(dt); return $('gl').toDataURL('image/png'); },
   state() { const C = CAR; return { x: +C.x.toFixed(1), z: +C.z.toFixed(1), yaw: +C.yaw.toFixed(2), kmh: Math.round(C.kmh), vy: +C.vy.toFixed(2), r: +C.r.toFixed(2), rpm: Math.round(C.rpm), gear: C.gear, surf: C.surface, slip: +C.slipK.toFixed(2), dmg: +C.damage.toFixed(2), fps: G.fps }; },
@@ -2160,7 +2214,8 @@ function openSelect() {
   $('b-gear').textContent = c.gears + ' 速'; $('b-eng').textContent = ENGINE_NAME[c.engine] || c.engine; $('b-drv').textContent = DRIVE_NAME[P.drive];
   const st = $('c-stats'); st.innerHTML = '';
   for (const [l, f, v] of STAT_ROWS) { st.appendChild(h(`<span class="l">${l}</span>`)); const b = h('<div class="bar"><i></i></div>'); b.firstChild.style.width = Math.round(clamp(f(c), 0.05, 1) * 100) + '%'; st.appendChild(b); st.appendChild(h(`<span class="v">${v ? v(c) : ''}</span>`)); }
-  const th = $('thumbs'); th.innerHTML = ''; CARS.forEach((q, i) => { const d = h(`<button class="th${i === UI.sel ? ' on' : ''}" style="--c:${cssHex(q.color)}"></button>`); d.onclick = () => { UI.sel = i; openSelect(); }; th.appendChild(d); });
+  const th = $('thumbs'); th.innerHTML = ''; CARS.forEach((q, i) => { const d = h(`<button class="th${i === UI.sel ? ' on' : ''}${q.starter ? '' : ' lock'}" style="--c:${cssHex(q.color)}" title="${q.name}"></button>`); d.onclick = () => { UI.sel = i; openSelect(); }; th.appendChild(d); });
+  const locked = !c.starter; $('c-desc').textContent = locked ? '（尚未解鎖）' + c.desc : c.desc; document.querySelector('#s-select button[data-act=go]').disabled = locked; document.querySelector('#s-select button[data-act=go]').textContent = locked ? '之後解鎖' : '出發！';
   if (!UI.turnRaf) turnLoop();
 }
 function turnLoop() {
