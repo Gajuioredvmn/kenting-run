@@ -117,7 +117,8 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .res-body{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:center;justify-content:center}.res-body>table.sp{flex:1 1 260px;min-width:0}
 .cmap-box{flex:1 1 250px;max-width:400px;margin:0 auto}.cmap{display:block;width:100%;height:auto;font-family:var(--font-ui)}
 .unl{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 8px;font:700 clamp(12px,2vh,14px)/1.3 var(--font-ui)}.unl li{padding:2px 8px;border-radius:8px;background:rgba(255,243,220,.12)}.unl li.lock{opacity:.45}.unl li small{margin-left:4px;font-weight:500}
-.hand{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.cardb{flex:1 1 150px;max-width:220px;min-height:120px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:12px 14px;border-radius:12px;border:2px solid var(--sun);background:linear-gradient(180deg,rgba(40,24,90,.95),rgba(16,10,40,.95));color:var(--cream);font:700 clamp(13px,2.2vh,16px)/1.3 var(--font-ui);cursor:pointer}.cardb .k{font-size:.75em;letter-spacing:.1em;opacity:.8}.cardb b{font-size:1.25em;color:#fff}.cardb .d{font-weight:500;font-size:.85em;opacity:.9}.cardb.drive{border-color:#7ec8ff}.cardb.risk{border-color:#ff8aa0}.cardb.road{border-color:#7cf26a}.cardb:active{transform:scale(.97)}
+#s-cards.hand-scr{align-items:flex-start;justify-content:center;padding-top:max(8px,env(safe-area-inset-top,0px));pointer-events:none;background:none}#s-cards #cards{pointer-events:none;width:min(96%,720px)}#s-cards .hand{pointer-events:auto}.hand-bar{height:4px;margin:6px auto 0;width:60%;background:rgba(255,243,220,.2);border-radius:2px;overflow:hidden}.hand-bar i{display:block;height:100%;width:100%;background:var(--sun)}
+.hand{display:flex;gap:8px;justify-content:center;flex-wrap:nowrap}.cardb{flex:1 1 0;max-width:230px;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:12px 14px;border-radius:12px;border:2px solid var(--sun);background:linear-gradient(180deg,rgba(40,24,90,.95),rgba(16,10,40,.95));color:var(--cream);font:700 clamp(13px,2.2vh,16px)/1.3 var(--font-ui);cursor:pointer}.cardb .k{font-size:.75em;letter-spacing:.1em;opacity:.8}.cardb b{font-size:1.25em;color:#fff}.cardb .d{font-weight:500;font-size:.85em;opacity:.9}.cardb.drive{border-color:#7ec8ff}.cardb.risk{border-color:#ff8aa0}.cardb.road{border-color:#7cf26a}.cardb:active{transform:scale(.97)}
 .res-sub{text-align:center;font:700 clamp(13px,2.2vh,16px)/1.4 var(--font-ui);color:var(--cream);margin:0 0 .8em}
 table.sp{width:100%;border-collapse:collapse;font:700 clamp(12px,2vh,15px)/1.5 var(--font-ui)}
 table.sp td{padding:3px 6px;border-bottom:1px solid rgba(255,243,220,.12)}
@@ -4715,18 +4716,18 @@ function keyed(keys) {
 const SKIN = [0xf2c8a0, 0xe0b088, 0xc89068, 0xf6d2b0];
 // the drift pose: how far the car rolls onto its outside wheels and how its springs answer, how far the nose swings,
 // the cartoon stretch and smear, the hop as the tyres let go, what comes off the tyres, how the passengers are thrown
-const POSE_DEFAULT = { rollK: 1, springK: 150, springC: 6.5, yawK: 1, swingK: 160, swingC: 11, lag: 0, hop: 1, chatter: 1, stretchX: 0.06, squashY: 0.06, smear: 0, wobble: 0, shimmy: 0, smokeK: 1, smokeKind: 'smoke', outerOnly: false, leanK: 1, driftV: 26 };
+const POSE_DEFAULT = { rollK: 1, springK: 150, springC: 6.5, yawK: 1, swingK: 70, swingC: 8, lag: 0, hop: 1, chatter: 1, stretchX: 0.06, squashY: 0.06, smear: 0, wobble: 0, shimmy: 0, smokeK: 1, smokeKind: 'smoke', outerOnly: false, leanK: 1, driftV: 26 };
 const POSES = {
   rosso: { rollK: 0.55, yawK: 1.1, stretchX: 0.1, smear: 0.35, smokeK: 1.4 },                                        // the flat four-wheel slide behind a wall of smoke
-  vespa: { rollK: 0.8, springK: 240, springC: 5, yawK: 1.4, swingK: 260, swingC: 7, stretchX: 0.18, smear: 0.7, hop: 0.8, smokeK: 0.9, outerOnly: true, driftV: 30 },   // the snap: nose right out, over and back
-  argento: { rollK: 0.85, springK: 55, springC: 4.5, yawK: 0.7, swingK: 70, swingC: 7, hop: 0.6, chatter: 0.3, stretchX: 0.02, squashY: 0.02, smokeK: 0.3, leanK: 1.8, driftV: 22 },   // soft springs: it leans like a boat
-  ballena: { rollK: 0.35, springK: 90, springC: 7, yawK: 0.85, swingK: 90, swingC: 9, hop: 1.3, chatter: 1.4, stretchX: 0.14, squashY: 0.12, smokeK: 2, leanK: 0.8, driftV: 32 },   // heavy: squats, bounces, burns rubber
+  vespa: { rollK: 0.8, springK: 240, springC: 5, yawK: 1.4, swingK: 130, swingC: 6, stretchX: 0.18, smear: 0.7, hop: 0.8, smokeK: 0.9, outerOnly: true, driftV: 30 },   // the snap: nose right out, over and back
+  argento: { rollK: 0.85, springK: 55, springC: 4.5, yawK: 0.7, swingK: 36, swingC: 6, hop: 0.6, chatter: 0.3, stretchX: 0.02, squashY: 0.02, smokeK: 0.3, leanK: 1.8, driftV: 22 },   // soft springs: it leans like a boat
+  ballena: { rollK: 0.35, springK: 90, springC: 7, yawK: 0.85, swingK: 48, swingC: 7, hop: 1.3, chatter: 1.4, stretchX: 0.14, squashY: 0.12, smokeK: 2, leanK: 0.8, driftV: 32 },   // heavy: squats, bounces, burns rubber
   bamboo: { rollK: 1.15, springK: 200, springC: 5.5, yawK: 1.2, hop: 1.8, chatter: 1.6, stretchX: 0.04, squashY: 0.04, smokeK: 0.5, driftV: 18 },   // light: up on two wheels, hopping
   blanco: { rollK: 0.65, springK: 180, springC: 8, yawK: 1.0, hop: 0.9, stretchX: 0.08, smear: 0.25, smokeK: 0.7, driftV: 22 },   // neat and quick
-  adler: { rollK: 0.75, springK: 140, springC: 6, yawK: 1.3, swingK: 120, swingC: 5, lag: 0.9, hop: 1.0, stretchX: 0.1, smear: 0.4, smokeK: 1.1, outerOnly: false, driftV: 28 },   // the pendulum: the tail hangs back, then swings right out
+  adler: { rollK: 0.75, springK: 140, springC: 6, yawK: 1.3, swingK: 60, swingC: 4.5, lag: 0.9, hop: 1.0, stretchX: 0.1, smear: 0.4, smokeK: 1.1, outerOnly: false, driftV: 28 },   // the pendulum: the tail hangs back, then swings right out
   raiden: { rollK: 0.1, springK: 200, springC: 10, yawK: 1.1, hop: 0, chatter: 0, stretchX: 0.24, squashY: 0.02, smear: 1, smokeKind: 'sparks', smokeK: 1.5, leanK: 0.6, driftV: 34 },   // flat as a hovercraft, a smear of light and sparks
   arancia: { rollK: 1.1, springK: 170, springC: 3.5, yawK: 1.0, wobble: 0.08, shimmy: 2, hop: 1.2, chatter: 1.3, stretchX: 0.05, smokeKind: 'dirt', smokeK: 1.2, driftV: 20 },   // nervous: rolls, wobbles and shimmies
-  oro: { rollK: 0.8, springK: 45, springC: 4, yawK: 0.6, swingK: 60, swingC: 6, hop: 0.5, chatter: 0.4, stretchX: 0.03, squashY: 0.08, smokeK: 0.4, leanK: 2.0, driftV: 24 },   // a lazy ocean liner of a roll
+  oro: { rollK: 0.8, springK: 45, springC: 4, yawK: 0.6, swingK: 32, swingC: 5, hop: 0.5, chatter: 0.4, stretchX: 0.03, squashY: 0.08, smokeK: 0.4, leanK: 2.0, driftV: 24 },   // a lazy ocean liner of a roll
 };
 const KY = keyed;
 const CARS = [
@@ -5215,7 +5216,9 @@ function carSteerIndex(spr) {
   const n = spr.frames.length, mid = (n - 1) >> 1, a = Math.abs(PC.steerIn) * clamp((PC.v - 1) / 10, 0, 1), cur = Math.abs((PC._si == null ? mid : PC._si) - mid);
   let lv = a > 0.72 ? 2 : a > 0.28 ? 1 : 0;
   if (cur === 2 && a > 0.62) lv = 2; else if (cur === 1 && a > 0.2 && a <= 0.82) lv = 1; else if (cur === 0 && a <= 0.36) lv = 0;
-  if (PC.drift && lv < 2 && Math.sign(PC.steerIn) === PC.driftDir) lv = 2;   // sideways, the nose is right round
+  // in a drift the picture follows the tail, not the wheel: the nose comes round as the swing builds, right round at full swing
+  if (PC.drift && Math.sign(PC.steerIn) === PC.driftDir) { const sw = Math.abs(FX.swing); lv = Math.max(lv, sw > 0.8 ? 3 : sw > 0.45 ? 2 : sw > 0.15 ? 1 : 0); }
+  else if (Math.abs(FX.swing) > 0.5 && FX.driftK > 0.3) lv = Math.max(lv, 2);   // the tail is still out while the wheel comes back: inertia
   const si = clamp(mid + Math.sign(PC.steerIn || 1) * Math.min(lv, mid), 0, n - 1);
   PC._si = si;
   return si;
@@ -6239,14 +6242,19 @@ function sfxWarn() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 
 // a deeper and longer one for the big trucks and buses
 function sfxPass(k, pan, type) {
   if (!AU.ctx) return; const t = AU.ctx.currentTime;
-  const big = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs', dur = big ? 0.75 : 0.5;
-  const s = noiseSrc(false), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain(), p = AU.ctx.createStereoPanner ? AU.ctx.createStereoPanner() : null;
-  f.type = 'bandpass'; f.frequency.setValueAtTime(big ? 1800 : 3200, t); f.frequency.exponentialRampToValueAtTime(big ? 160 : 260, t + dur); f.Q.value = 0.9;
-  s.connect(f); f.connect(g); if (p) { p.pan.setValueAtTime(clamp(pan, -1, 1) * 0.8, t); p.pan.linearRampToValueAtTime(clamp(pan, -1, 1) * 0.3, t + dur); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((big ? 1.0 : 0.85) * k, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random()); s.stop(t + dur + 0.1);
-  // the slap of the air as the gap closes, and their engine note dropping away behind — the doppler of a car going by
-  noiseHit(t, 'highpass', 5000, 0.7, 0.3 * k, 0.08, p || AU.sfx);
-  tone(t, 'sawtooth', big ? 180 : 320, big ? 70 : 120, 0.14 * k, dur * 0.9, p || AU.sfx);
+  // the air of a car going by: a rush of low noise that opens up as the gap closes and shuts again as it falls
+  // behind, the pressure bump as the two bodies pass, nothing tonal — the ear never hears a note in a pass-by
+  const big = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs', dur = (big ? 0.9 : 0.62) / (0.7 + 0.3 * k), peak = (big ? 0.7 : 0.5) * k;
+  const s = noiseSrc(false), f1 = AU.ctx.createBiquadFilter(), f2 = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain(), p = AU.ctx.createStereoPanner ? AU.ctx.createStereoPanner() : null;
+  f1.type = 'lowpass'; f2.type = 'lowpass'; f1.Q.value = 0.4; f2.Q.value = 0.7;
+  const fc = big ? 900 : 1500;
+  for (const f of [f1, f2]) { f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(fc, t + 0.1); f.frequency.exponentialRampToValueAtTime(140, t + dur); }
+  s.connect(f1); f1.connect(f2); f2.connect(g);
+  if (p) { const side = clamp(pan, -1, 1); p.pan.setValueAtTime(side * 0.9, t); p.pan.linearRampToValueAtTime(side * 0.25, t + dur); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.09); g.gain.setValueAtTime(peak, t + 0.14); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.1);
+  // the bump: a soft low pulse as the bodies pass, heavier for a truck
+  tone(t + 0.06, 'sine', big ? 70 : 95, big ? 40 : 55, (big ? 0.34 : 0.22) * k, big ? 0.22 : 0.15, p || AU.sfx);
 }
 // metal on metal: a crunch, a ring, and the clatter after
 function sfxClang(k) {
@@ -7420,8 +7428,10 @@ function fxUpdate(dt) {
   FX.driftK = lerp(FX.driftK, dTarget, clamp(dt * (dTarget > FX.driftK ? 14 : 4), 0, 1));
   const dir = PC.drift ? PC.driftDir : (slide > 0.55 ? Math.sign(PC.steerIn || 1) : 0);
   if (dir) FX.pivot = -dir;                                                   // the outside wheels stay down
-  const rollT = (-dir * (0.36 + 0.22 * clamp(v / 60, 0, 1)) * pose.rollK + Math.sin(G.t * 75) * pose.wobble) * FX.driftK;
-  FX.rollV += ((rollT - FX.roll) * pose.springK - FX.rollV * pose.springC) * dt; FX.roll = clamp(FX.roll + FX.rollV * dt, -0.68, 0.68);   // underdamped: it pops past and swings back, never past the point of tipping
+  // the lean is a lean, not a tumble: the body rolls outward onto the outside springs, a dozen degrees at the most,
+  // and only once the tail has actually come round (it follows the swing, so it builds with it)
+  const rollT = (-dir * (0.12 + 0.09 * clamp(v / 60, 0, 1)) * pose.rollK * clamp(Math.abs(FX.swing), 0, 1) + Math.sin(G.t * 75) * pose.wobble * 0.5) * FX.driftK;
+  FX.rollV += ((rollT - FX.roll) * pose.springK - FX.rollV * pose.springC) * dt; FX.roll = clamp(FX.roll + FX.rollV * dt, -0.3, 0.3);   // underdamped: it pops past and swings back, never past the point of tipping
   // the nose swings out on its own spring; a pendulum car first hangs back the other way
   const swT = dir * FX.driftK;
   if (PC.drift && !FX.wasDrift) { FX.hopV = -95 * pose.hop; FX.swingV -= dir * pose.lag * 9; sfxChirp(); }   // the body lurches up as the tyres let go
@@ -8380,7 +8390,7 @@ function uiInit() {
   <section class="scr dim" id="s-settings" hidden><div class="panel card" id="settings"></div></section>
   <section class="scr dim" id="s-online" hidden><div class="panel card" id="online"></div></section>
   <section class="scr dim" id="s-rogue" hidden><div class="panel card" id="rogue"></div></section>
-  <section class="scr dim" id="s-cards" hidden><div class="panel card" id="cards"></div></section>`;
+  <section class="scr hand-scr" id="s-cards" hidden><div id="cards"></div></section>`;
   document.body.appendChild(h('<div id="rot" class="need"><div style="font-size:44px">⟲</div>請把手機轉成橫向<br><small style="font-weight:500;font-size:14px;opacity:.8">這個遊戲要橫著玩</small></div>'));
   root.addEventListener('click', onUiClick);
   // the first touch anywhere on the title unlocks sound and asks for the tilt sensor
@@ -8450,6 +8460,7 @@ function onUiKey(e) {
   if (UI.scr === 'select') { if (e.code === 'ArrowLeft') { UI.sel = (UI.sel + CARS.length - 1) % CARS.length; openSelect(); } if (e.code === 'ArrowRight') { UI.sel = (UI.sel + 1) % CARS.length; openSelect(); } if (e.code === 'Enter') show('setup'); }
   else if (UI.scr === 'title' && (e.code === 'Enter' || e.code === 'Space')) { if (!UI.unlocked) unlock(); else show('select'); }
   else if (UI.scr === 'setup' && e.code === 'Enter') startPlay();
+  else if (ROGUE.pending && /^Digit[123]$/.test(e.code)) roguePick(+e.code.slice(5) - 1);
 }
 // ---------- car select: a turntable of the chosen car, its numbers, the line-up below ----------
 function openSelect() {
@@ -8662,9 +8673,8 @@ function openRogue() {
 }
 function rogueShowCards() {
   const kindName = { drive: '開法', risk: '賭注', road: '路況' };
-  $('cards').innerHTML = `<h2 class="ttl">檢查點　留一張</h2>
-    <div class="hand">${ROGUE.hand.map((c, i) => `<button class="cardb ${c.kind}" data-act="card" data-i="${i}"><span class="k">${kindName[c.kind]}</span><b>${c.name}</b><span class="d">${c.desc}</span></button>`).join('')}</div>
-    <p class="note" style="text-align:center;margin:6px 0 0">已拿：${ROGUE.picks.length ? ROGUE.picks.map((c) => c.name).join('・') : '還沒有'}</p>`;
+  $('cards').innerHTML = `<div class="hand">${ROGUE.hand.map((c, i) => `<button class="cardb ${c.kind}" data-act="card" data-i="${i}"><span class="k">${kindName[c.kind]}　${i + 1}</span><b>${c.name}</b><span class="d">${c.desc}</span></button>`).join('')}</div>
+    <div class="hand-bar"><i id="hand-t"></i></div>`;
   show('cards');
 }
 // ---------- settings ----------
@@ -9118,6 +9128,7 @@ function rogueEnterPiece(p) {
 function rogueCondName(p) { const c = ROGUE.conds.get(p); return c && c.id !== 'none' ? c.name : '一般'; }
 function rogueUpdate(dt) {
   if (!ROGUE.on || RACE.state !== 'run') return;
+  if (ROGUE.pending) { ROGUE.handT -= dt; const bar = document.getElementById('hand-t'); if (bar) bar.style.width = Math.max(0, ROGUE.handT / 9 * 100) + '%'; if (ROGUE.handT <= 0) roguePick(0); }
   const p = PC.piece;
   if (p.children.length === 2 && p.L - PC.s < 720 && !ROGUE.msgDone.has(p)) {
     ROGUE.msgDone.add(p);
@@ -9152,14 +9163,15 @@ function rogueCheckpoint() {
   if (!ROGUE.on) return;
   ROGUE.hand = rogueDeal(); if (!ROGUE.hand.length) return;
   if (BOT.on || ROGUE.bot) { roguePick(0); return; }
-  ROGUE.pending = true; G.paused = true; if (AU.ctx) AU.ctx.suspend();
+  // the cards hang at the top of the screen while you keep driving: tap one, or the first is yours when the time is up
+  ROGUE.pending = true; ROGUE.handT = 9;
   rogueShowCards();
 }
 function roguePick(i) {
   const c = ROGUE.hand && ROGUE.hand[i]; if (!c) return;
   ROGUE.picks.push(c); c.apply(); ROGUE.lastPick = c; ROGUE.hand = null;
   hudMsg(c.name, c.desc, '#7cf26a', 2.4, false);
-  if (ROGUE.pending) { ROGUE.pending = false; G.paused = false; show(null); if (AU.ctx) AU.ctx.resume(); }
+  if (ROGUE.pending) { ROGUE.pending = false; show(null); }
 }
 // a crash with a card that cares: the shield takes it, the glass car pays double, the soft tyres wear
 function rogueOnCrash() {
