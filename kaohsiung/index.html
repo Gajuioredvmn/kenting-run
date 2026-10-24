@@ -1429,7 +1429,8 @@ function buildGraph() {
       const e = { id: edges.length, a: ev[k].node, b: ev[k + 1].node, pts, rd, kind: rd.kind, K: RK[rd.kind], w: rd.w, len, lvl: rd.lvl, s0, s1 };
       if (rd.h) { e.h0 = e.h1 = rd.h; } if (rd.ramp) { e.h0 = lerp(rd.h0, rd.h1, s0 / rd.len); e.h1 = lerp(rd.h0, rd.h1, s1 / rd.len); e.ramp = true; }
       // a grade road crossing the river is a bridge
-      if (!e.lvl && !e.ramp && riverCross(pts)) e.bridge = true;
+      if (!e.lvl && !e.ramp && riverCross(pts)) { e.bridge = true; e.h0 = e.h1 = 0; }
+      if (rd.kind === 'hill') e.hill = true;
       edges.push(e); ev[k].node.edges.push(e); ev[k + 1].node.edges.push(e);
     }
   }
@@ -1456,7 +1457,7 @@ function buildGraph() {
     }
   }
   for (const e of edges) { e.ta = e.a.out.find((o) => o.e === e).trim; e.tb = e.b.out.find((o) => o.e === e).trim; }
-  MAP.elev = edges.filter((e) => e.h0 != null);
+  MAP.elev = edges.filter((e) => e.h0 != null || e.hill);
 }
 function nearestOn(rd, x, z) {
   let best = null;
@@ -1632,8 +1633,9 @@ function groundH(x, z, yNow) {
   for (const e of MAP.elev) {
     const bb = e.bb; if (x < bb[0] || x > bb[2] || z < bb[1] || z > bb[3]) continue;
     const n = nearestOnPts(e.pts, x, z); if (n.d > e.w / 2 + 2.5) continue;
+    if (e.hill) { if (n.d < e.w / 2 + 1) h += 0.3; continue; }
     const t = n.s / Math.max(1, e.len), he = e.ramp ? lerp(e.h0, e.h1, sstep(t)) : e.h0;
-    if (yNow == null || Math.abs(yNow - he) < 3.5 || he < 0.5) { h = Math.max(h, he) - (n.d > e.w / 2 ? (n.d - e.w / 2) * 0.6 : 0); }
+    if (yNow == null || Math.abs(yNow - he) < 3.5 || he < 0.5) { h = Math.max(h, he - (n.d > e.w / 2 ? (n.d - e.w / 2) * 0.6 : 0)); }
   }
   return h;
 }
@@ -1650,7 +1652,7 @@ function nearestOnPts(pts, x, z) {
 function nearestRoad(x, z, yNow) {
   let best = null;
   for (const e of MAP.edges) {
-    if (e.h0 != null && (yNow == null || Math.abs(yNow - e.h0) > 3)) continue;
+    if (e.h0 != null && e.h0 > 0.5 && (yNow == null || Math.abs(yNow - e.h0) > 3)) continue;
     const n = nearestOnPts(e.pts, x, z); if (!best || n.d < best.d) best = Object.assign(n, { e, rd: e.rd });
   }
   return best;
@@ -2011,7 +2013,7 @@ function buildRoads() {
     // the median of a boulevard: a raised strip with a kerb, broken near the junctions
     if (e.K.median && s1 - s0 > 30) buildMedian(e, c);
     if (e.bridge) buildBridge(e, c);
-    if (e.h0 != null) buildViaduct(e, c);
+    if (e.h0 != null && !e.bridge) buildViaduct(e, c);
     // the approaches: a crossing and a stop line at every lit junction
     for (const end of [0, 1]) { const n = end ? e.b : e.a; if (n.lit || n.ring) buildApproach(e, end, c); }
   }
@@ -2075,16 +2077,20 @@ function buildBridge(e, c) {
     for (const side of ['L', 'R']) { const p = off[side][i]; box(p[0], S.ys[i], p[1], yaw + Math.PI, 0.25, 1.1, seg, rail, rail, rail); }
     box(pts[i][0], S.ys[i] - 1.2, pts[i][1], yaw + Math.PI, e.w + 1, 1.2, seg, conc, conc, conc);
   }
+  for (const side of ['L', 'R']) addSolidsAlong(off[side], 0.2);
 }
 function buildViaduct(e, c) {
-  const S = e.strip, pts = S.pts, hw = e.w / 2, conc = T('conc'), kerb = T('kerb'), off = polyOffsets(pts, hw + 0.2);
+  const S = e.strip, pts = S.pts, hw = e.w / 2, conc = T('conc'), kerb = T('kerb'), off = polyOffsets(pts, hw + 0.2), rampTops = MAP.roads.filter((rd) => rd.ramp).map((rd) => rd.pts[0]);
   for (let i = 0; i + 1 < pts.length; i++) {
     const seg = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]), yaw = Math.atan2(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]), y = Math.min(S.ys[i], S.ys[i + 1]);
-    for (const side of ['L', 'R']) { const p = off[side][i]; box(p[0], S.ys[i], p[1], yaw + Math.PI, 0.4, 1.0, seg, kerb, kerb, kerb); }
-    box(pts[i][0], y - 1.5, pts[i][1], yaw + Math.PI, e.w + 1, 1.5 + Math.abs(S.ys[i + 1] - S.ys[i]), seg, conc, conc, conc);
+    // a ramp's foot merges into the road: its barriers and deck begin once it has risen a little; and the
+    // motorway's barrier is left open where a ramp joins it
+    const mx = (pts[i][0] + pts[i + 1][0]) / 2, mz = (pts[i][1] + pts[i + 1][1]) / 2, gap = !e.ramp && rampTops.some((q) => Math.hypot(q[0] - mx, q[1] - mz) < 36);
+    if (y > 0.6 && !gap) for (const side of ['L', 'R']) { const p = off[side][i]; box(p[0], S.ys[i], p[1], yaw + Math.PI, 0.4, 1.0, seg, kerb, kerb, kerb); }
+    if (y > 0.3) box(pts[i][0], y - 1.5, pts[i][1], yaw + Math.PI, e.w + 1, 1.5 + Math.abs(S.ys[i + 1] - S.ys[i]), seg, conc, conc, conc);
     if (i % 3 === 0 && y > 2) box(pts[i][0], terrainH(pts[i][0], pts[i][1]), pts[i][1], yaw, 2.2, y - 1.5, 2.2, conc, conc, conc);
   }
-  for (const side of ['L', 'R']) addSolidsAlong(off[side], 0.5);
+  for (const side of ['L', 'R']) for (let i = 0; i + 1 < pts.length; i++) { const mx = (pts[i][0] + pts[i + 1][0]) / 2, mz = (pts[i][1] + pts[i + 1][1]) / 2; if (Math.min(S.ys[i], S.ys[i + 1]) <= 0.6 || (!e.ramp && rampTops.some((q) => Math.hypot(q[0] - mx, q[1] - mz) < 36))) continue; addSolidsAlong([off[side][i], off[side][i + 1]], 0.5); }
 }
 function addSolidsAlong(pts, hw) { for (let i = 0; i + 1 < pts.length; i++) { const dx = pts[i + 1][0] - pts[i][0], dz = pts[i + 1][1] - pts[i][1], L = Math.hypot(dx, dz); if (L < 0.5) continue; addSolid({ x: (pts[i][0] + pts[i + 1][0]) / 2, z: (pts[i][1] + pts[i + 1][1]) / 2, yaw: Math.atan2(dx, dz), hx: hw, hz: L / 2 }); } }
 // ---------- the pavements: a ring round every block, with its kerb ----------
@@ -2354,6 +2360,8 @@ function buildLandmarkLots() {
   lot(L.夢時代[0] - 90, L.夢時代[1] - 70, L.夢時代[0] + 90, L.夢時代[1] + 70);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) lot(L.美麗島[0] + sx * 22, L.美麗島[1] + sz * 22, L.美麗島[0] + sx * 48, L.美麗島[1] + sz * 48);
   lot(L.旗津[0] - 30, L.旗津[1] - 30, L.旗津[0] + 30, L.旗津[1] + 30);
+  // nothing is built under the ramps
+  for (const rd of MAP.roads) if (rd.ramp) for (let i = 0; i + 1 < rd.pts.length; i++) lot(Math.min(rd.pts[i][0], rd.pts[i + 1][0]) - 9, Math.min(rd.pts[i][1], rd.pts[i + 1][1]) - 9, Math.max(rd.pts[i][0], rd.pts[i + 1][0]) + 9, Math.max(rd.pts[i][1], rd.pts[i + 1][1]) + 9);
   // temples and petrol stations get their plots now, before the houses are laid
   const r = mulberry(123); CITY.sites = [];
   for (const f of MAP.faces) {
@@ -2798,8 +2806,10 @@ function carStep(dt) {
   const dLon = (P.m * C.aLon * P.h) / P.L, FzF = Math.max(0.05 * Wt, FzF0 - dLon), FzR = Math.max(0.05 * Wt, FzR0 + dLon);
   C.loadF = FzF / Wt;
   // ---- slip angles at each axle ----
-  const vxs = Math.max(Math.abs(C.vx), 1.5) * Math.sign(C.vx || 1);
-  const aF = Math.atan2(C.vy + P.a * C.r, vxs) - C.steer, aR = Math.atan2(C.vy - P.b * C.r, vxs);
+  const vxs = Math.max(Math.abs(C.vx), 0.3) * Math.sign(C.vx || 1);
+  // at a crawl the slip angles mean little (the kinematic blend below steers the car), so they fade out, which also keeps the friction circle free for pulling away
+  const lowK = clamp(Math.abs(C.vx) / 1.5, 0.1, 1);
+  const aF = (Math.atan2(C.vy + P.a * C.r, vxs) - C.steer) * lowK, aR = Math.atan2(C.vy - P.b * C.r, vxs) * lowK;
   // ---- longitudinal demand per axle: drive on the driven axle, brakes on both (60/40), handbrake locks the rear ----
   const Fb = P.brakeF * br * (C.vx < 0 ? -1 : 1);
   let FxF = -Fb * 0.62, FxR = -Fb * 0.38;
