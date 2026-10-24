@@ -5910,6 +5910,18 @@ function pcStep(dt, track) {
   PC.surface = PC.offroad ? ((PC.x < 0 ? p.sec(PC.s).L : p.sec(PC.s).R) || 'grass') : 'road';
   if (PC.x > re + 32) { PC.x = re + 32; PC.vx = Math.min(PC.vx, 0); }
   if (PC.x < le - 32) { PC.x = le - 32; PC.vx = Math.max(PC.vx, 0); }
+  // a bridge, or the sea right up against the paving: there is no shoulder to run onto, the edge itself is a wall
+  // (a car already on the shoulder when the bridge begins is set back inside the parapet, never out on the water)
+  if (PC.offroad) {
+    const sec = p.sec(PC.s), sideKind = PC.x < 0 ? sec.L : sec.R;
+    if (sec.bridge || sideKind === 'water') {
+      const inward = PC.x < 0 ? 1 : -1;
+      PC.x = (PC.x < 0 ? le : re) + inward * 0.95; PC.offroad = 0; PC.surface = 'road';
+      if (inward > 0) PC.vx = Math.max(PC.vx, 1.5); else PC.vx = Math.min(PC.vx, -1.5);
+      if (performance.now() - PC.lastHit > 300 && v > 6) { PC.lastHit = performance.now(); PC.v *= 0.9; PC.scrape = 0.25; sfxScrape(); shake(0.12); if (typeof fxScrape === 'function') fxScrape(-inward); }
+      else if (v > 6) PC.v *= 1 - 0.25 * dt;
+    }
+  }
   // ---- walls: rails, parapets, shop fronts — you grind along them, you never get through them ----
   const wall = findCollider(p, PC.s, PC.x, 2.1, 0.92, 'wall');
   if (wall) {
